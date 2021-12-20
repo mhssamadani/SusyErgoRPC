@@ -20,8 +20,17 @@ export default class ApiNetwork {
         )
     }
 
-    static getGuardianData = () => {
-        return explorerApi.get(`/boxes/unspent/byTokenId/${config.token.guardianNFT}`).then(res => res.data)
+    static getGuardianPubkeys = () => {
+        return explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${config.token.guardianNFT}`).then(res => {
+            let box = res.data.items[0]
+            let pubKeys: Array<number> = []
+
+            let arr = box.additionalRegisters.R4.renderedValue
+            arr.slice(1, arr.length).split(",").array.forEach((element: string) => {
+                pubKeys.push(parseInt(element, 16))
+            });
+            pubKeys
+        })
     }
 
 }
