@@ -176,5 +176,3 @@ export const sponserScript = `
 }
 
 `;
-
-

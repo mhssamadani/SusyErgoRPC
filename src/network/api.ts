@@ -23,4 +23,5 @@ export default class ApiNetwork {
     static getGuardianData = () => {
         return explorerApi.get(`/boxes/unspent/byTokenId/${config.token.guardianNFT}`).then(res => res.data)
     }
+
 }
