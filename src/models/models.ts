@@ -13,12 +13,12 @@ class WormholeSignature {
     signatureData: Uint8Array;
 
     constructor(signatureBytes: Uint8Array) {
-        this.index = parseInt(signatureBytes[0].toString())
-        this.signatureData = signatureBytes.subarray(1)
+        this.index = parseInt(signatureBytes[0].toString(), 16) //TODO: this parsing is wrong
+        this.signatureData = signatureBytes.slice(1)
     }
 }
 
-class VAA {
+export default class VAA {
     version: number;
     GuardianSetIndex: number;
     Signatures: Array<WormholeSignature>;
@@ -31,30 +31,48 @@ class VAA {
 
     constructor(vaaBytes: Uint8Array) {
         let signaturesSize: number = (vaaBytes.length - 56 - 133)
-        if (signaturesSize % 65 != 0) throw new Error("cannot parse vaa signatures (length is not dividable by 65)")
+        if (signaturesSize % 65 != 0) throw new Error(`cannot parse vaa signatures (length is ${signaturesSize} it's not dividable by 65)`)
         
-        let signatures: Array<WormholeSignature> = this.signatureParser(vaaBytes.subarray(5, 5 + signaturesSize))
-        let remainingVAABytes: Uint8Array = vaaBytes.subarray(5 + signaturesSize)
+        let signatures: Array<WormholeSignature> = this.signatureParser(vaaBytes.slice(5, 5 + signaturesSize))
+        let remainingVAABytes: Uint8Array = vaaBytes.slice(5 + signaturesSize)
 
-        this.version = parseInt(vaaBytes[0].toString())
-        this.GuardianSetIndex = parseInt(vaaBytes[0].toString())
+        this.version = parseInt(vaaBytes[0].toString(16), 16) //TODO: this parsing is wrong
+        this.GuardianSetIndex = this.arrayToInt(vaaBytes.slice(1, 5), 4)
         this.Signatures = signatures
-        this.timestamp = parseInt(remainingVAABytes.subarray(0, 4).toString())
-        this.nonce = parseInt(remainingVAABytes.subarray(4, 8).toString())
-        this.consistencyLevel = parseInt(remainingVAABytes[8].toString())
-        this.EmitterChain = parseInt(remainingVAABytes.subarray(9, 11).toString())
-        this.EmitterAddress = remainingVAABytes.subarray(11, 43)
-        this.payload = new Payload(remainingVAABytes.subarray(43))
+        this.timestamp = this.arrayToInt(remainingVAABytes.slice(0, 4), 4)
+        this.nonce = this.arrayToInt(remainingVAABytes.slice(4, 8), 4)
+        this.consistencyLevel = remainingVAABytes[8] //TODO: this parsing is wrong
+        this.EmitterChain = this.arrayToInt(remainingVAABytes.slice(9, 11), 2)
+        this.EmitterAddress = remainingVAABytes.slice(11, 43)
+        this.payload = new Payload(remainingVAABytes.slice(43))
     }    
 
+    arrayToInt(bytes: Uint8Array, length: number) {
+        return Buffer.from(bytes).readUIntLE(0, length)
+    }
+    
     signatureParser(signatureBytes: Uint8Array) {
         let signatures: Array<WormholeSignature> = []
         let remainingBytes = signatureBytes
         while (remainingBytes.length > 0) {
-            signatures.push(new WormholeSignature(remainingBytes.subarray(0, 65)))
-            remainingBytes = remainingBytes.subarray(65)
+            signatures.push(new WormholeSignature(remainingBytes.slice(0, 65)))
+            remainingBytes = remainingBytes.slice(65)
         }
         return signatures
+    }
+
+    toJson() {
+        return `{
+            "version": ${this.version},
+            "GuardianSetIndex": ${this.GuardianSetIndex},
+            "Signatures": ${this.Signatures},
+            "timestamp": ${this.timestamp},
+            "nonce": ${this.nonce},
+            "consistencyLevel": ${this.consistencyLevel},
+            "EmitterChain": ${this.EmitterChain},
+            "EmitterAddress": ${this.EmitterAddress},
+            "payload": ${this.payload},
+        }`
     }
 }
 
