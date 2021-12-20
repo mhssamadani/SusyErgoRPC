@@ -1,2 +1,2 @@
-import Contracts from "./susy/boxes";
-Contracts.generateSponsorContract().then(res=>console.log(res));
+import Contracts from "./susy/contracts";
+Contracts.generateBankContract().then(res=>console.log(res));
