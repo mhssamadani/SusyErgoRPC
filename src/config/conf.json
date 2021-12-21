@@ -9,5 +9,9 @@
   "explorerApi": "http://10.10.9.3:7000",
   "bftSignatureCount": 4,
   "fee": 1100000,
-  "bridgeId": 10
+  "bridgeId": 10,
+  "guardian": {
+    "index": 1,
+    "privateKey": ""
+  }
 }

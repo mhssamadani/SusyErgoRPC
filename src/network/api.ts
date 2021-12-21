@@ -33,4 +33,19 @@ export default class ApiNetwork {
         })
     }
 
+    static getVAABoxes = () => {
+        return explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${config.token.VAAT}`).then(res => res.data.items)
+    }
+
+    static trackMempool = async (box: any) => {
+        let mempoolTxs = await explorerApi.get(`/api/v1/mempool/transactions/byAddress/${box.address}`).then(res => res.data)
+        if (mempoolTxs.total == 0) return box
+        mempoolTxs.items.array.forEach((tx: any) => {
+            if (tx.inputs[1].boxId == box.boxId) {
+                let newVAABox = tx.outputs[1]
+                return ApiNetwork.trackMempool(newVAABox) // TODO: IS THIS TRUE ? IS THIS RETURN FOR WHOLE FUNCTION ? OR JUST forEach ??
+            }
+        });
+    }
+
 }
