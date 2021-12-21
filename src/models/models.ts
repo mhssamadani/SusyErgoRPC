@@ -1,3 +1,4 @@
+import ApiNetwork from "../network/api";
 
 // TODO: complete Payload implementation if necessary or remove it if not
 class Payload  {
@@ -74,5 +75,6 @@ export default class VAA {
             "payload": ${this.payload},
         }`
     }
+    
 }
 
