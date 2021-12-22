@@ -64,15 +64,16 @@ export default class ApiNetwork {
         return explorerApi.get(`/api/v1/boxes/unspent/byAddress/${address}`).then(res => res.data.items[0])
     }
 
-    static trackMempool = async (box: any, index: number) => {
+    static trackMempool = async (box: any, index: number): Promise<any> => {
         let mempoolTxs = await explorerApi.get(`/api/v1/mempool/transactions/byAddress/${box.address}`).then(res => res.data)
         if (mempoolTxs.total == 0) return box
-        mempoolTxs.items.array.forEach((tx: any) => {
+        for (const tx of mempoolTxs.items.array) {
             if (tx.inputs[index].boxId == box.boxId) {
                 let newVAABox = tx.outputs[index]
-                return ApiNetwork.trackMempool(newVAABox, index) // TODO: IS THIS TRUE ? IS THIS RETURN FOR WHOLE FUNCTION ? OR JUST forEach ??
+                return ApiNetwork.trackMempool(newVAABox, index)
             }
-        });
+        }
+        return box
     }
 
 }
