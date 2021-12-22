@@ -1,8 +1,6 @@
-import axios, { Axios } from "axios";
-import exp from "constants";
+import axios from "axios";
 import config from "../config/conf.json";
 import Contracts from "../susy/contracts";
-import {BlockHeaders, PreHeader} from "../../pkg-nodejs";
 
 const URL = config.node;
 const nodeClient = axios.create({
