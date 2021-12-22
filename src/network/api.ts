@@ -1,5 +1,6 @@
-import axios, { Axios } from "axios";
+import axios, {Axios} from "axios";
 import config from "../config/conf.json";
+import {BlockHeaders, PreHeader} from "../../pkg-nodejs";
 
 const URL = config.node;
 const nodeClient = axios.create({
@@ -19,6 +20,23 @@ export default class ApiNetwork {
             res => res.data.address
         )
     }
+
+    static getLastBlockHeader = () => {
+        return nodeClient.get("/blocks/lastHeaders/1").then(
+            res => res.data
+        )
+    }
+
+    // TODO: should checked with new function
+    static getErgoStateContexet = async () => {
+        const ergoLib = require("ergo-lib-wasm-nodejs");
+        const blockHeaderJson = await this.getLastBlockHeader();
+        const blockHeaders = ergoLib.BlockHeaders.from_json(blockHeaderJson);
+        const preHeader = ergoLib.from_block_header(blockHeaderJson.get(0));
+        const ctx = new ergoLib.ErgoStateContext(preHeader, blockHeaders);
+        return ctx;
+    }
+
 
     static getGuardianPubkeys = () => {
         return explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${config.token.guardianNFT}`).then(res => {

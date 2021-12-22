@@ -206,6 +206,17 @@ function getUint32Memory0() {
     return cachegetUint32Memory0;
 }
 
+function passArray32ToWasm0(arg, malloc) {
+    const ptr = malloc(arg.length * 4);
+    getUint32Memory0().set(arg, ptr / 4);
+    WASM_VECTOR_LEN = arg.length;
+    return ptr;
+}
+
+function getArrayI32FromWasm0(ptr, len) {
+    return getInt32Memory0().subarray(ptr / 4, ptr / 4 + len);
+}
+
 function passArrayJsValueToWasm0(array, malloc) {
     const ptr = malloc(array.length * 4);
     const mem = getUint32Memory0();
@@ -224,13 +235,6 @@ function getArrayJsValueFromWasm0(ptr, len) {
         result.push(takeObject(slice[i]));
     }
     return result;
-}
-
-function passArray32ToWasm0(arg, malloc) {
-    const ptr = malloc(arg.length * 4);
-    getUint32Memory0().set(arg, ptr / 4);
-    WASM_VECTOR_LEN = arg.length;
-    return ptr;
 }
 
 function handleError(f, args) {
@@ -893,14 +897,14 @@ class Constant {
         return I64.__wrap(ret);
     }
     /**
-    * Create from byte array(BigInt)
+    * Create BigInt constant from byte array (signed bytes bit-endian)
     * @param {Uint8Array} num
     * @returns {Constant}
     */
-    static from_byte_array_bigint(num) {
+    static from_bigint_signed_bytes_be(num) {
         var ptr0 = passArray8ToWasm0(num, wasm.__wbindgen_malloc);
         var len0 = WASM_VECTOR_LEN;
-        var ret = wasm.constant_from_byte_array_bigint(ptr0, len0);
+        var ret = wasm.constant_from_bigint_signed_bytes_be(ptr0, len0);
         return Constant.__wrap(ret);
     }
     /**
@@ -924,26 +928,26 @@ class Constant {
     }
     /**
     * Create `Coll[Int]` from string array
-    * @param {any[]} arr
+    * @param {Int32Array} arr
     * @returns {Constant}
     */
-    static from_i32_str_array(arr) {
-        var ptr0 = passArrayJsValueToWasm0(arr, wasm.__wbindgen_malloc);
+    static from_i32_array(arr) {
+        var ptr0 = passArray32ToWasm0(arr, wasm.__wbindgen_malloc);
         var len0 = WASM_VECTOR_LEN;
-        var ret = wasm.constant_from_i32_str_array(ptr0, len0);
+        var ret = wasm.constant_from_i32_array(ptr0, len0);
         return Constant.__wrap(ret);
     }
     /**
     * Extract `Coll[Int]` as string array
-    * @returns {any[]}
+    * @returns {Int32Array}
     */
-    to_i32_str_array() {
+    to_i32_array() {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.constant_to_i32_str_array(retptr, this.ptr);
+            wasm.constant_to_i32_array(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
-            var v0 = getArrayJsValueFromWasm0(r0, r1).slice();
+            var v0 = getArrayI32FromWasm0(r0, r1).slice();
             wasm.__wbindgen_free(r0, r1 * 4);
             return v0;
         } finally {
@@ -979,13 +983,13 @@ class Constant {
         }
     }
     /**
-    * Extract `Coll[Coll[Byte]]` as byte array
+    * Extract `Coll[Coll[Byte]]` as array of byte arrays
     * @returns {(Uint8Array)[]}
     */
-    to_coll_coll_byte_array() {
+    to_coll_coll_byte() {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.constant_to_coll_coll_byte_array(retptr, this.ptr);
+            wasm.constant_to_coll_coll_byte(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayJsValueFromWasm0(r0, r1).slice();
@@ -1028,6 +1032,23 @@ class Constant {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
             wasm.constant_to_tuple_coll_bytes(retptr, this.ptr);
+            var r0 = getInt32Memory0()[retptr / 4 + 0];
+            var r1 = getInt32Memory0()[retptr / 4 + 1];
+            var v0 = getArrayJsValueFromWasm0(r0, r1).slice();
+            wasm.__wbindgen_free(r0, r1 * 4);
+            return v0;
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+    }
+    /**
+    * Create `(Int, Int)` tuple Constant
+    * @returns {any[]}
+    */
+    to_tuple_i32() {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            wasm.constant_to_tuple_i32(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayJsValueFromWasm0(r0, r1).slice();
@@ -1384,6 +1405,60 @@ class DerivationPath {
         var ptr0 = passArray32ToWasm0(address_indices, wasm.__wbindgen_malloc);
         var len0 = WASM_VECTOR_LEN;
         var ret = wasm.derivationpath_new(acc, ptr0, len0);
+        return DerivationPath.__wrap(ret);
+    }
+    /**
+    * Create root derivation path
+    * @returns {DerivationPath}
+    */
+    static master_path() {
+        var ret = wasm.derivationpath_master_path();
+        return DerivationPath.__wrap(ret);
+    }
+    /**
+    * Returns the length of the derivation path
+    * @returns {number}
+    */
+    depth() {
+        var ret = wasm.derivationpath_depth(this.ptr);
+        return ret >>> 0;
+    }
+    /**
+    * Returns a new path with the last element of the deriviation path being increased, e.g. m/1/2 -> m/1/3
+    * Returns an empty path error if the path is empty (master node)
+    * @returns {DerivationPath}
+    */
+    next() {
+        var ret = wasm.derivationpath_next(this.ptr);
+        return DerivationPath.__wrap(ret);
+    }
+    /**
+    * String representation of derivation path
+    * E.g m/44'/429'/0'/0/1
+    * @returns {string}
+    */
+    toString() {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            wasm.derivationpath_toString(retptr, this.ptr);
+            var r0 = getInt32Memory0()[retptr / 4 + 0];
+            var r1 = getInt32Memory0()[retptr / 4 + 1];
+            return getStringFromWasm0(r0, r1);
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+            wasm.__wbindgen_free(r0, r1);
+        }
+    }
+    /**
+    * Create a derivation path from a formatted string
+    * E.g "m/44'/429'/0'/0/1"
+    * @param {string} path
+    * @returns {DerivationPath}
+    */
+    static from_string(path) {
+        var ptr0 = passStringToWasm0(path, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len0 = WASM_VECTOR_LEN;
+        var ret = wasm.derivationpath_from_string(ptr0, len0);
         return DerivationPath.__wrap(ret);
     }
     /**
@@ -2406,6 +2481,14 @@ class ExtSecretKey {
         var ret = wasm.extsecretkey_public_key(this.ptr);
         return ExtPubKey.__wrap(ret);
     }
+    /**
+    * Derivation path associated with the ext secret key
+    * @returns {DerivationPath}
+    */
+    path() {
+        var ret = wasm.extsecretkey_path(this.ptr);
+        return DerivationPath.__wrap(ret);
+    }
 }
 module.exports.ExtSecretKey = ExtSecretKey;
 /**
@@ -2618,6 +2701,48 @@ class MinerAddress {
     }
 }
 module.exports.MinerAddress = MinerAddress;
+/**
+* Mnemonic
+*/
+class Mnemonic {
+
+    __destroy_into_raw() {
+        const ptr = this.ptr;
+        this.ptr = 0;
+
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_mnemonic_free(ptr);
+    }
+    /**
+    * Convert a mnemonic phrase into a mnemonic seed
+    * mnemonic_pass is optional and is used to salt the seed
+    * @param {string} mnemonic_phrase
+    * @param {string} mnemonic_pass
+    * @returns {Uint8Array}
+    */
+    static to_seed(mnemonic_phrase, mnemonic_pass) {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            var ptr0 = passStringToWasm0(mnemonic_phrase, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+            var len0 = WASM_VECTOR_LEN;
+            var ptr1 = passStringToWasm0(mnemonic_pass, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+            var len1 = WASM_VECTOR_LEN;
+            wasm.mnemonic_to_seed(retptr, ptr0, len0, ptr1, len1);
+            var r0 = getInt32Memory0()[retptr / 4 + 0];
+            var r1 = getInt32Memory0()[retptr / 4 + 1];
+            var v2 = getArrayU8FromWasm0(r0, r1).slice();
+            wasm.__wbindgen_free(r0, r1 * 1);
+            return v2;
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+    }
+}
+module.exports.Mnemonic = Mnemonic;
 /**
 * Combination of an Address with a network
 * These two combined together form a base58 encoding

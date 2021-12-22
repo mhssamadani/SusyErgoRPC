@@ -3,6 +3,8 @@
 /**
 * newtype for box registers R4 - R9
 */
+import {AxiosResponse} from "axios";
+
 export enum NonMandatoryRegisterId {
 /**
 * id for R4 register
@@ -197,7 +199,7 @@ export class BlockHeaders {
 * @param {any[]} json_vals
 * @returns {BlockHeaders}
 */
-  static from_json(json_vals: any[]): BlockHeaders;
+  static from_json(json_vals: AxiosResponse<any>): BlockHeaders;
 /**
 * Create new collection with one element
 * @param {BlockHeader} b
@@ -342,11 +344,11 @@ export class Constant {
 */
   to_i64(): I64;
 /**
-* Create from byte array(BigInt)
+* Create BigInt constant from byte array (signed bytes bit-endian)
 * @param {Uint8Array} num
 * @returns {Constant}
 */
-  static from_byte_array_bigint(num: Uint8Array): Constant;
+  static from_bigint_signed_bytes_be(num: Uint8Array): Constant;
 /**
 * Create from byte array
 * @param {Uint8Array} v
@@ -360,15 +362,15 @@ export class Constant {
   to_byte_array(): Uint8Array;
 /**
 * Create `Coll[Int]` from string array
-* @param {any[]} arr
+* @param {Int32Array} arr
 * @returns {Constant}
 */
-  static from_i32_str_array(arr: (string | any)[]): Constant;
+  static from_i32_array(arr: number[]): Constant;
 /**
 * Extract `Coll[Int]` as string array
-* @returns {any[]}
+* @returns {Int32Array}
 */
-  to_i32_str_array(): any[];
+  to_i32_array(): Int32Array;
 /**
 * Create `Coll[Long]` from string array
 * @param {any[]} arr
@@ -381,10 +383,10 @@ export class Constant {
 */
   to_i64_str_array(): any[];
 /**
-* Extract `Coll[Coll[Byte]]` as byte array
+* Extract `Coll[Coll[Byte]]` as array of byte arrays
 * @returns {(Uint8Array)[]}
 */
-  to_coll_coll_byte_array(): (Uint8Array)[];
+  to_coll_coll_byte(): (Uint8Array)[];
 /**
 * Parse raw [`EcPoint`] value from bytes and make [`ProveDlog`] constant
 * @param {Uint8Array} bytes
@@ -403,6 +405,11 @@ export class Constant {
 * @returns {(Uint8Array)[]}
 */
   to_tuple_coll_bytes(): (Uint8Array)[];
+/**
+* Create `(Int, Int)` tuple Constant
+* @returns {any[]}
+*/
+  to_tuple_i32(): any[];
 /**
 * Create `(Long, Long)` tuple Constant
 * @param {I64} l1
@@ -553,6 +560,35 @@ export class DerivationPath {
 * @returns {DerivationPath}
 */
   static new(acc: number, address_indices: Uint32Array): DerivationPath;
+/**
+* Create root derivation path
+* @returns {DerivationPath}
+*/
+  static master_path(): DerivationPath;
+/**
+* Returns the length of the derivation path
+* @returns {number}
+*/
+  depth(): number;
+/**
+* Returns a new path with the last element of the deriviation path being increased, e.g. m/1/2 -> m/1/3
+* Returns an empty path error if the path is empty (master node)
+* @returns {DerivationPath}
+*/
+  next(): DerivationPath;
+/**
+* String representation of derivation path
+* E.g m/44'/429'/0'/0/1
+* @returns {string}
+*/
+  toString(): string;
+/**
+* Create a derivation path from a formatted string
+* E.g "m/44'/429'/0'/0/1"
+* @param {string} path
+* @returns {DerivationPath}
+*/
+  static from_string(path: string): DerivationPath;
 /**
 * For 0x21 Sign Transaction command of Ergo Ledger App Protocol
 * P2PK Sign (0x0D) instruction
@@ -1049,6 +1085,11 @@ export class ExtSecretKey {
 * @returns {ExtPubKey}
 */
   public_key(): ExtPubKey;
+/**
+* Derivation path associated with the ext secret key
+* @returns {DerivationPath}
+*/
+  path(): DerivationPath;
 }
 /**
 * Wrapper for i64 for JS/TS
@@ -1130,6 +1171,20 @@ export class MinerAddress {
 * @returns {string}
 */
   static testnet_fee_address(): string;
+}
+/**
+* Mnemonic
+*/
+export class Mnemonic {
+  free(): void;
+/**
+* Convert a mnemonic phrase into a mnemonic seed
+* mnemonic_pass is optional and is used to salt the seed
+* @param {string} mnemonic_phrase
+* @param {string} mnemonic_pass
+* @returns {Uint8Array}
+*/
+  static to_seed(mnemonic_phrase: string, mnemonic_pass: string): Uint8Array;
 }
 /**
 * Combination of an Address with a network
