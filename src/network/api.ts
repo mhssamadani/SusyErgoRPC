@@ -1,5 +1,7 @@
-import axios, {Axios} from "axios";
+import axios, { Axios } from "axios";
+import exp from "constants";
 import config from "../config/conf.json";
+import Contracts from "../susy/contracts";
 import {BlockHeaders, PreHeader} from "../../pkg-nodejs";
 
 const URL = config.node;
@@ -55,13 +57,22 @@ export default class ApiNetwork {
         return explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${config.token.VAAT}`).then(res => res.data.items)
     }
 
-    static trackMempool = async (box: any) => {
+    static getWormholeBox = () => {
+        return explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${config.token.wormholeNFT}`).then(res => res.data.items[0])
+    }
+
+    static getSponsorBox = () => {
+        let address = Contracts.generateSponsorContract()
+        return explorerApi.get(`/api/v1/boxes/unspent/byAddress/${address}`).then(res => res.data.items[0])
+    }
+
+    static trackMempool = async (box: any, index: number) => {
         let mempoolTxs = await explorerApi.get(`/api/v1/mempool/transactions/byAddress/${box.address}`).then(res => res.data)
         if (mempoolTxs.total == 0) return box
         mempoolTxs.items.array.forEach((tx: any) => {
-            if (tx.inputs[1].boxId == box.boxId) {
-                let newVAABox = tx.outputs[1]
-                return ApiNetwork.trackMempool(newVAABox) // TODO: IS THIS TRUE ? IS THIS RETURN FOR WHOLE FUNCTION ? OR JUST forEach ??
+            if (tx.inputs[index].boxId == box.boxId) {
+                let newVAABox = tx.outputs[index]
+                return ApiNetwork.trackMempool(newVAABox, index) // TODO: IS THIS TRUE ? IS THIS RETURN FOR WHOLE FUNCTION ? OR JUST forEach ??
             }
         });
     }

@@ -1,3 +1,4 @@
+import { TextEncoder } from "util";
 import ApiNetwork from "../network/api";
 
 // TODO: complete Payload implementation if necessary or remove it if not
@@ -76,5 +77,10 @@ export default class VAA {
         }`
     }
     
+}
+
+export function getVAADataFromBox(box: any) {
+    let arrR4 = box.additionalRegisters.R4.renderedValue.slice(1).split(",")
+    return Uint8Array.from(Buffer.from(arrR4[0].concat(arrR4[1]), 'hex'))
 }
 
