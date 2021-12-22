@@ -59,7 +59,7 @@ console.log(signMsg(msg, secret))
     vaaBoxes.array.forEach((box: any) => {
         if (checkSign(box)) return
     
-        let lastBox = ApiNetwork.trackMempool(box)
+        let lastBox = ApiNetwork.trackMempool(box, 1)
     
         if (checkSign(lastBox)) return
     
