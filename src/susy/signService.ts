@@ -4,7 +4,7 @@ import ApiNetwork from "../network/api";
 import { TextEncoder } from "util";
 import * as wasm from 'ergo-lib-wasm-nodejs'
 import * as Utils from '../utils/decodeEncode'
-import { verify } from "../utils/ecdsa";
+import { verifyBoxSignatures } from "../utils/ecdsa";
 
 var ecurve = require('ecurve')
 var BigInteger = require('bigi')
@@ -33,17 +33,6 @@ function signMsg(msg: Uint8Array, sk: string) {
             return (a.getEncoded().toString('hex'), z.toString(16))
         }
     }
-}
-
-function verifyBoxSignatures(box: any, guardianBox: any): boolean {
-    let signatures = Utils.getBoxSignatures(box)
-    let guardianAddresses = Utils.getGuardianAddresses(guardianBox)
-    let vaaData = Utils.getVAADataFromBox(box)
-
-    for (const sign of signatures) {
-        if (!verify(vaaData, sign.toHex(), guardianAddresses[sign.index])) return false
-    }
-    return true
 }
 
 export default async function signSerivce() {
