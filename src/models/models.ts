@@ -81,7 +81,6 @@ export default class VAA {
 
 export function getVAADataFromBox(box: any) {
     let arrR4 = box.additionalRegisters.R4.renderedValue.slice(1).split(",")
-    let enc =  new TextEncoder()
-    return enc.encode(arrR4[0].concat(arrR4[1]))
+    return Uint8Array.from(Buffer.from(arrR4[0].concat(arrR4[1]), 'hex'))
 }
 
