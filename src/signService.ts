@@ -39,18 +39,19 @@ console.log("[*] sign service started...")
 
 // TODO: how await for this function ? 
 //      or how we await for axios request without making this function async ?
-let vaaBoxes = await ApiNetwork.getVAABoxes()
+ApiNetwork.getVAABoxes().then(vaaBoxes => {
+    vaaBoxes.array.forEach((box: any) => {
+        if (checkSign(box)) return
+    
+        let lastBox = ApiNetwork.trackMempool(box)
+    
+        if (checkSign(lastBox)) return
+    
+        let newVAABox = signVAABox(lastBox)
+    
+        // TODO: generate and send the transaction
+    });
+})
 
-vaaBoxes.array.forEach((box: any) => {
-    if (checkSign(box)) return
-
-    let lastBox = ApiNetwork.trackMempool(box)
-
-    if (checkSign(lastBox)) return
-
-    let newVAABox = signVAABox(lastBox)
-
-    // TODO: generate and send the transaction
-});
 
 console.log("[+] sign service done...")
