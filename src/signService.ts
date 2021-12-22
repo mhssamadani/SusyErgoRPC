@@ -1,8 +1,10 @@
 import VAA from "./models/models"
 import config from "./config/conf.json";
 import ApiNetwork from "./network/api";
+import { TextEncoder } from "util";
 
 var ecurve = require('ecurve')
+var BigInteger = require('bigi')
 const { blake2b } = require("ethereum-cryptography/blake2b")
 
 function checkSign(box: any): boolean {
@@ -11,14 +13,16 @@ function checkSign(box: any): boolean {
     return false
 }
 
-// TODO: this fucntion implemented correct ?
-function signMsg(msg: Uint8Array, sk: number) {
+function signMsg(msg: Uint8Array, sk: string) {
     while (true) {
-        let r = 1000000000000000000000 // TODO: This should be csprn
+        let r = BigInteger.fromHex("c7065537c8a4473c24f66efef51cdd7e07f0c767db10ae20a3df025bcb551753") // TODO: This should be csprn
         let ecparams = ecurve.getCurveByName('secp256k1')
         let a = ecparams.G.multiply(r)
-        let z = (r + sk * parseInt(blake2b(msg), 16)) % ecparams.n
-        if (z.toString(2).length < 256) return (a.getEncoded().toString('hex'), z.toString(16))
+        let msgHash = blake2b(msg, 32).toString('hex') // TODO: Result is different from scala Blake2b256 hash
+        let z: any = r.add(BigInteger.fromHex(sk).multiply(BigInteger.fromHex(msgHash))).remainder(ecparams.n)
+        if (z.bitCount() < 256) {
+            return (a.getEncoded().toString('hex'), z.toString(16))
+        }
     }
 }
 
@@ -34,12 +38,18 @@ function signVAABox(box: any) {
 
 console.log("[*] sign service started...")
 
+var enc = new TextEncoder()
+let msg = enc.encode("s".repeat(50))
+let secret = "17b42abec839188f816f2b0c39be2a401bb05a0a152db37e87f76bb5ae38f6db"
+console.log(signMsg(msg, secret))
+
+
 // loop this procedure (e.g. once in 3 minutes)
 // get vaa boxes from network
 
 // TODO: how await for this function ? 
 //      or how we await for axios request without making this function async ?
-ApiNetwork.getVAABoxes().then(vaaBoxes => {
+/*ApiNetwork.getVAABoxes().then(vaaBoxes => {
     vaaBoxes.array.forEach((box: any) => {
         if (checkSign(box)) return
     
@@ -51,7 +61,7 @@ ApiNetwork.getVAABoxes().then(vaaBoxes => {
     
         // TODO: generate and send the transaction
     });
-})
+})*/
 
 
 console.log("[+] sign service done...")
