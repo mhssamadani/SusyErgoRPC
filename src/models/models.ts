@@ -10,13 +10,28 @@ class Payload  {
     }
 }
 
-class WormholeSignature {
+export class WormholeSignature {
     index: number;
     signatureData: Uint8Array;
 
-    constructor(signatureBytes: Uint8Array) {
+    constructor() {
+        this.index = -1
+        this.signatureData = new Uint8Array()
+    }
+
+    fromString(signatureHexString: string) {
+        if(signatureHexString.startsWith("0x")) signatureHexString = signatureHexString.slice(2)
+        this.index = parseInt(signatureHexString.slice(0, 2), 16)
+        this.signatureData = new Uint8Array(Buffer.from(signatureHexString.slice(2), "hex"))
+    }
+
+    fromBytes(signatureBytes: Uint8Array) {
         this.index = parseInt(signatureBytes[0].toString(), 16) //TODO: this parsing is wrong
         this.signatureData = signatureBytes.slice(1)
+    }
+
+    toHex() {
+        return Buffer.from(this.signatureData).toString("hex")
     }
 }
 
@@ -59,7 +74,9 @@ export default class VAA {
         let signatures: Array<WormholeSignature> = []
         let remainingBytes = signatureBytes
         while (remainingBytes.length > 0) {
-            signatures.push(new WormholeSignature(remainingBytes.slice(0, 65)))
+            let wormholeSignature = new WormholeSignature()
+            wormholeSignature.fromBytes(remainingBytes.slice(0, 65))
+            signatures.push(wormholeSignature)
             remainingBytes = remainingBytes.slice(65)
         }
         return signatures
@@ -79,11 +96,5 @@ export default class VAA {
         }`
     }
     
-}
-
-export function getVAADataFromBox(box: any) {
-    let arr = box.additionalRegisters.R4.renderedValue
-    let R4 = arr.slice(1, arr.length - 1).split(",")
-    return Uint8Array.from(Buffer.from(R4[0].concat(R4[1]), 'hex'))
 }
 
