@@ -6,6 +6,12 @@ import { TextEncoder } from "util";
 var ecurve = require('ecurve')
 var BigInteger = require('bigi')
 const { blake2b } = require("ethereum-cryptography/blake2b")
+var secureRandom = require('secure-random')
+
+function rand() {
+    let r = secureRandom.randomBuffer(32)
+    return BigInteger.fromHex(r.toString('hex'))
+}
 
 function checkSign(box: any): boolean {
     let checkpoint = box.additionalRegisters.R7.renderedValue.slice(1).split(",")[0]
@@ -15,7 +21,7 @@ function checkSign(box: any): boolean {
 
 function signMsg(msg: Uint8Array, sk: string) {
     while (true) {
-        let r = BigInteger.fromHex("c7065537c8a4473c24f66efef51cdd7e07f0c767db10ae20a3df025bcb551753") // TODO: This should be csprn
+        let r = rand()
         let ecparams = ecurve.getCurveByName('secp256k1')
         let a = ecparams.G.multiply(r)
         let msgHash = blake2b(msg, 32).toString('hex') // TODO: Result is different from scala Blake2b256 hash
