@@ -5,7 +5,7 @@ import { TextEncoder } from "util";
 
 var ecurve = require('ecurve')
 var BigInteger = require('bigi')
-const { blake2b } = require("ethereum-cryptography/blake2b")
+const blake2 = require("blake2")
 var secureRandom = require('secure-random')
 
 function rand() {
@@ -19,12 +19,21 @@ function checkSign(box: any): boolean {
     return false
 }
 
+function blake2bHash(msg: Uint8Array) {
+    var h = blake2.createHash('blake2b', {digestLength: 32})
+    h.update(msg)
+    return h.digest("hex")
+}
+
 function signMsg(msg: Uint8Array, sk: string) {
     while (true) {
-        let r = rand()
+        //let r = rand()
+        let r = BigInteger.fromHex("c7065537c8a4473c24f66efef51cdd7e07f0c767db10ae20a3df025bcb551753")
         let ecparams = ecurve.getCurveByName('secp256k1')
         let a = ecparams.G.multiply(r)
-        let msgHash = blake2b(msg, 32).toString('hex') // TODO: Result is different from scala Blake2b256 hash
+        let msgHash = blake2bHash(msg)
+        console.log(`msgHash: ${msgHash}`)
+        console.log(`msgHash bigint: ${BigInteger.fromHex(msgHash).toString(16)}`)
         let z: any = r.add(BigInteger.fromHex(sk).multiply(BigInteger.fromHex(msgHash))).remainder(ecparams.n)
         if (z.bitCount() < 256) {
             return (a.getEncoded().toString('hex'), z.toString(16))

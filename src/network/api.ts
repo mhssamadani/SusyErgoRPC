@@ -44,7 +44,7 @@ export default class ApiNetwork {
             let pubKeys: Array<number> = []
 
             let arr = box.additionalRegisters.R4.renderedValue
-            arr.slice(1, arr.length).split(",").array.forEach((element: string) => {
+            arr.slice(1, arr.length - 1).split(",").array.forEach((element: string) => {
                 pubKeys.push(parseInt(element, 16))
             });
             pubKeys

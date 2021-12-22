@@ -31,6 +31,8 @@ export default class VAA {
     EmitterAddress: Uint8Array;
     payload: Payload;
 
+    // TODO: Fix parsing with new model
+    //      Also there is a signatureSize value in bytes which should be considered
     constructor(vaaBytes: Uint8Array) {
         let signaturesSize: number = (vaaBytes.length - 56 - 133)
         if (signaturesSize % 65 != 0) throw new Error(`cannot parse vaa signatures (length is ${signaturesSize} it's not dividable by 65)`)
@@ -80,7 +82,8 @@ export default class VAA {
 }
 
 export function getVAADataFromBox(box: any) {
-    let arrR4 = box.additionalRegisters.R4.renderedValue.slice(1).split(",")
-    return Uint8Array.from(Buffer.from(arrR4[0].concat(arrR4[1]), 'hex'))
+    let arr = box.additionalRegisters.R4.renderedValue
+    let R4 = arr.slice(1, arr.length - 1).split(",")
+    return Uint8Array.from(Buffer.from(R4[0].concat(R4[1]), 'hex'))
 }
 
