@@ -56,9 +56,7 @@ async function updateVAABox(
     inputBoxes.add(VAABox);
     inputBoxes.add(sponsor);
     inputBoxes.add(guardianBox);
-
-    const boxSelection = new ergoLib.BoxSelection(inputBoxes, new ergoLib.ErgoBoxAssetsDataList());
-    const tx=generateTx(inputBoxes,[outWormhole,outVAA,outSponsor],sponsor);
+    const tx = generateTx(inputBoxes, [outWormhole, outVAA, outSponsor], sponsor);
 
     tx.set_data_inputs(ergoLib.DataInput(guardianBox.box_id()));
     // TODO:should check signer secret key
@@ -72,10 +70,10 @@ async function updateVAABox(
 
 }
 
-function generateTx(inputBoxes:any,outputs:[any,...any[]],sponsor:any){
+function generateTx(inputBoxes: any, outputs: [any, ...any[]], sponsor: any) {
     const boxSelection = new ergoLib.BoxSelection(inputBoxes, new ergoLib.ErgoBoxAssetsDataList());
     const txOutput = new ergoLib.ErgoBoxCandidates(outputs[0]);
-    for(let i=1;i<outputs.length;i++) txOutput.add(outputs[i]);
+    for (let i = 1; i < outputs.length; i++) txOutput.add(outputs[i]);
     const tx = ergoLib.TxBuilder.new(
         boxSelection,
         txOutput,
@@ -101,6 +99,21 @@ export async function createPayment(bank: ErgoBox, VAABox: ErgoBox, sponsor: Erg
     const tokenId = payload.slice(33, 65);
     const userAddress = payload.slice(67, 103);
     const fee = new DataView(payload.slice(105, 137)).getInt32(0, false);
+    const receiverBuilder = new ergoLib.ErgoBoxCandidateBuilder(
+        ergoLib.BoxValue.from_i64(
+            ergoLib.I64.from_str(
+                config.fee.toString()
+            )
+        ),
+        ergoLib.Contract.pay_to_address(ergoLib.Address.from_bytes(userAddress)),
+        0
+    );
+    // TODO:i64
+    receiverBuilder.add_token(
+        ergoLib.TokenId.from_str(Buffer.from(tokenId).toString('hex')),
+        ergoLib.TokenAmount.from_i64(ergoLib.I64.from_str((amount - fee).toString()))
+    );
+    const outReceiver = receiverBuilder.build();
     const outBank = await Boxes.getBank(
         bank.tokens().get(1).amount().as_i64().checked_add(
             ergoLib.I64.from_str((amount - fee).toString())
@@ -122,7 +135,7 @@ export async function createPayment(bank: ErgoBox, VAABox: ErgoBox, sponsor: Erg
     const inputBoxes = ergoLib.ErgoBoxes.new(bank);
     inputBoxes.add(VAABox);
     inputBoxes.add(sponsor);
-    const tx=generateTx(inputBoxes,[bank,outVAA,outSponsor],sponsor);
+    const tx = generateTx(inputBoxes, [outBank, outVAA, outReceiver, outSponsor], sponsor);
     tx.set_data_inputs(ergoLib.DataInput(guardianBox.box_id()));
     // TODO:should check signer secret key
     const sks = new ergoLib.SecretKeys();
