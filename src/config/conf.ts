@@ -18,8 +18,11 @@ const config = {
         index: 1,
         privateKey: "",
     },
-    service: "rpc"
+    service: "sign",
+    initializer: {
+        secret: "bae3ef240ca2e6398ca58446a4b42aa3c24cf90a841aad72e827fbc5b29390b5",
+        address: "9gMbbSbYMn7KiDmvPSSHiBEu9CkjrJXb3TTDjm87NkqbVTj15NM"
+    }
 }
-
 
 export default config

@@ -1,5 +1,5 @@
 import Contracts from "./contracts";
-import config from "../config/conf.json";
+import config from "../config/conf";
 import {I64} from "ergo-lib-wasm-nodejs";
 
 const ergoLib = require("ergo-lib-wasm-nodejs");
@@ -31,12 +31,12 @@ export class Boxes {
                 )
             )
         );
-        bankBuilder.add_token(
-            ergoLib.token.from_str(config.token.bankToken),
-            ergoLib.token.TokenAmount.from_i64(
-            tokenCount
-            )
-        );
+        // bankBuilder.add_token(
+        //     ergoLib.token.from_str(config.token.bankToken),
+        //     ergoLib.token.TokenAmount.from_i64(
+        //     tokenCount
+        //     )
+        // );
         return bankBuilder.build();
     }
 }
