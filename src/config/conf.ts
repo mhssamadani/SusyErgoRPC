@@ -22,7 +22,8 @@ const config = {
     initializer: {
         secret: "bae3ef240ca2e6398ca58446a4b42aa3c24cf90a841aad72e827fbc5b29390b5",
         address: "9gMbbSbYMn7KiDmvPSSHiBEu9CkjrJXb3TTDjm87NkqbVTj15NM"
-    }
+    },
+    vaaSourceBoxAddress: ""
 }
 
 export default config
