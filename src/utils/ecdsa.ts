@@ -1,5 +1,4 @@
 import * as util from 'ethereumjs-util';
-import * as Utils from '../utils/decodeEncode'
 
 const verify = (message: string, signature: string, address: string) => {
     if(!signature.startsWith("0x")){
@@ -18,14 +17,7 @@ const verify = (message: string, signature: string, address: string) => {
     return addr.toLowerCase() === address.toLowerCase();
 }
 
-export function verifyBoxSignatures(box: any, guardianBox: any): boolean {
-    let signatures = Utils.getBoxSignatures(box)
-    let guardianAddresses = Utils.getGuardianAddresses(guardianBox)
-    let vaaData = Utils.getVAADataFromBox(box)
-
-    for (const sign of signatures) {
-        if (!verify(vaaData, sign.toHex(), guardianAddresses[sign.index])) return false
-    }
-    return true
+export {
+    verify
 }
 

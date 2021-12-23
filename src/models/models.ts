@@ -8,6 +8,10 @@ class Payload  {
     constructor(paylaodBytes: Uint8Array) {
         this.bytes = paylaodBytes
     }
+
+    toString() {
+        return Buffer.from(this.bytes).toString("hex")
+    }
 }
 
 export class WormholeSignature {
@@ -94,6 +98,16 @@ export default class VAA {
             "EmitterAddress": ${this.EmitterAddress},
             "payload": ${this.payload},
         }`
+    }
+
+    hexData() {
+        let timestamp = this.timestamp.toString(16)
+        let nonce = this.nonce.toString(16)
+        let consistency = this.consistencyLevel.toString(16)
+        let emitterChain = this.EmitterChain.toString(16)
+        let emitterAddress = Buffer.from(this.EmitterAddress).toString("hex")
+        let payload = this.payload.toString()
+        return `${timestamp}${nonce}${consistency}${emitterChain}${payload}${payload}`
     }
     
 }
