@@ -3,7 +3,8 @@
     "VAAT": "44ee077854471a04fbef18a5a971b50fb39f52fc6f6b3b8d0682ce2c48f6ebef",
     "wormholeNFT": "55ee077854471a04fbef18a5a971b50fb39f52fc6f6b3b8d0682ce2c48f6ebef",
     "guardianNFT": "11ee077854471a04fbef18a5a971b50fb39f52fc6f6b3b8d0682ce2c48f6ebef",
-    "bankNFT": "33ee077854471a04fbef18a5a971b50fb39f52fc6f6b3b8d0682ce2c48f6ebef"
+    "bankNFT": "33ee077854471a04fbef18a5a971b50fb39f52fc6f6b3b8d0682ce2c48f6ebef",
+    "bankToken": "99cb32281ac356f876bfa0704653d1ec6278786748d3558c60c97c0fe5194f3b"
   },
   "updateSK": "",
   "node": "http://10.10.9.3:9064",
