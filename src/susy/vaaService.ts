@@ -36,6 +36,7 @@ export default async function processVAA(vaaBytes: Uint8Array) {
         console.log("[-] verify signature failed")
         return false
     }
+    let wormholeBox = wasm.ErgoBox.from_json(await ApiNetwork.trackMempool(ApiNetwork.getBankBox(), 1))
 
     // TODO: import issueVAABox properly
     // issueVAABox(vaa)

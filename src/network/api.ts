@@ -1,6 +1,7 @@
 import axios from "axios";
 import config from "../config/conf";
 import Contracts from "../susy/contracts";
+
 const ergoLib = require("ergo-lib-wasm-nodejs");
 
 const URL = config.node;
@@ -52,6 +53,10 @@ export default class ApiNetwork {
         return explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${config.token.wormholeNFT}`).then(res => res.data.items[0])
     }
 
+    static getBankBox = () => {
+        return explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${config.token.bankNFT}`).then(res => res.data.items[0])
+    }
+
     static getSponsorBox = () => {
         let address = Contracts.generateSponsorContract()
         return explorerApi.get(`/api/v1/boxes/unspent/byAddress/${address}`).then(res => res.data.items[0])
@@ -69,7 +74,7 @@ export default class ApiNetwork {
         return box
     }
 
-    static getBoxesForAddress = async (tree: string, offset=0, limit=100) => {
+    static getBoxesForAddress = async (tree: string, offset = 0, limit = 100) => {
         return explorerApi.get(`/api/v1/boxes/unspent/byErgoTree/${tree}?offset=${offset}&limit=${limit}`).then(res => res.data.items);
     }
 }
