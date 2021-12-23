@@ -29,7 +29,6 @@
     "axios": "^0.24.0",
     "bigi": "^1.1.0",
     "blake2": "^4.0.2",
-    "blakejs": "^1.1.1",
     "bridge": "file:./bridge",
     "coinstring": "^2.0.0",
     "ecurve": "^1.0.0",

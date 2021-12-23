@@ -1,7 +1,6 @@
 import {ErgoBox} from "ergo-lib-wasm-nodejs";
 import config from "../config/conf";
 import {Boxes} from "./boxes";
-import blake from "blakejs";
 import Contracts from "./contracts";
 import ApiNetwork from "../network/api";
 import {hexStringToByte} from "../utils/decodeEncode";
@@ -20,10 +19,6 @@ async function updateVAABox(
     signZ: Uint8Array
 ) {
     const outSponsor = await Boxes.getSponsor(sponsor.value().as_i64().as_num() - config.fee);
-    const observation = VAABox.register_value(0)!.to_coll_coll_byte()[0];
-    const payload = VAABox.register_value(0)!.to_coll_coll_byte()[1];
-    const hashMsg = blake.blake2bHex(new Uint8Array([...observation, ...payload]), null!, 32);
-
     const signatureCount = VAABox.register_value(3)!.to_i32_array()[1];
     const checksum = VAABox.register_value(3)!.to_i32_array()[0]
 
