@@ -28,5 +28,6 @@ export default async function processVAA(vaaBytes: Uint8Array) {
     // TODO: import issueVAABox properly
     // issueVAABox(vaa)
 
+
     return true
 }

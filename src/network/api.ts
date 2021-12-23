@@ -1,6 +1,7 @@
 import axios from "axios";
 import config from "../config/conf";
 import Contracts from "../susy/contracts";
+const ergoLib = require("ergo-lib-wasm-nodejs");
 
 const URL = config.node;
 const nodeClient = axios.create({
@@ -29,7 +30,6 @@ export default class ApiNetwork {
 
     // TODO: should checked with new function
     static getErgoStateContexet = async () => {
-        const ergoLib = require("ergo-lib-wasm-nodejs");
         const blockHeaderJson = await this.getLastBlockHeader();
         const blockHeaders = ergoLib.BlockHeaders.from_json(blockHeaderJson);
         const preHeader = ergoLib.from_block_header(blockHeaderJson.get(0));

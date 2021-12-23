@@ -3,21 +3,19 @@ import config from "../config/conf";
 import {Boxes} from "./boxes";
 import Contracts from "./contracts";
 import ApiNetwork from "../network/api";
-import {hexStringToByte} from "../utils/decodeEncode";
-
+import {hexStringToByte, strToUint8Array} from "../utils/decodeEncode";
 
 const ergoLib = require("ergo-lib-wasm-nodejs");
 
-async function updateVAABox(
+const updateVAABox = async (
     wormhole: ErgoBox,
     VAABox: ErgoBox,
     sponsor: ErgoBox,
     guardianBox: ErgoBox,
-    guardianSecret: bigint,
     index: number,
     signA: Uint8Array,
     signZ: Uint8Array
-) {
+): Promise<any> => {
     const outSponsor = await Boxes.getSponsor(sponsor.value().as_i64().as_num() - config.fee);
     const signatureCount = VAABox.register_value(3)!.to_i32_array()[1];
     const checksum = VAABox.register_value(3)!.to_i32_array()[0]
@@ -74,7 +72,7 @@ function generateTx(inputBoxes: any, outputs: [any, ...any[]], sponsor: any) {
     const boxSelection = new ergoLib.BoxSelection(inputBoxes, new ergoLib.ErgoBoxAssetsDataList());
     const txOutput = new ergoLib.ErgoBoxCandidates(outputs[0]);
     for (let i = 1; i < outputs.length; i++) txOutput.add(outputs[i]);
-    const tx = ergoLib.TxBuilder.new(
+    return  ergoLib.TxBuilder.new(
         boxSelection,
         txOutput,
         0,
@@ -86,10 +84,9 @@ function generateTx(inputBoxes: any, outputs: [any, ...any[]], sponsor: any) {
         ergoLib.Address.recreate_from_ergo_tree(sponsor.ergo_tree()),
         ergoLib.BoxValue.SAFE_USER_MIN()
     );
-    return tx;
 }
 
-export async function createPayment(bank: ErgoBox, VAABox: ErgoBox, sponsor: ErgoBox, guardianBox: ErgoBox) {
+const createPayment = async (bank: ErgoBox, VAABox: ErgoBox, sponsor: ErgoBox, guardianBox: ErgoBox): Promise<any> => {
     // TODO:is register value index same as sacala version?
     if (VAABox.register_value(3)?.to_i32_array()[1]! < config.bftSignatureCount) {
         throw("Not enough signature");
@@ -142,6 +139,61 @@ export async function createPayment(bank: ErgoBox, VAABox: ErgoBox, sponsor: Erg
     sks.add(ergoLib.SecretKey.dlog_from_bytes(hexStringToByte(ergoLib.Address.config.updateSK)));
     const wallet = ergoLib.Wallet.from_secrets(sks);
     const tx_data_inputs = new ergoLib.ErgoBoxes(guardianBox);
+    const ctx = await ApiNetwork.getErgoStateContexet();
+    const signedTx = wallet.sign_transaction(ctx, tx, inputBoxes, tx_data_inputs)
+    return signedTx.to_json();
+
+}
+
+const createRequest = async (bank: ErgoBox, application: ErgoBox, amount: number, fee: number) => {
+    const receiverAddress = strToUint8Array("6obZ6DUGj8qLVwVB28U2tCwa13jVrAFvo3jzMuxTgSeY");
+
+    const receiverChainId = new Uint8Array([0, 1]);
+    const bankBuilder = new ergoLib.ErgoBoxCandidateBuilder(
+        bank.value(),
+        ergoLib.Contract.pay_to_address(ergoLib.Address.recreate_from_ergo_tree(bank.ergo_tree())),
+        0
+    );
+    // TODO:i64
+    bankBuilder.add_token(
+        bank.tokens().get(0).id(),
+        bank.tokens().get(0).amount()
+    );
+    bankBuilder.add_token(
+        bank.tokens().get(1).id(),
+        ergoLib.TokenAmount.from_i64(bank.tokens().get(0).amount().as_i64().checked_add(ergoLib.I64.from_str((amount).toString())))
+    );
+    bankBuilder.set_register_value(
+        4,
+        ergoLib.Constant.from_i64_str_array([amount.toString(), fee.toString()])
+    );
+    // TODO: should work with tuple coll
+    bankBuilder.set_register_value(
+        5,
+        ergoLib.Constant.from_tuple_coll_bytes(receiverChainId, receiverAddress)
+    );
+    const outBank = bankBuilder.build();
+    const inputBoxes = ergoLib.ErgoBoxes.new(bank);
+    inputBoxes.add(application);
+    const txOutput = new ergoLib.ErgoBoxCandidates(outBank);
+    const boxSelection = new ergoLib.BoxSelection(inputBoxes, new ergoLib.ErgoBoxAssetsDataList());
+    const tx = ergoLib.TxBuilder.new(
+        boxSelection,
+        txOutput,
+        0,
+        ergoLib.BoxValue.from_i64(
+            ergoLib.I64.from_str(
+                config.fee.toString()
+            )
+        ),
+        ergoLib.Address.recreate_from_ergo_tree(application.ergo_tree()),
+        ergoLib.BoxValue.SAFE_USER_MIN()
+    );
+    const sks = new ergoLib.SecretKeys();
+    sks.add(ergoLib.SecretKey.random_dlog());
+    const wallet = ergoLib.Wallet.from_secrets(sks);
+    const tx_data_inputs = ergoLib.ErgoBoxes.from_boxes_json([])
+
     const ctx = await ApiNetwork.getErgoStateContexet();
     const signedTx = wallet.sign_transaction(ctx, tx, inputBoxes, tx_data_inputs)
     return signedTx.to_json();
