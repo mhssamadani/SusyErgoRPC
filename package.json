@@ -26,7 +26,6 @@
   },
   "dependencies": {
     "@types/getenv": "^1.0.0",
-    "argparse": "^2.0.1",
     "axios": "^0.24.0",
     "bigi": "^1.1.0",
     "blake2": "^4.0.2",

@@ -1,9 +1,5 @@
 const getenv = require('getenv');
-import parser from "./args";
 
-const service = parser.service ? parser.service : getenv("service", "rpc");
-const privateKey = parser.privateKey ? parser.privateKey : getenv("privateKey", "");
-const guardianIndex = parser.index ? parser.index : getenv("index", 1);
 
 const config = {
     token: {
@@ -19,10 +15,10 @@ const config = {
     fee: 1100000,
     bridgeId: 10,
     guardian: {
-        index: guardianIndex,
-        privateKey: privateKey,
+        index: 1,
+        privateKey: "",
     },
-    service: service
+    service: "rpc"
 }
 
 

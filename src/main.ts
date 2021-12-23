@@ -8,7 +8,7 @@ const main = () => {
     } else if (config.service === "sign") {
         signService().then(() => null)
     } else {
-
+        console.log(`invalid service type ${config.service}`)
     }
 }
 
