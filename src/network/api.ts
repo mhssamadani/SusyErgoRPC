@@ -1,5 +1,5 @@
 import axios from "axios";
-import config from "../config/conf.json";
+import config from "../config/conf";
 import Contracts from "../susy/contracts";
 
 const URL = config.node;

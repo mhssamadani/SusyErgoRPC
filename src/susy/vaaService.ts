@@ -24,9 +24,9 @@ export default async function processVAA(vaaBytes: Uint8Array) {
         console.log("[-] verify signature failed")
         return false
     }
-  
+
     // TODO: import issueVAABox properly
-    issueVAABox(vaa)
+    // issueVAABox(vaa)
 
     return true
 }

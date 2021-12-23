@@ -1,4 +1,4 @@
-import config from "../config/conf.json";
+import config from "../config/conf";
 import ApiNetwork from "../network/api";
 import * as wasm from 'ergo-lib-wasm-nodejs'
 import * as Utils from '../utils/decodeEncode'
@@ -67,6 +67,6 @@ export default async function signService() {
         let guardianBox = wasm.ErgoBox.from_json(guardianBoxJson)
 
         // TODO: import updateVAABox properly
-        updateVAABox(wormholeBox, box, sponsorBox, guardianBox, config.guardian.index, signatureData[0], signatureData[1])
+        // updateVAABox(wormholeBox, box, sponsorBox, guardianBox, config.guardian.index, signatureData[0], signatureData[1])
     }
 }

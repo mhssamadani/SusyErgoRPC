@@ -10,10 +10,10 @@ export default function setupRPC() {
     server.addMethod("vaa", (args: { bytes: Uint8Array }) => {
       processVAA(args.bytes)
     })
-    
+
     const app = express();
     app.use(bodyParser.json());
-    
+
     app.post("/json-rpc", (req: any, res: any) => {
       const jsonRPCRequest = req.body;
       // server.receive takes a JSON-RPC request and returns a promise of a JSON-RPC response.
@@ -28,7 +28,5 @@ export default function setupRPC() {
         }
       });
     });
-    
     app.listen(8080);
-
 }
