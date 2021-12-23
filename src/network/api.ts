@@ -23,18 +23,21 @@ export default class ApiNetwork {
     }
 
     static getLastBlockHeader = () => {
-        return nodeClient.get("/blocks/lastHeaders/1").then(
+        return nodeClient.get("/blocks/lastHeaders/10").then(
             res => res.data
         )
+    }
+
+    static getHeight = async (): Promise<number> => {
+        return nodeClient.get("/info").then((info: any) => info.fullHeight)
     }
 
     // TODO: should checked with new function
     static getErgoStateContexet = async () => {
         const blockHeaderJson = await this.getLastBlockHeader();
         const blockHeaders = ergoLib.BlockHeaders.from_json(blockHeaderJson);
-        const preHeader = ergoLib.from_block_header(blockHeaderJson.get(0));
-        const ctx = new ergoLib.ErgoStateContext(preHeader, blockHeaders);
-        return ctx;
+        const preHeader = ergoLib.PreHeader.from_block_header(blockHeaders.get(0));
+        return new ergoLib.ErgoStateContext(preHeader, blockHeaders);
     }
 
     static getGuardianBox = () => {
@@ -66,4 +69,7 @@ export default class ApiNetwork {
         return box
     }
 
+    static getBoxesForAddress = async (tree: string, offset=0, limit=100) => {
+        return explorerApi.get(`/api/v1/boxes/unspent/byErgoTree/${tree}?offset=${offset}&limit=${limit}`).then(res => res.data.items);
+    }
 }

@@ -7,8 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start:dev": "nodemon",
     "build": "rimraf ./build && tsc",
-    "start": "npx ts-node src/main.ts",
-    "sign": "npx ts-node src/signService.ts"
+    "start": "npx ts-node src/main.ts"
   },
   "repository": {
     "type": "git",
@@ -29,7 +28,6 @@
     "axios": "^0.24.0",
     "bigi": "^1.1.0",
     "blake2": "^4.0.2",
-    "bridge": "file:./bridge",
     "coinstring": "^2.0.0",
     "ecurve": "^1.0.0",
     "ergo-lib-wasm-nodejs": "^0.15.0-alpha-5d1deb0",

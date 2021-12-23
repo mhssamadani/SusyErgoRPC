@@ -48,7 +48,7 @@ export default async function signService() {
     // loop this procedure (e.g. once in 3 minutes)
 
     let vaaBoxes = await ApiNetwork.getVAABoxes()
-    for (const box of vaaBoxes.array) {
+    for (const box of vaaBoxes) {
         if (checkSign(box)) continue
 
         let lastBox = await ApiNetwork.trackMempool(box, 1)
