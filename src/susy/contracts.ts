@@ -2,7 +2,7 @@ import {bankScript, guardianScript, sponserScript, VAAScript, wormholeScript} fr
 import ApiNetwork from "../network/api";
 import config from "../config/conf";
 
-const ergoLib = require("ergo-lib-wasm-nodejs");
+const ergoLib=require("ergo-lib-wasm-nodejs");
 
 class Contracts {
     static generateBankContract = () => {

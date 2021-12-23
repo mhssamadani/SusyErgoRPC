@@ -50,7 +50,7 @@ const updateVAABox = async (
     );
     wormholeBuilder.add_token(wormhole.tokens().get(0).id(), wormhole.tokens().get(0).amount());
     const outWormhole = wormholeBuilder.build();
-    const inputBoxes = ergoLib.ErgoBoxes.new(wormhole);
+    const inputBoxes = new ergoLib.ErgoBoxes(wormhole);
     inputBoxes.add(VAABox);
     inputBoxes.add(sponsor);
     inputBoxes.add(guardianBox);
@@ -129,14 +129,14 @@ const createPayment = async (bank: ErgoBox, VAABox: ErgoBox, sponsor: ErgoBox, g
     for (let i = 0; i < 3; i++) VAABuilder.set_register_value(i, VAABox.register_value(i)!);
     const outVAA = VAABuilder.build();
     const outSponsor = await Boxes.getSponsor(sponsor.value().as_i64().as_num() - config.fee * 2);
-    const inputBoxes = ergoLib.ErgoBoxes.new(bank);
+    const inputBoxes = new ergoLib.ErgoBoxes(bank);
     inputBoxes.add(VAABox);
     inputBoxes.add(sponsor);
     const tx = generateTx(inputBoxes, [outBank, outVAA, outReceiver, outSponsor], sponsor);
     tx.set_data_inputs(ergoLib.DataInput(guardianBox.box_id()));
     // TODO:should check signer secret key
     const sks = new ergoLib.SecretKeys();
-    sks.add(ergoLib.SecretKey.dlog_from_bytes(hexStringToByte(ergoLib.Address.config.updateSK)));
+    sks.add(ergoLib.SecretKey.dlog_from_bytes(strToUint8Array(config.addressSecret)));
     const wallet = ergoLib.Wallet.from_secrets(sks);
     const tx_data_inputs = new ergoLib.ErgoBoxes(guardianBox);
     const ctx = await ApiNetwork.getErgoStateContexet();
@@ -146,9 +146,11 @@ const createPayment = async (bank: ErgoBox, VAABox: ErgoBox, sponsor: ErgoBox, g
 }
 
 const createRequest = async (bank: ErgoBox, application: ErgoBox, amount: number, fee: number) => {
-    const receiverAddress = strToUint8Array("6obZ6DUGj8qLVwVB28U2tCwa13jVrAFvo3jzMuxTgSeY");
-
+    // hex string of "6obZ6DUGj8qLVwVB28U2tCwa13jVrAFvo3jzMuxTgSeY"
+    const receiverAddress = strToUint8Array("563a38ab1f1be9e8c57f66f6cd56ed08e2b906e7e0310067f50171245906c21d");
+    console.log(receiverAddress)
     const receiverChainId = new Uint8Array([0, 1]);
+    console.log(receiverChainId)
     const bankBuilder = new ergoLib.ErgoBoxCandidateBuilder(
         bank.value(),
         ergoLib.Contract.pay_to_address(ergoLib.Address.recreate_from_ergo_tree(bank.ergo_tree())),
@@ -161,7 +163,7 @@ const createRequest = async (bank: ErgoBox, application: ErgoBox, amount: number
     );
     bankBuilder.add_token(
         bank.tokens().get(1).id(),
-        ergoLib.TokenAmount.from_i64(bank.tokens().get(0).amount().as_i64().checked_add(ergoLib.I64.from_str((amount).toString())))
+        ergoLib.TokenAmount.from_i64(bank.tokens().get(1).amount().as_i64().checked_add(ergoLib.I64.from_str((amount).toString())))
     );
     bankBuilder.set_register_value(
         4,
@@ -170,10 +172,10 @@ const createRequest = async (bank: ErgoBox, application: ErgoBox, amount: number
     // TODO: should work with tuple coll
     bankBuilder.set_register_value(
         5,
-        ergoLib.Constant.from_tuple_coll_bytes(receiverChainId, receiverAddress)
+        ergoLib.Constant.from_coll_coll_byte(receiverChainId, receiverAddress)
     );
     const outBank = bankBuilder.build();
-    const inputBoxes = ergoLib.ErgoBoxes.new(bank);
+    const inputBoxes = new ergoLib.ErgoBoxes(bank);
     inputBoxes.add(application);
     const txOutput = new ergoLib.ErgoBoxCandidates(outBank);
     const boxSelection = new ergoLib.BoxSelection(inputBoxes, new ergoLib.ErgoBoxAssetsDataList());
@@ -188,9 +190,10 @@ const createRequest = async (bank: ErgoBox, application: ErgoBox, amount: number
         ),
         ergoLib.Address.recreate_from_ergo_tree(application.ergo_tree()),
         ergoLib.BoxValue.SAFE_USER_MIN()
-    );
+    ).build();
+    console.log(tx.to_json());
     const sks = new ergoLib.SecretKeys();
-    sks.add(ergoLib.SecretKey.random_dlog());
+    sks.add(ergoLib.SecretKey.dlog_from_bytes(strToUint8Array(config.addressSecret)));
     const wallet = ergoLib.Wallet.from_secrets(sks);
     const tx_data_inputs = ergoLib.ErgoBoxes.from_boxes_json([])
 
@@ -199,3 +202,5 @@ const createRequest = async (bank: ErgoBox, application: ErgoBox, amount: number
     return signedTx.to_json();
 
 }
+
+export {createRequest};
