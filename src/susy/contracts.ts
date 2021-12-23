@@ -1,6 +1,6 @@
 import {bankScript, guardianScript, sponserScript, VAAScript, wormholeScript} from "./scripts";
 import ApiNetwork from "../network/api";
-import config from "../config/conf.json";
+import config from "../config/conf";
 
 const ergoLib = require("ergo-lib-wasm-nodejs");
 

@@ -1,5 +1,5 @@
 import {ErgoBox} from "ergo-lib-wasm-nodejs";
-import config from "../config/conf.json";
+import config from "../config/conf";
 import {Boxes} from "./boxes";
 import blake from "blakejs";
 import Contracts from "./contracts";
