@@ -2,7 +2,7 @@ import {bankScript, guardianScript, sponserScript, VAAScript, wormholeScript} fr
 import ApiNetwork from "../network/api";
 import config from "../config/conf";
 
-const ergoLib=require("ergo-lib-wasm-nodejs");
+const ergoLib = require("ergo-lib-wasm-nodejs");
 
 class Contracts {
     static generateBankContract = () => {
@@ -19,13 +19,13 @@ class Contracts {
     static generateVAAContract = () => {
         let script: string = VAAScript;
         script = script.replace(
-            "WORMHOLENFT",
-            "\"" + Buffer.from(config.token.wormholeNFT).toString() + "\""
-        );
-        script = script.replace(
-            "BFTSIGNATURECOUNT",
+            "WORM_HOLE_NFT",
+            Buffer.from(config.token.wormholeNFT, "hex").toString("base64")
+        ).replace(
+            "BFT_SIGNATURE_COUNT",
             config.bftSignatureCount.toString()
         );
+        console.log(script)
         return ApiNetwork.pay2ScriptAddress(script).then(res => {
             const P2SA = ergoLib.Address.from_base58(res);
             return ergoLib.Contract.pay_to_address(P2SA);

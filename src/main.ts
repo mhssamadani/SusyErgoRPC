@@ -1,17 +1,20 @@
 import setupRPC from "./network/rpc"
 import config from "./config/conf";
 import signService from "./susy/signService";
-import initializeService from "./susy/init";
+// import initializeServiceToken from "./susy/init";
+import ApiNetwork from "./network/api";
+import {createWormholeBox} from "./susy/init";
 
 const main = () => {
-    initializeService().then(res => console.log(res))
-    if (config.service === "rpc") {
-        setupRPC();
-    } else if (config.service === "sign") {
-        signService().then(() => null)
-    } else {
-        console.log(`invalid service type ${config.service}`)
-    }
+    createWormholeBox().then(() => null);
+    // initializeServiceToken().then(res => res.map(item => ApiNetwork.sendTx(item.to_json())))
+    // if (config.service === "rpc") {
+    //     setupRPC();
+    // } else if (config.service === "sign") {
+    //     signService().then(() => null)
+    // } else {
+    //     console.log(`invalid service type ${config.service}`)
+    // }
 }
 
 main()

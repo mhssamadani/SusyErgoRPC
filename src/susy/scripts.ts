@@ -40,10 +40,11 @@ export const bankScript = `
   sigmaProp(tokenPayment || createRequest)
 }`;
 
+// tG5iDQcvRtxAvzrFQWyJKyutYEQmdQRNNhXMoCXcRQ2TViUEQHZvV7MHZu7ycaGxXUPj5yTjQzs84wjFhVW177Tg9VCFR7h1MkhkevoRapCNoDm7qdryF2aY2ERz5MvNvRHEeoArMb36jjPb44S6tvmCMC8QzwENmMr2yTVSv67MYaSbpck8ayzh3nrx3sUNg6tAn6i7SXaoxmSRvTVDj6KHMdPThvK6XLrXoaHzojoSWadhFQ3vMqBbmr5qgHQyQcAmbL9G2CNSMvkPdLePKso718x5tKqv7KjGMs8fdvqwfQkEKt23VMKJto5Lbfv39stYDX5YW1gLGgg5uKQ5v1k9quh9Xs3DwfRxwCA71DYY36rujTjDhzwbPqDdYbzB7mFoz12taTXrKSY7NttJRpPf4vS7sGvtzZk2TyyAuwfvzikcKPewK41reYt3GqQeszZNMgaMbs3jdG4F25xtzUC4d5e5W6bVZrFePvpw2jZsMGW1yMNJM4k7HydLyvPgsoPKwqRvAQNnhLKCvB7a3x7xQzMd3bLcptCf45uDrek4ngw6LKw5TyQ3gkVVMdqtxLib5Vvs68kdRrTy4VgifQPTZUQxbmoMWYQRWZD8FMLcrB4VeMUKMtCwKct7aH3iqFuUBayfzcJxGxfKFEb7DJUJcqWeGJyRZmRGRMSuf3sWMRRQvknznCuh7kXKm3TAGcWv8MsveVmDaXVMi2EomC2J364dhvYHUGPmNFaTZG17xwWnBnEDzHvFrpmvV1FxaQ9Jg3gn
 export const VAAScript = `
 {
-  val wormholeNFT = fromBase64( WORMHOLENFT )
-  val bftSignatureCount = BFTSIGNATURECOUNT
+  val wormholeNFT = fromBase64("WORM_HOLE_NFT");
+  val bftSignatureCount = BFT_SIGNATURE_COUNT
   val payload = SELF.R4[Coll[Coll[Byte]]].get(1)
   val amount = byteArrayToLong(payload.slice(1, 33))
   val tokenId = payload.slice(33, 65)
@@ -54,23 +55,31 @@ export const VAAScript = `
     // INPUTS: [wormhole, VAABox, sponsor] --> OUTPUTS: [wormhole, VAABox, sponsor]
     val signatureIndex = OUTPUTS(1).R7[Coll[Int]].get(2)
     val signatureMask = Coll[Int](1, 2, 4, 8, 16, 32)(signatureIndex)
-
     sigmaProp(allOf(Coll(
       // validating self replication
       OUTPUTS(1).propositionBytes == SELF.propositionBytes,
       OUTPUTS(1).R4[Coll[Coll[Byte]]].get == SELF.R4[Coll[Coll[Byte]]].get,
       OUTPUTS(1).R5[Coll[Coll[Byte]]].get == SELF.R5[Coll[Coll[Byte]]].get,
       OUTPUTS(1).R6[Coll[Byte]].get == SELF.R6[Coll[Byte]].get,
+      OUTPUTS(1).tokens(0)._1 == SELF.tokens(0)._1,
       // Verifying checkpoint
       (SELF.R7[Coll[Int]].get(0) / signatureMask) % 2 == 0,
       OUTPUTS(1).R7[Coll[Int]].get(0) == SELF.R7[Coll[Int]].get(0) + signatureMask,
       // verifying signature count
-      OUTPUTS(1).R7[Coll[Int]].get(1) == SELF.R7[Coll[Int]].get(1) + 1
+      OUTPUTS(1).R7[Coll[Int]].get(1) == SELF.R7[Coll[Int]].get(1) + 1,
+      OUTPUTS(1).R7[Coll[Int]].get(3) == SELF.R7[Coll[Int]].get(3)
     )))
   }
   else {
+    val emitterIndex = SELF.R7[Coll[Int]].get(4)
     sigmaProp(allOf(Coll(
-      // INPUTS: [Bank, VAABox, sponsor] --> OUTPUTS: [Bank, VAATokenRedeem, payment, sponsor]
+      // INPUTS: [Bank, VAABox, sponsor] --> OUTPUTS: [Bank, VAATokenokenRedeem, payment, sponsor]
+      // DataINPUTS: register
+
+      // Verify emitter
+      SELF.R4[Coll[Coll[Byte]]].get(2) == CONTEXT.dataInputs(0).R4[Coll[Coll[Byte]]].get(emitterIndex),
+      SELF.R4[Coll[Coll[Byte]]].get(3) == CONTEXT.dataInputs(0).R5[Coll[Coll[Byte]]].get(emitterIndex),
+
       // Verify Payment
       SELF.R7[Coll[Int]].get(1) >= bftSignatureCount,
       OUTPUTS(2).tokens(0)._1 == tokenId,

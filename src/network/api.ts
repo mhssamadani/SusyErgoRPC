@@ -1,7 +1,6 @@
 import axios from "axios";
 import config from "../config/conf";
 import Contracts from "../susy/contracts";
-
 const ergoLib = require("ergo-lib-wasm-nodejs");
 
 const URL = config.node;
@@ -33,6 +32,11 @@ export default class ApiNetwork {
         return nodeClient.get("/info").then((info: any) => info.fullHeight)
     }
 
+    static sendTx = async (tx: any) => {
+        const response = await nodeClient.post("/transactions", JSON.parse(tx));
+        return { "txId": response.data as string };
+    };
+
     // TODO: should checked with new function
     static getErgoStateContexet = async () => {
         const blockHeaderJson = await this.getLastBlockHeader();
@@ -41,8 +45,12 @@ export default class ApiNetwork {
         return new ergoLib.ErgoStateContext(preHeader, blockHeaders);
     }
 
+    static getBoxWithToken = (token: string) => {
+        return explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${token}`).then(res => res.data)
+    }
+
     static getGuardianBox = () => {
-        return explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${config.token.guardianNFT}`).then(res => res.data.items[0])
+        ApiNetwork.getBoxWithToken(config.token.guardianNFT).then(res => res.items[0])
     }
 
     static getVAABoxes = () => {
@@ -73,6 +81,7 @@ export default class ApiNetwork {
         }
         return box
     }
+
     static getBoxesForAddress = async (tree: string, offset=0, limit=100) => {
         return explorerApi.get(`/api/v1/boxes/unspent/byErgoTree/${tree}?offset=${offset}&limit=${limit}`).then(res => res.data);
     }
