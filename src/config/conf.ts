@@ -23,7 +23,8 @@ const config = {
         secret: "bae3ef240ca2e6398ca58446a4b42aa3c24cf90a841aad72e827fbc5b29390b5",
         address: "9gMbbSbYMn7KiDmvPSSHiBEu9CkjrJXb3TTDjm87NkqbVTj15NM"
     },
-    vaaSourceBoxAddress: ""
+    vaaSourceBoxAddress: "",
+    port: 8080
 }
 
 export default config
