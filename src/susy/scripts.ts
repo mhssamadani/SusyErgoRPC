@@ -43,7 +43,7 @@ export const bankScript = `
 // tG5iDQcvRtxAvzrFQWyJKyutYEQmdQRNNhXMoCXcRQ2TViUEQHZvV7MHZu7ycaGxXUPj5yTjQzs84wjFhVW177Tg9VCFR7h1MkhkevoRapCNoDm7qdryF2aY2ERz5MvNvRHEeoArMb36jjPb44S6tvmCMC8QzwENmMr2yTVSv67MYaSbpck8ayzh3nrx3sUNg6tAn6i7SXaoxmSRvTVDj6KHMdPThvK6XLrXoaHzojoSWadhFQ3vMqBbmr5qgHQyQcAmbL9G2CNSMvkPdLePKso718x5tKqv7KjGMs8fdvqwfQkEKt23VMKJto5Lbfv39stYDX5YW1gLGgg5uKQ5v1k9quh9Xs3DwfRxwCA71DYY36rujTjDhzwbPqDdYbzB7mFoz12taTXrKSY7NttJRpPf4vS7sGvtzZk2TyyAuwfvzikcKPewK41reYt3GqQeszZNMgaMbs3jdG4F25xtzUC4d5e5W6bVZrFePvpw2jZsMGW1yMNJM4k7HydLyvPgsoPKwqRvAQNnhLKCvB7a3x7xQzMd3bLcptCf45uDrek4ngw6LKw5TyQ3gkVVMdqtxLib5Vvs68kdRrTy4VgifQPTZUQxbmoMWYQRWZD8FMLcrB4VeMUKMtCwKct7aH3iqFuUBayfzcJxGxfKFEb7DJUJcqWeGJyRZmRGRMSuf3sWMRRQvknznCuh7kXKm3TAGcWv8MsveVmDaXVMi2EomC2J364dhvYHUGPmNFaTZG17xwWnBnEDzHvFrpmvV1FxaQ9Jg3gn
 export const VAAScript = `
 {
-  val wormholeNFT = fromBase64("WORM_HOLE_NFT");
+  val wormholeNFT = fromBase64("WORMHOLE_NFT");
   val bftSignatureCount = BFT_SIGNATURE_COUNT
   val payload = SELF.R4[Coll[Coll[Byte]]].get(1)
   val amount = byteArrayToLong(payload.slice(1, 33))
@@ -151,12 +151,15 @@ export const guardianScript = `
   )
 }`;
 
+// FxNN9gGTwcfAZVMj7rv9Bka98BWyZhFxpvrZzWqvVgMvJdcT3Mcp4jcCCfGetALnkNvqFhELA2x2iggo6qxnzQXYz4V5EcY4edP9PEsfmu3EtctULBMW5G6U9HhVW9Kh9YcKGrM74mxmfoPKvaiLQMm7Dv1VvmfWGiW96GkwJ9SNnsxt3ZbsMhnuhL5LB1kCCgHcEJRfJxMnhWmjYpLwZrxAo5UgDSu3gXn8toHwJJGup97mVX7GRQwG3EmBBuQC9wJ6oZiaYphG2mo833j11JiGbUjQmvvtnRuLqqTAWupBfgQfXg8UjCXAidHCz5Aqw856aCCZuwV5Ui4hUgTejLn57j83W7U9D5rfAk1J12sA4VfKvgWmbYp8DHpf8Tsc3P1MXLJvRKW7EKyZbxSWRRT7wDcJFJhGyR7Sc5wYT1HCMKQMnuFDvMNCJTV9tch23oKKN23a4FYaqsUQBUeC67o8R45iCc5CsMoVekM4EcCsQAoJZRDQZrTGvfLVwf
 export const sponserScript = `
 {
-  // INPUTS: [wormhole, VAABox, sponsor] --> OUTPUTS: [wormhole, VAABox, sponsor]
-  val wormholeNFT = fromBase64( WORMHOLENFT )
-  val bankNFT = fromBase64( BANKNFT )
+  val wormholeNFT = fromBase64("WORMHOLE_NFT")
+  val bankNFT = fromBase64("BANK_NFT")
+  val guardianNFT = fromBase64("GUARDIAN_NFT")
+  val registerNFT = fromBase64("REGISTER_NFT")
   val fee = FEE
+  // INPUTS: [wormhole, VAABox, sponsor] --> OUTPUTS: [wormhole, VAABox, sponsor]
   val VAACreation = {
     if(OUTPUTS(0).tokens(0)._1 == wormholeNFT){
       allOf(Coll(
@@ -169,7 +172,7 @@ export const sponserScript = `
     else false
   }
 
-  // INPUTS: [Bank, VAABox, sponsor] --> OUTPUTS: [Bank, VAATokenRedeem, payment, sponsor]
+  // INPUTS: [Bank, VAABox, sponsor] --> OUTPUTS: [Bank, VAATokenokenRedeem, payment, sponsor]
   val paymentCreation = {
     if(OUTPUTS(0).tokens(0)._1 == bankNFT){
       allOf(Coll(
@@ -180,8 +183,30 @@ export const sponserScript = `
     }
     else false
   }
-  sigmaProp(VAACreation || paymentCreation)
-  //sigmaProp(true)
-}
 
-`;
+  // INPUTS: [GuardianTokenRepo, VAA-Guardian, sponsor], optional[Guardian] --> OUTPUTS: [GuardianTokenRepo, Guardian, VAA-refund, sponsor]
+  val guardianCreation = {
+    if(OUTPUTS(0).tokens(0)._1 == guardianNFT){
+      allOf(Coll(
+        OUTPUTS(3).propositionBytes == SELF.propositionBytes,
+        // Add register replication
+        OUTPUTS(3).value >= SELF.value - 2 * fee,
+      ))
+    }
+    else false
+  }
+
+  // INPUTS: [Register, VAA-register, sponsor] --> OUTPUTS: [Register, VAA-register, sponsor]
+  val registerUpdate = {
+    if(OUTPUTS(0).tokens(0)._1 == registerNFT){
+      allOf(Coll(
+        OUTPUTS(2).propositionBytes == SELF.propositionBytes,
+        // Add register replication
+        OUTPUTS(2).value >= SELF.value - fee
+      ))
+    }
+    else false
+  }
+
+  sigmaProp(VAACreation || paymentCreation || guardianCreation || registerUpdate)
+}`;

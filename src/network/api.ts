@@ -86,7 +86,7 @@ export default class ApiNetwork {
         return explorerApi.get(`/api/v1/boxes/unspent/byErgoTree/${tree}?offset=${offset}&limit=${limit}`).then(res => res.data);
     }
 
-    static getCoveringForAddress = async (tree: string, amount: number, ignoreBoxes: Array<string> = []) => {
+    static getCoveringForAddress = async (tree: string, amount: number, ignoreBoxes: Array<string> = [], filter: (box: any) => boolean = () => true) => {
         let res = []
         const boxesItems = await ApiNetwork.getBoxesForAddress(tree, 0, 1)
         const total = boxesItems.total;
@@ -95,7 +95,7 @@ export default class ApiNetwork {
         while (offset < total && amount > 0){
             const boxes = await ApiNetwork.getBoxesForAddress(tree, offset, 10)
             for(let box of boxes.items){
-                if(ignoreBoxes.indexOf(box.boxId) < 0){
+                if(ignoreBoxes.indexOf(box.boxId) < 0 && filter(box)){
                     selectedIds.push(box.boxId)
                     res.push(JSON.stringify(box));
                     amount -= box.value;

@@ -8,7 +8,8 @@ const config = {
         wormholeNFT: "3cb20db790e53ae78db3960a67ce7adb08ea0a072af6237aa5a14bdeb9f9f677",
         guardianNFT: "34a808699da9299a3d1a7cf1296edce0c714adcd80ec604d1c597c129f9a4cc2",
         guardianToken: "b7071529615dc4a665534f3cb39b6d731e0cd41fa2939dd3a8eaef0745fd7168",
-        bankNFT: "b7d432da5fff44f2d44781586f60c8ca38bbd15079e57e98f08f3f72dccf5269"
+        bankNFT: "b7d432da5fff44f2d44781586f60c8ca38bbd15079e57e98f08f3f72dccf5269",
+        registerNFT: "77ee077854471a04fbef18a5a971b50fb39f52fc6f6b3b8d0682ce2c48f6ebef",
     },
     addressSecret: "bae3ef240ca2e6398ca58446a4b42aa3c24cf90a841aad72e827fbc5b29390b5",
     node: "http://10.10.9.3:9064",

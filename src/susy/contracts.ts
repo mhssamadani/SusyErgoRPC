@@ -19,13 +19,12 @@ class Contracts {
     static generateVAAContract = () => {
         let script: string = VAAScript;
         script = script.replace(
-            "WORM_HOLE_NFT",
+            "WORMHOLE_NFT",
             Buffer.from(config.token.wormholeNFT, "hex").toString("base64")
         ).replace(
             "BFT_SIGNATURE_COUNT",
             config.bftSignatureCount.toString()
         );
-        console.log(script)
         return ApiNetwork.pay2ScriptAddress(script).then(res => {
             const P2SA = ergoLib.Address.from_base58(res);
             return ergoLib.Contract.pay_to_address(P2SA);
@@ -62,16 +61,11 @@ class Contracts {
     }
 
     static generateSponsorContract = () => {
-        let script: string = sponserScript;
-        script = script.replace(
-            "WORMHOLENFT",
-            "\"" + Buffer.from(config.token.wormholeNFT).toString("base64") + "\""
-        );
-        script = script.replace(
-            "BANKNFT",
-            "\"" + Buffer.from(config.token.bankNFT).toString("base64") + "\""
-        );
-        script = script.replace("FEE", config.fee.toString())
+        const script = sponserScript.replace("WORMHOLE_NFT", Buffer.from(config.token.wormholeNFT, "hex").toString("base64"))
+            .replace("BANK_NFT", Buffer.from(config.token.bankNFT, "hex").toString("base64"))
+            .replace("GUARDIAN_NFT", Buffer.from(config.token.guardianNFT, "hex").toString("base64"))
+            .replace("REGISTER_NFT", Buffer.from(config.token.registerNFT, "hex").toString("base64"))
+            .replace("FEE", config.fee.toString())
         return ApiNetwork.pay2ScriptAddress(script).then(res => {
             const P2SA = ergoLib.Address.from_base58(res);
             return ergoLib.Contract.pay_to_address(P2SA);

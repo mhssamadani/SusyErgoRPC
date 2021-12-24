@@ -3,10 +3,11 @@ import config from "./config/conf";
 import signService from "./susy/signService";
 // import initializeServiceToken from "./susy/init";
 import ApiNetwork from "./network/api";
-import {createWormholeBox} from "./susy/init";
+import {createSponsorBox, createWormholeBox} from "./susy/init";
 
 const main = () => {
-    createWormholeBox().then(() => null);
+    createSponsorBox().then(tx => ApiNetwork.sendTx(tx.to_json()))
+    // createWormholeBox().then((tx) => ApiNetwork.sendTx(tx.to_json()));
     // initializeServiceToken().then(res => res.map(item => ApiNetwork.sendTx(item.to_json())))
     // if (config.service === "rpc") {
     //     setupRPC();
