@@ -77,8 +77,8 @@ const updateVAABox = async (
     signZ: Uint8Array
 ): Promise<any> => {
     const outSponsor = await Boxes.getSponsor(sponsor.value().as_i64().as_num() - config.fee);
-    const signatureCount = VAABox.register_value(3)!.to_i32_array()[1];
-    const checksum = VAABox.register_value(3)!.to_i32_array()[0]
+    const signatureCount = VAABox.register_value(7)!.to_i32_array()[1];
+    const checksum = VAABox.register_value(7)!.to_i32_array()[0]
 
     const VAABuilder = new ergoLib.ErgoBoxCandidateBuilder(
         VAABox.value(),
@@ -93,15 +93,15 @@ const updateVAABox = async (
             )
         )
     );
-    for (let i = 0; i < 3; i++) VAABuilder.set_register_value(i, VAABox.register_value(i)!);
+    for (let i = 4; i < 7; i++) VAABuilder.set_register_value(i, VAABox.register_value(i)!);
     VAABuilder.set_register_value(3,
         ergoLib.Constant.from_i32_array(
             [Math.pow(2, index), checksum, (signatureCount + 1), index]
         )
     );
     // TODO: should check
-    VAABuilder.set_register_value(4, ergoLib.Constant.from_ecpoint_bytes(signA));
-    VAABuilder.set_register_value(5, ergoLib.Constant.from_byte_array_bigint(signZ));
+    VAABuilder.set_register_value(8, ergoLib.Constant.from_ecpoint_bytes(signA));
+    VAABuilder.set_register_value(9, ergoLib.Constant.from_byte_array_bigint(signZ));
     const outVAA = VAABuilder.build();
     const wormholeBuilder = new ergoLib.ErgoBoxCandidateBuilder(
         wormhole.value(),
