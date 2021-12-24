@@ -1,4 +1,5 @@
 import processVAA from "../susy/vaaService";
+import config from "../config/conf";
 
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -28,5 +29,5 @@ export default function setupRPC() {
         }
       });
     });
-    app.listen(8080);
+    app.listen(config.port);
 }
