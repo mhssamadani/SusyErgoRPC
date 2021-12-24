@@ -1,10 +1,9 @@
 import setupRPC from "./network/rpc"
 import config from "./config/conf";
 import signService from "./susy/signService";
-// import { issueToken} from "./susy/init";
 
+const ergoLib=require("ergo-lib-wasm-nodejs");
 const main = () => {
-    // issueToken(1000, "name", "description", 1).then(res => console.log(res))
     if (config.service === "rpc") {
         setupRPC();
     } else if (config.service === "sign") {
