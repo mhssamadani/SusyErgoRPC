@@ -927,7 +927,7 @@ class Constant {
         return takeObject(ret);
     }
     /**
-    * Create `Coll[Int]` from string array
+    * Create `Coll[Int]` from integer array
     * @param {Int32Array} arr
     * @returns {Constant}
     */
@@ -938,7 +938,7 @@ class Constant {
         return Constant.__wrap(ret);
     }
     /**
-    * Extract `Coll[Int]` as string array
+    * Extract `Coll[Int]` as integer array
     * @returns {Int32Array}
     */
     to_i32_array() {
@@ -1000,17 +1000,14 @@ class Constant {
         }
     }
     /**
-    * test
-    * @param {Uint8Array} bytes1
-    * @param {Uint8Array} bytes2
+    * Create `Coll[Coll[Byte]]` from array byte array
+    * @param {(Uint8Array)[]} arr
     * @returns {Constant}
     */
-    static from_coll_coll_byte(bytes1, bytes2) {
-        var ptr0 = passArray8ToWasm0(bytes1, wasm.__wbindgen_malloc);
+    static from_coll_coll_byte(arr) {
+        var ptr0 = passArrayJsValueToWasm0(arr, wasm.__wbindgen_malloc);
         var len0 = WASM_VECTOR_LEN;
-        var ptr1 = passArray8ToWasm0(bytes2, wasm.__wbindgen_malloc);
-        var len1 = WASM_VECTOR_LEN;
-        var ret = wasm.constant_from_coll_coll_byte(ptr0, len0, ptr1, len1);
+        var ret = wasm.constant_from_coll_coll_byte(ptr0, len0);
         return Constant.__wrap(ret);
     }
     /**

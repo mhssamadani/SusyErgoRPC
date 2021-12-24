@@ -359,13 +359,13 @@ export class Constant {
 */
   to_byte_array(): Uint8Array;
 /**
-* Create `Coll[Int]` from string array
+* Create `Coll[Int]` from integer array
 * @param {Int32Array} arr
 * @returns {Constant}
 */
   static from_i32_array(arr: Int32Array): Constant;
 /**
-* Extract `Coll[Int]` as string array
+* Extract `Coll[Int]` as integer array
 * @returns {Int32Array}
 */
   to_i32_array(): Int32Array;
@@ -386,12 +386,11 @@ export class Constant {
 */
   to_coll_coll_byte(): (Uint8Array)[];
 /**
-* test
-* @param {Uint8Array} bytes1
-* @param {Uint8Array} bytes2
+* Create `Coll[Coll[Byte]]` from array byte array
+* @param {(Uint8Array)[]} arr
 * @returns {Constant}
 */
-  static from_coll_coll_byte(bytes1: Uint8Array, bytes2: Uint8Array): Constant;
+  static from_coll_coll_byte(arr: (Uint8Array)[]): Constant;
 /**
 * Parse raw [`EcPoint`] value from bytes and make [`ProveDlog`] constant
 * @param {Uint8Array} bytes

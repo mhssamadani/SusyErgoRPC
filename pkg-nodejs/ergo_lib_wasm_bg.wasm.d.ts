@@ -264,7 +264,7 @@ export function constant_to_i32_array(a: number, b: number): void;
 export function constant_from_i64_str_array(a: number, b: number): number;
 export function constant_to_i64_str_array(a: number, b: number): void;
 export function constant_to_coll_coll_byte(a: number, b: number): void;
-export function constant_from_coll_coll_byte(a: number, b: number, c: number, d: number): number;
+export function constant_from_coll_coll_byte(a: number, b: number): number;
 export function constant_from_ecpoint_bytes(a: number, b: number): number;
 export function constant_from_tuple_coll_bytes(a: number, b: number, c: number, d: number): number;
 export function constant_to_tuple_coll_bytes(a: number, b: number): void;

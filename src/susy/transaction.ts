@@ -9,8 +9,8 @@ import VAA from "../models/models";
 const ergoLib = require("ergo-lib-wasm-nodejs");
 
 
-const issueVAA = async (VAA:VAA, VAASourceBox:ErgoBox, VAAMessage:any, VAAAuthorityAddress:string)=>{
-    const VAAAuthorityAddressSigma=ergoLib.Address.from_base58(VAAAuthorityAddress);
+const issueVAA = async (VAASourceBox: ErgoBox, VAAMessage: any, VAAAuthorityAddress: string) => {
+    const VAAAuthorityAddressSigma = ergoLib.Address.from_base58(VAAAuthorityAddress);
     const VAABuilder = new ergoLib.ErgoBoxCandidateBuilder(
         ergoLib.BoxValue.from_i64(
             ergoLib.I64.from_str(
@@ -32,14 +32,32 @@ const issueVAA = async (VAA:VAA, VAASourceBox:ErgoBox, VAAMessage:any, VAAAuthor
 
 
     // TODO: should check
-    VAABuilder.set_register_value(4, ergoLib.Constant.from_coll_coll_byte(VAAMessage["observation"],VAAMessage["payload"]));
-    // should implemented in wasm
-
-    // VAABuilder.set_register_value(5, ergoLib.Constant.from_coll_coll_byte(VAAMessage["signature"]));
-
-    VAABuilder.set_register_value(6, ergoLib.Constant.from_byte_array(VAAAuthorityAddressSigma.to_bytes(0)));
-    VAABuilder.set_register_value(7, ergoLib.Constant.from_i32_array([0,0,0]));
-
+    VAABuilder.set_register_value(
+        4,
+        ergoLib.Constant.from_coll_coll_byte(
+            VAAMessage["observation"],
+            VAAMessage["payload"]
+        )
+    );
+    VAABuilder.set_register_value(
+        5,
+        ergoLib.Constant.from_coll_coll_byte(
+            VAAMessage["signature"])
+    );
+    VAABuilder.set_register_value(
+        6,
+        ergoLib.Constant.from_byte_array(
+            VAAAuthorityAddressSigma.to_bytes(
+                0
+            )
+        )
+    );
+    VAABuilder.set_register_value(
+        7,
+        ergoLib.Constant.from_i32_array(
+            [0, 0, 0]
+        )
+    );
     const outVAA = VAABuilder.build();
     const inputBoxes = new ergoLib.ErgoBoxes(VAASourceBox);
     const txOutput = new ergoLib.ErgoBoxCandidates(outVAA);
@@ -64,7 +82,6 @@ const issueVAA = async (VAA:VAA, VAASourceBox:ErgoBox, VAAMessage:any, VAAAuthor
     const ctx = await ApiNetwork.getErgoStateContexet();
     const signedTx = wallet.sign_transaction(ctx, tx, inputBoxes, tx_data_inputs)
     return signedTx.to_json();
-
 }
 
 const updateVAABox = async (
@@ -132,7 +149,7 @@ function generateTx(inputBoxes: any, outputs: [any, ...any[]], sponsor: any) {
     const boxSelection = new ergoLib.BoxSelection(inputBoxes, new ergoLib.ErgoBoxAssetsDataList());
     const txOutput = new ergoLib.ErgoBoxCandidates(outputs[0]);
     for (let i = 1; i < outputs.length; i++) txOutput.add(outputs[i]);
-    return  ergoLib.TxBuilder.new(
+    return ergoLib.TxBuilder.new(
         boxSelection,
         txOutput,
         0,
