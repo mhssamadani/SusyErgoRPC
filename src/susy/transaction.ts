@@ -4,7 +4,6 @@ import {Boxes} from "./boxes";
 import Contracts from "./contracts";
 import ApiNetwork from "../network/api";
 import {hexStringToByte, strToUint8Array} from "../utils/decodeEncode";
-import VAA from "../models/models";
 
 const ergoLib = require("ergo-lib-wasm-nodejs");
 
@@ -30,7 +29,6 @@ const issueVAA = async (VAASourceBox: ErgoBox, VAAMessage: any, VAAAuthorityAddr
         )
     );
 
-
     // TODO: should check
     VAABuilder.set_register_value(
         4,
@@ -42,7 +40,7 @@ const issueVAA = async (VAASourceBox: ErgoBox, VAAMessage: any, VAAAuthorityAddr
     VAABuilder.set_register_value(
         5,
         ergoLib.Constant.from_coll_coll_byte(
-            VAAMessage["signature"])
+            VAAMessage["signature"].map((item: string)=>strToUint8Array(item)))
     );
     VAABuilder.set_register_value(
         6,
@@ -280,4 +278,4 @@ const createRequest = async (bank: ErgoBox, application: ErgoBox, amount: number
 
 }
 
-export {createRequest};
+export {createRequest,issueVAA};
