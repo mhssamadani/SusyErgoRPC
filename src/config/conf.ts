@@ -13,6 +13,7 @@ const config = {
         bankToken: "1bf7a0ffbd22afe0a553c9a33281e7c295e52f37865ba17be686c2af2b52ae31"
     },
     addressSecret: "bae3ef240ca2e6398ca58446a4b42aa3c24cf90a841aad72e827fbc5b29390b5",
+    address:"9gMbbSbYMn7KiDmvPSSHiBEu9CkjrJXb3TTDjm87NkqbVTj15NM",
     node: "http://10.10.9.3:9064",
     explorerApi: "http://10.10.9.3:7000",
     networkType: wasm.NetworkPrefix.Mainnet,

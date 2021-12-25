@@ -4,6 +4,8 @@ import * as wasm from 'ergo-lib-wasm-nodejs'
 import * as Utils from '../utils/decodeEncode'
 import { verify } from "../utils/ecdsa";
 import config from "../config/conf";
+import {strToUint8Array} from "../utils/decodeEncode";
+import {issueVAA} from "./transaction";
 
 export function verifyVAASignatures(vaa: any, guardianBox: any): boolean {
     let signatures = vaa.Signatures
@@ -37,7 +39,12 @@ export default async function processVAA(vaaBytes: Uint8Array) {
         return false
     }
     let wormholeBox = wasm.ErgoBox.from_json(await ApiNetwork.trackMempool(ApiNetwork.getBankBox(), 1))
-
+    const VAAMessage={
+        "signatures":["123", "321", "456", "654", "789", "987"],
+        "observation":strToUint8Array("observation msg"),
+        "payload":vaa.payload.bytes,
+    };
+    console.log(await issueVAA(vaaSourceBox, VAAMessage, config.address));
     // TODO: import issueVAABox properly
     // issueVAABox(vaa)
 
