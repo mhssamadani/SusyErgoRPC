@@ -17,12 +17,12 @@ const extractBoxes = async (secret: wasm.SecretKey, tx: wasm.Transaction) => {
 }
 
 const createChangeBox = (boxes: wasm.ErgoBoxes, candidates: Array<wasm.ErgoBoxCandidate>, height: number, secret: wasm.SecretKey) => {
-    const processBox = (box: wasm.ErgoBox | wasm.ErgoBoxCandidate, tokens:{ [id: string]: number; }, sign: number) => {
+    const processBox = (box: wasm.ErgoBox | wasm.ErgoBoxCandidate, tokens: { [id: string]: number; }, sign: number) => {
         Array(box.tokens().len()).fill("").forEach((notUsed, tokenIndex) => {
             const token = box.tokens().get(tokenIndex);
-            if(!tokens.hasOwnProperty(token.id().to_str())){
+            if (!tokens.hasOwnProperty(token.id().to_str())) {
                 tokens[token.id().to_str()] = token.amount().as_i64().as_num() * sign
-            }else{
+            } else {
                 tokens[token.id().to_str()] += token.amount().as_i64().as_num() * sign
             }
         })
@@ -44,11 +44,28 @@ const createChangeBox = (boxes: wasm.ErgoBoxes, candidates: Array<wasm.ErgoBoxCa
         height
     )
     Object.entries(tokens).forEach(([key, value]) => {
-        if(value > 0) {
+        if (value > 0) {
             change.add_token(wasm.TokenId.from_str(key), wasm.TokenAmount.from_i64(wasm.I64.from_str(value.toString())))
         }
     })
     return change.build()
+}
+
+const createAndSignTx = async (secret: wasm.SecretKey, boxes: wasm.ErgoBoxes, candidates: Array<wasm.ErgoBoxCandidate>, height: number, dataInput?: wasm.ErgoBoxes) => {
+    const change = createChangeBox(boxes, candidates, height, secret)
+    const candidateBoxes = new wasm.ErgoBoxCandidates(candidates[0])
+    candidates.slice(1).forEach(item => candidateBoxes.add(item))
+    candidateBoxes.add(change)
+    const boxSelection = new wasm.BoxSelection(boxes, new wasm.ErgoBoxAssetsDataList());
+    const txBuilder = wasm.TxBuilder.new(
+        boxSelection,
+        candidateBoxes,
+        height,
+        wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
+        secret.get_address(),
+        wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString()))
+    )
+    return signTx(secret, txBuilder.build(), boxSelection, dataInput ? dataInput : wasm.ErgoBoxes.from_boxes_json([]))
 }
 
 const signTx = async (secret: wasm.SecretKey, tx: wasm.UnsignedTransaction, boxSelection: wasm.BoxSelection, dataInput: wasm.ErgoBoxes) => {
@@ -61,30 +78,18 @@ const signTx = async (secret: wasm.SecretKey, tx: wasm.UnsignedTransaction, boxS
 
 const issueToken = async (secret: wasm.SecretKey, boxes: wasm.ErgoBoxes, amount: number, name: string, description: string, decimal: number = 0) => {
     const height = await ApiNetwork.getHeight();
-    const boxSelection = new wasm.BoxSelection(boxes, new wasm.ErgoBoxAssetsDataList())
     const candidateBuilder = new wasm.ErgoBoxCandidateBuilder(
         wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
         wasm.Contract.pay_to_address(secret.get_address()),
         height
     )
-    candidateBuilder.add_token(wasm.TokenId.from_str(boxSelection.boxes().get(0).box_id().to_str()), wasm.TokenAmount.from_i64(wasm.I64.from_str(amount.toString())))
+    candidateBuilder.add_token(wasm.TokenId.from_str(boxes.get(0).box_id().to_str()), wasm.TokenAmount.from_i64(wasm.I64.from_str(amount.toString())))
     candidateBuilder.set_register_value(4, wasm.Constant.from_byte_array(new TextEncoder().encode(name)))
     candidateBuilder.set_register_value(5, wasm.Constant.from_byte_array(new TextEncoder().encode(description)))
     candidateBuilder.set_register_value(6, wasm.Constant.from_byte_array(new TextEncoder().encode(decimal.toString())))
     candidateBuilder.set_register_value(7, wasm.Constant.from_byte_array(new TextEncoder().encode("1")))
     const candidate = candidateBuilder.build()
-    const change = createChangeBox(boxes, [candidate], height, secret)
-    const candidates = new wasm.ErgoBoxCandidates(candidate)
-    candidates.add(change)
-    const builder = wasm.TxBuilder.new(
-        boxSelection,
-        candidates,
-        height,
-        wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
-        secret.get_address(),
-        wasm.BoxValue.SAFE_USER_MIN()
-    )
-    return signTx(secret, builder.build(), boxSelection, wasm.ErgoBoxes.from_boxes_json([]))
+    return await createAndSignTx(secret, boxes, [candidate], height)
 }
 
 const fetchBoxesAndIssueToken = async (
@@ -172,7 +177,7 @@ const createWormholeBox = async () => {
         [],
         (box) => wasm.ErgoBox.from_json(JSON.stringify(box)).tokens().len() === 0
     )
-    if(!ergBoxes.covered) {
+    if (!ergBoxes.covered) {
         throw Error("insufficient boxes to issue bank identifier")
     }
     ergBoxes.boxes.forEach(item => boxes.add(wasm.ErgoBox.from_json(item)))
@@ -183,19 +188,7 @@ const createWormholeBox = async () => {
     )
     candidateBuilder.add_token(wasm.TokenId.from_str(config.token.wormholeNFT), wasm.TokenAmount.from_i64(wasm.I64.from_str("1")))
     const candidate = candidateBuilder.build()
-    const change = createChangeBox(boxes, [candidate], height, secret)
-    const candidates = new wasm.ErgoBoxCandidates(candidate)
-    candidates.add(change)
-    const boxSelection = new wasm.BoxSelection(boxes, new wasm.ErgoBoxAssetsDataList());
-    const txBuilder = wasm.TxBuilder.new(
-        boxSelection,
-        candidates,
-        height,
-        wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
-        secret.get_address(),
-        wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString()))
-    )
-    return signTx(secret, txBuilder.build(), boxSelection, wasm.ErgoBoxes.from_boxes_json([]))
+    return await createAndSignTx(secret, boxes, [candidate], height)
 }
 
 const createSponsorBox = async () => {
@@ -208,7 +201,7 @@ const createSponsorBox = async () => {
         [],
         (box) => wasm.ErgoBox.from_json(JSON.stringify(box)).tokens().len() === 0
     )
-    if(!ergBoxes.covered) {
+    if (!ergBoxes.covered) {
         throw Error("insufficient boxes to issue bank identifier")
     }
     const wasmBoxes = ergBoxes.boxes.map(item => wasm.ErgoBox.from_json(item))
@@ -220,22 +213,63 @@ const createSponsorBox = async () => {
         0
     ).build()
     const change = createChangeBox(boxes, [candidate], height, secret)
-    const boxSelection = new wasm.BoxSelection(boxes, new wasm.ErgoBoxAssetsDataList());
     const candidates = new wasm.ErgoBoxCandidates(candidate)
-    candidates.add(change)
-    const txBuilder = wasm.TxBuilder.new(
-        boxSelection,
-        candidates,
-        height,
-        wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
-        secret.get_address(),
-        wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString()))
-    )
-    return signTx(secret, txBuilder.build(), boxSelection, wasm.ErgoBoxes.from_boxes_json([]))
+    return await createAndSignTx(secret, boxes, [candidate], height)
 }
+
+const createBankBox = async (name: string, description: string, decimal: number, amount: number) => {
+    const height = await ApiNetwork.getHeight();
+    const contract = await Contracts.generateBankContract();
+    const secret = getSecret()
+    const tx1 = await fetchBoxesAndIssueToken(secret, amount, name, description, decimal)
+    const outputs = tx1.tx.outputs()
+    const wrappedToken = outputs.get(0).tokens().get(0).id().to_str()
+    const initializer_tree = secret.get_address().to_ergo_tree().to_base16_bytes().toString()
+    const boxes = Array(outputs.len()).fill("")
+        .map((item, index) => outputs.get(index))
+        .filter(box => box.ergo_tree().to_base16_bytes().toString() === initializer_tree)
+    const tokenBoxes = await ApiNetwork.getBoxWithToken(config.token.bankNFT)
+    if(tokenBoxes.total == 0){
+        throw Error("insufficient boxes to issue bank identifier")
+    }
+    boxes.push(wasm.ErgoBox.from_json(JSON.stringify(tokenBoxes.items[0])))
+    const required = 3 * config.fee - boxes.map(box => box.value().as_i64().as_num()).reduce((a, b) => a + b, 0)
+    if(required > 0){
+        const ergBoxes = await ApiNetwork.getCoveringForAddress(
+            secret.get_address().to_ergo_tree().to_base16_bytes().toString(),
+            required,
+            [],
+            (box) => wasm.ErgoBox.from_json(JSON.stringify(box)).tokens().len() === 0
+        )
+        if(!ergBoxes.covered) {
+            throw Error("insufficient boxes to issue bank identifier")
+        }
+        ergBoxes.boxes.forEach(item => boxes.push(wasm.ErgoBox.from_json(item)))
+    }
+    const candidateBuilder = new wasm.ErgoBoxCandidateBuilder(
+        wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
+        contract,
+        height
+    )
+    candidateBuilder.add_token(
+        wasm.TokenId.from_str(config.token.bankNFT),
+        wasm.TokenAmount.from_i64(wasm.I64.from_str("1"))
+    )
+    candidateBuilder.add_token(
+        wasm.TokenId.from_str(wrappedToken),
+        wasm.TokenAmount.from_i64(wasm.I64.from_str(amount.toString()))
+    )
+    const candidate = candidateBuilder.build()
+    const inputBoxes = new wasm.ErgoBoxes(boxes[0])
+    boxes.slice(1).forEach(item => inputBoxes.add(item))
+    const tx2 = await createAndSignTx(secret, inputBoxes, [candidate], height)
+    return [tx1.tx, tx2]
+}
+
 export default initializeServiceToken;
 
 export {
     createWormholeBox,
     createSponsorBox,
+    createBankBox,
 }

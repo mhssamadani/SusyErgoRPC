@@ -1,6 +1,9 @@
+// 424poBqNcfgMNuNYqk3vPeWAg73oywJUAHmjU8hs8XBhRq7nhPQtgpjDx3bsMtH1XxUkyxionf5L1DcyaxTUYGXH89Y9SMHK8gSQLXvknyasRCPshtuHJHp2KZCtCepD8YABNuAYYTtfPtg7vizGtMbENVpNKt18F9arKSvjdFXrPkdJjx54u3HrgpfrC8BExB2FMqu6d8yz6r7d48uSLe94wW9cysizCiZo5q4ijNnjboSEVkikt82v7L1YtGHtsJ7GZi9DiUJn42b5ngP79ZL5mTrYD6tur7LcVSWTK2UwFrHtg6XZ76RnwRprRxwstdJiCqRg74wGHfcQSdrYhEe1WkgvCu4ru5RZ27mvU8nHQDk
 export const bankScript = `
 {
-  val VAAT = fromBase64( VAATToken )
+  val wormholeNFT = fromBase64("WORMHOLE_NFT");
+  val bankNFT = fromBase64("BANK_NFT");
+  val VAAToken = fromBase64("VAA_TOKEN");
   val selfReplication = allOf(Coll(
     OUTPUTS(0).value == SELF.value,
     OUTPUTS(0).tokens(0)._1 == SELF.tokens(0)._1,
@@ -23,14 +26,14 @@ export const bankScript = `
     else false
   }
 
-  // INPUTS: [Bank, VAABox, sponsor] --> OUTPUTS: [Bank, VAATokenRedeem, payment, sponsor]
+  // INPUTS: [Bank, VAABox, sponsor] --> OUTPUTS: [Bank, VAATokenokenRedeem, payment, sponsor]
   val tokenPayment ={
-   if (INPUTS(1).tokens(0)._1 == VAAT){
+   if (INPUTS(1).tokens(0)._1 == VAAToken){
      allOf(Coll(
        // Self replication checking
        selfReplication,
        // token checking
-       INPUTS(1).tokens(0)._1 == VAAT,
+       INPUTS(1).tokens(0)._1 == VAAToken,
        OUTPUTS(0).tokens(1)._1 == OUTPUTS(2).tokens(0)._1,
      ))
    }
