@@ -40,13 +40,12 @@ export default async function processVAA(vaaBytes: Uint8Array) {
     }
     let wormholeBox = wasm.ErgoBox.from_json(await ApiNetwork.trackMempool(ApiNetwork.getBankBox(), 1))
     const VAAMessage={
-        "signatures":["123", "321", "456", "654", "789", "987"],
-        "observation":strToUint8Array("observation msg"),
-        "payload":vaa.payload.bytes,
+        signatures:["123", "321", "456", "654", "789", "987"],
+        observation:strToUint8Array("observation msg"),
+        payload:vaa.payload.bytes,
     };
     console.log(await issueVAA(vaaSourceBox, VAAMessage, config.address));
-    // TODO: import issueVAABox properly
-    // issueVAABox(vaa)
+
 
 
     return true
