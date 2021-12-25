@@ -152,21 +152,9 @@ const issueGuardianToken = async (secret: wasm.SecretKey, txs: Array<wasm.Transa
     return res.tx
 }
 
-const initializeServiceToken = async () => {
-    let txs: Array<wasm.Transaction> = [];
-    let fetchedBoxes: Array<string> = [];
-    const secret = getSecret();
-    await issueBankIdentifier(secret, txs, fetchedBoxes)
-    await issueVaaIdentifier(secret, txs, fetchedBoxes)
-    await issueWormHoleNFT(secret, txs, fetchedBoxes)
-    await issueGuardianNFT(secret, txs, fetchedBoxes)
-    await issueGuardianToken(secret, txs, fetchedBoxes)
-    return txs
-}
-
 const createWormholeBox = async () => {
     const height = await ApiNetwork.getHeight();
-    const contract = await Contracts.generateVAAContract();
+    const contract = await Contracts.generateWormholeContract();
     const box = await ApiNetwork.getBoxWithToken(config.token.wormholeNFT)
     const secret = getSecret()
     const boxes = new wasm.ErgoBoxes(wasm.ErgoBox.from_json(JSON.stringify(box.items[0])))
@@ -264,6 +252,19 @@ const createBankBox = async (name: string, description: string, decimal: number,
     boxes.slice(1).forEach(item => inputBoxes.add(item))
     const tx2 = await createAndSignTx(secret, inputBoxes, [candidate], height)
     return [tx1.tx, tx2]
+}
+
+const initializeServiceToken = async () => {
+    let txs: Array<wasm.Transaction> = [];
+    let fetchedBoxes: Array<string> = [];
+    const secret = getSecret();
+    await issueBankIdentifier(secret, txs, fetchedBoxes)
+    await issueVaaIdentifier(secret, txs, fetchedBoxes)
+    await issueWormHoleNFT(secret, txs, fetchedBoxes)
+    await issueGuardianNFT(secret, txs, fetchedBoxes)
+    await issueGuardianToken(secret, txs, fetchedBoxes)
+    txs.map(tx => ApiNetwork.sendTx(tx.to_json()))
+    return txs
 }
 
 export default initializeServiceToken;
