@@ -60,7 +60,6 @@ const createGuardianBox = async () => {
         const ergBoxes = await ApiNetwork.getCoveringForAddress(
             secret.get_address().to_ergo_tree().to_base16_bytes().toString(),
             required,
-            [],
             (box) => wasm.ErgoBox.from_json(JSON.stringify(box)).tokens().len() === 0
         )
         if(!ergBoxes.covered) {

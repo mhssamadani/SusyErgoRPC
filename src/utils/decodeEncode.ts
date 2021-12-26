@@ -12,7 +12,7 @@ export function getGuardianAddresses(guardianBox: any) {
     let addresses: Array<string> = []
 
     let arr = guardianBox.additionalRegisters.R4.renderedValue
-    arr.slice(1, arr.length - 1).split(",").array.forEach((element: string) => {
+    arr.slice(1, arr.length - 1).split(",").forEach((element: string) => {
         addresses.push(element)
     });
     return addresses

@@ -29,7 +29,7 @@ const config = {
         secret: "b1ef2a340ca2e639858446a4b42ac24cf90a84ca1aad72e827fbc5b29390b73e",
         address: "9fo5LQvJJigxgGJ4Qv5KZGq5nMHLHomX4h1nPPo1JKxcPKa3myL"
     },
-    vaaSourceBoxAddress: "",
+    vaaSourceBoxAddress: "9fo5LQvJJigxgGJ4Qv5KZGq5nMHLHomX4h1nPPo1JKxcPKa3myL",
     port: 8080,
     guardianPublicKey: [{
         secret: "17b42abec839188f816f2b0c39be2a401bb05a0a152db37e87f76bb5ae38f6db",

@@ -41,7 +41,6 @@ const createWormholeBox = async () => {
     const ergBoxes = await ApiNetwork.getCoveringForAddress(
         secret.get_address().to_ergo_tree().to_base16_bytes().toString(),
         required,
-        [],
         (box) => wasm.ErgoBox.from_json(JSON.stringify(box)).tokens().len() === 0
     )
     if (!ergBoxes.covered) {
@@ -65,7 +64,6 @@ const createSponsorBox = async () => {
     const ergBoxes = await ApiNetwork.getCoveringForAddress(
         secret.get_address().to_ergo_tree().to_base16_bytes().toString(),
         1e9,
-        [],
         (box) => wasm.ErgoBox.from_json(JSON.stringify(box)).tokens().len() === 0
     )
     if (!ergBoxes.covered) {
@@ -101,7 +99,6 @@ const createBankBox = async (name: string, description: string, decimal: number,
         const ergBoxes = await ApiNetwork.getCoveringForAddress(
             secret.get_address().to_ergo_tree().to_base16_bytes().toString(),
             required,
-            [],
             (box) => wasm.ErgoBox.from_json(JSON.stringify(box)).tokens().len() === 0
         )
         if(!ergBoxes.covered) {
@@ -181,7 +178,7 @@ const generateVaa = () => {
     ]
     const observation = observationParts.join("")
     let signatures = "06";
-    signatures += wormhole.map(item => sign(Buffer.from(observation, "hex"),Buffer.from(item.privateKey, "hex"))).join("")
+    signatures += wormhole.map((item, index) => `0${index}` + sign(Buffer.from(observation, "hex"),Buffer.from(item.privateKey, "hex"))).join("")
 
     const vaaParts = [
         "02", // version

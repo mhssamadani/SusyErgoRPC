@@ -42,7 +42,7 @@ function verifyBoxSignatures(box: any, guardianBox: any): boolean {
     for (const sign of signatures) {
         if (verify(vaaData, sign.toHex(), guardianAddresses[sign.index])) verified += 1
     }
-    
+
     if (verified >= 4)
         return true
     return false
@@ -55,19 +55,19 @@ export default async function signService() {
     for (const box of vaaBoxes) {
         if (checkSign(box)) continue
 
-        let lastBox = await ApiNetwork.trackMempool(box, 1)
+        let lastBox = await ApiNetwork.trackMemPool(box, 1)
 
         if (checkSign(lastBox)) continue
 
-        let guardianBoxJson = await ApiNetwork.getGuardianBox()
+        let guardianBoxJson = await ApiNetwork.getGuardianBox(0)
 
         if (!verifyBoxSignatures(lastBox, guardianBoxJson)) continue
 
         let msg = Utils.strToUint8Array(Utils.getVAADataFromBox(lastBox))
         let signatureData = signMsg(msg, config.guardian.privateKey)
 
-        let wormholeBox = wasm.ErgoBox.from_json(await ApiNetwork.trackMempool(ApiNetwork.getWormholeBox(), 1))
-        let sponsorBox = wasm.ErgoBox.from_json(await ApiNetwork.trackMempool(ApiNetwork.getSponsorBox(), 1))
+        let wormholeBox = wasm.ErgoBox.from_json(await ApiNetwork.trackMemPool(ApiNetwork.getWormholeBox(), 1))
+        let sponsorBox = wasm.ErgoBox.from_json(await ApiNetwork.trackMemPool(ApiNetwork.getSponsorBox(), 1))
         let guardianBox = wasm.ErgoBox.from_json(guardianBoxJson)
 
         // TODO: import updateVAABox properly

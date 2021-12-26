@@ -71,7 +71,7 @@ const signTx = async (secret: wasm.SecretKey, tx: wasm.UnsignedTransaction, boxS
     const secrets = new wasm.SecretKeys()
     secrets.add(secret)
     const wallet = wasm.Wallet.from_secrets(secrets);
-    const ctx = await ApiNetwork.getErgoStateContexet();
+    const ctx = await ApiNetwork.getErgoStateContext();
     return wallet.sign_transaction(ctx, tx, boxSelection.boxes(), dataInput)
 }
 

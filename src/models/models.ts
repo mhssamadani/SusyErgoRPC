@@ -52,8 +52,8 @@ export default class VAA {
 
     constructor(vaaBytes: Uint8Array) {
         let signaturesSize: number = vaaBytes[5]
-        let signatures: Array<WormholeSignature> = this.signatureParser(vaaBytes.slice(6, 6 + signaturesSize*65))
-        let remainingVAABytes: Uint8Array = vaaBytes.slice(6 + 6 + signaturesSize*65)
+        let signatures: Array<WormholeSignature> = this.signatureParser(vaaBytes.slice(6, 6 + signaturesSize*66))
+        let remainingVAABytes: Uint8Array = vaaBytes.slice(6 + 6 + signaturesSize*66)
 
         this.version = vaaBytes[0]
         this.GuardianSetIndex = this.arrayToInt(vaaBytes.slice(1, 5), 4)
@@ -64,20 +64,20 @@ export default class VAA {
         this.EmitterChain = remainingVAABytes[9]
         this.EmitterAddress = remainingVAABytes.slice(10, 42)
         this.payload = new Payload(remainingVAABytes.slice(42))
-    }    
+    }
 
     arrayToInt(bytes: Uint8Array, length: number) {
         return Buffer.from(bytes).readUIntLE(0, length)
     }
-    
+
     signatureParser(signatureBytes: Uint8Array) {
         let signatures: Array<WormholeSignature> = []
         let remainingBytes = signatureBytes
         while (remainingBytes.length > 0) {
             let wormholeSignature = new WormholeSignature()
-            wormholeSignature.fromBytes(remainingBytes.slice(0, 65))
+            wormholeSignature.fromBytes(remainingBytes.slice(0, 66))
             signatures.push(wormholeSignature)
-            remainingBytes = remainingBytes.slice(65)
+            remainingBytes = remainingBytes.slice(66)
         }
         return signatures
     }
@@ -103,8 +103,8 @@ export default class VAA {
         let emitterChain = this.EmitterChain.toString(16)
         let emitterAddress = Buffer.from(this.EmitterAddress).toString("hex")
         let payload = this.payload.toString()
-        return `${timestamp}${nonce}${consistency}${emitterChain}${payload}${payload}`
+        return `${timestamp}${nonce}${consistency}${emitterChain}${emitterAddress}${payload}`
     }
-    
+
 }
 
