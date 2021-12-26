@@ -3,11 +3,28 @@ import config from "./config/conf";
 import signService from "./susy/signService";
 // import initializeServiceToken from "./susy/init";
 import ApiNetwork from "./network/api";
-import {createBankBox, createSponsorBox, createWormholeBox} from "./susy/init";
+import {
+    createBankBox,
+    createSponsorBox,
+    createWormholeBox,
+    generateVaa,
+    initializeServiceBoxes,
+    issueTokens
+} from "./susy/init";
 import Contracts from "./susy/contracts";
+import * as bip39 from 'bip39'
+import {hdkey} from "ethereumjs-wallet";
+import processVAA from "./susy/vaaService";
+// const hdkey = require('ethereumjs-wallet/hdkey');
 
 const main = () => {
-    Contracts.generateRegisterVAAContract().then(() => null)
+    const tou8 = require('buffer-to-uint8array');
+    const vaa = generateVaa()
+    console.log(vaa)
+    processVAA(tou8(Buffer.from(vaa))).then((res) => console.log(res))
+    // issueTokens().then((tokens) => console.log(tokens))
+    // initializeServiceBoxes().then(() => null)
+    // Contracts.generateRegisterVAAContract().then(() => null)
     // createBankBox("test Susy 2", "this is a testing token for susy version 2 ergo gateway", 2, 1e15).then((tx) => {
     //     tx.forEach(item => ApiNetwork.sendTx(item.to_json()))
     // })

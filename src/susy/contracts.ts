@@ -43,7 +43,6 @@ class Contracts {
 
         return ApiNetwork.pay2ScriptAddress(script).then(res => {
             const P2SA = ergoLib.Address.from_base58(res);
-            console.log(res)
             return ergoLib.Contract.pay_to_address(P2SA);
         });
     }
@@ -98,7 +97,6 @@ class Contracts {
         let script: string = registerScript
             .replace("VAA_TOKEN", Buffer.from(config.token.VAAT, "hex").toString("base64"))
         return ApiNetwork.pay2ScriptAddress(script).then(res => {
-            console.log(res)
             const P2SA = ergoLib.Address.from_base58(res);
             return ergoLib.Contract.pay_to_address(P2SA);
         });

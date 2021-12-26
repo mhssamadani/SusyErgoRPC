@@ -44,7 +44,7 @@ export default async function processVAA(vaaBytes: Uint8Array) {
         "observation":strToUint8Array("observation msg"),
         "payload":vaa.payload.bytes,
     };
-    console.log(await issueVAA(vaaSourceBox, VAAMessage, config.address));
+    // console.log(await issueVAA(vaaSourceBox, VAAMessage, config.address));
     // TODO: import issueVAABox properly
     // issueVAABox(vaa)
 

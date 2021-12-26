@@ -1,4 +1,5 @@
 import * as util from 'ethereumjs-util';
+import * as wallet from 'ethereumjs-wallet';
 
 const verify = (message: string, signature: string, address: string) => {
     if(!signature.startsWith("0x")){
@@ -17,7 +18,13 @@ const verify = (message: string, signature: string, address: string) => {
     return addr.toLowerCase() === address.toLowerCase();
 }
 
+const sign = (message: Buffer, privateKey: Buffer) => {
+    const sign = util.ecsign(util.keccak256(message), privateKey)
+    const hexString = util.toRpcSig(sign.v, sign.r,  sign.s)
+    return hexString.substring(2)
+}
+
 export {
-    verify
+    verify, sign
 }
 

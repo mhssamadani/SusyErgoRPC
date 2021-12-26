@@ -70,6 +70,10 @@ export default class ApiNetwork {
         return explorerApi.get(`/api/v1/boxes/unspent/byAddress/${address}`).then(res => res.data.items[0])
     }
 
+    static getTransaction = async (txId: string) => {
+        return await explorerApi.get(`/api/v1/transactions/${txId}`).then(res => res.data)
+    }
+
     static trackMempool = async (box: any, index: number): Promise<any> => {
         let mempoolTxs = await explorerApi.get(`/api/v1/mempool/transactions/byAddress/${box.address}`).then(res => res.data)
         if (mempoolTxs.total == 0) return box
@@ -102,6 +106,7 @@ export default class ApiNetwork {
                     if(amount <= 0) break
                 }
             }
+            offset += 10;
         }
         return {boxes: res, covered: amount <= 0, selectedIds: selectedIds}
     }
