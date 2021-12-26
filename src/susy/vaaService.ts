@@ -14,7 +14,7 @@ export function verifyVAASignatures(vaa: any, guardianBox: any): boolean {
     let verified: number = 0
 
     for (const sign of signatures) {
-        if (!verify(vaaData, sign.toHex(), guardianAddresses[sign.index])) verified += 1
+        if (verify(vaaData, sign.toHex(), guardianAddresses[sign.index])) verified += 1
     }
     
     if (verified >= 4)
