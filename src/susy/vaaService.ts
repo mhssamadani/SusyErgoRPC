@@ -11,11 +11,15 @@ export function verifyVAASignatures(vaa: any, guardianBox: any): boolean {
     let signatures = vaa.Signatures
     let guardianAddresses = Utils.getGuardianAddresses(guardianBox)
     let vaaData = vaa.hexData()
+    let verified: number = 0
 
     for (const sign of signatures) {
-        if (!verify(vaaData, sign.toHex(), guardianAddresses[sign.index])) return false
+        if (!verify(vaaData, sign.toHex(), guardianAddresses[sign.index])) verified += 1
     }
-    return true
+    
+    if (verified >= 4)
+        return true
+    return false
 }
 
 export default async function processVAA(vaaBytes: Uint8Array) {
