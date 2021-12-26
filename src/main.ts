@@ -21,7 +21,7 @@ const main = () => {
     const tou8 = require('buffer-to-uint8array');
     const vaa = generateVaa()
     console.log(vaa)
-    processVAA(tou8(Buffer.from(vaa))).then((res) => console.log(res))
+    processVAA(tou8(Buffer.from(vaa, "hex"))).then((res) => console.log(res))
     // issueTokens().then((tokens) => console.log(tokens))
     // initializeServiceBoxes().then(() => null)
     // Contracts.generateRegisterVAAContract().then(() => null)
