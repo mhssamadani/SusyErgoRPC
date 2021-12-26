@@ -14,9 +14,13 @@ export function verifyVAASignatures(vaa: any, guardianBox: any): boolean {
     let verified: number = 0
 
     for (const sign of signatures) {
+<<<<<<< HEAD
         if (!verify(vaaData, sign.toHex(), guardianAddresses[sign.index])) verified += 1
+=======
+        if (verify(vaaData, sign.toHex(), guardianAddresses[sign.index])) verified += 1
+>>>>>>> node
     }
-    
+
     if (verified >= 4)
         return true
     return false
@@ -44,14 +48,11 @@ export default async function processVAA(vaaBytes: Uint8Array) {
     }
     let wormholeBox = wasm.ErgoBox.from_json(await ApiNetwork.trackMempool(ApiNetwork.getBankBox(), 1))
     const VAAMessage={
-        "signatures":["123", "321", "456", "654", "789", "987"],
-        "observation":strToUint8Array("observation msg"),
-        "payload":vaa.payload.bytes,
+        signatures:["123", "321", "456", "654", "789", "987"],
+        observation:strToUint8Array("observation msg"),
+        payload:vaa.payload.bytes,
     };
     // console.log(await issueVAA(vaaSourceBox, VAAMessage, config.address));
-    // TODO: import issueVAABox properly
-    // issueVAABox(vaa)
-
 
     return true
 }
