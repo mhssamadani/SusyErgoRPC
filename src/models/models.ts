@@ -30,7 +30,7 @@ export class WormholeSignature {
     }
 
     fromBytes(signatureBytes: Uint8Array) {
-        this.index = parseInt(signatureBytes[0].toString(), 16) //TODO: this parsing is wrong
+        this.index = signatureBytes[0]
         this.signatureData = signatureBytes.slice(1)
     }
 
@@ -50,24 +50,20 @@ export default class VAA {
     EmitterAddress: Uint8Array;
     payload: Payload;
 
-    // TODO: Fix parsing with new model
-    //      Also there is a signatureSize value in bytes which should be considered
     constructor(vaaBytes: Uint8Array) {
-        let signaturesSize: number = (vaaBytes.length - 56 - 133)
-        if (signaturesSize % 65 != 0) throw new Error(`cannot parse vaa signatures (length is ${signaturesSize} it's not dividable by 65)`)
-        
-        let signatures: Array<WormholeSignature> = this.signatureParser(vaaBytes.slice(5, 5 + signaturesSize))
-        let remainingVAABytes: Uint8Array = vaaBytes.slice(5 + signaturesSize)
+        let signaturesSize: number = vaaBytes[5]
+        let signatures: Array<WormholeSignature> = this.signatureParser(vaaBytes.slice(6, 6 + signaturesSize*65))
+        let remainingVAABytes: Uint8Array = vaaBytes.slice(6 + 6 + signaturesSize*65)
 
-        this.version = parseInt(vaaBytes[0].toString(16), 16) //TODO: this parsing is wrong
+        this.version = vaaBytes[0]
         this.GuardianSetIndex = this.arrayToInt(vaaBytes.slice(1, 5), 4)
         this.Signatures = signatures
         this.timestamp = this.arrayToInt(remainingVAABytes.slice(0, 4), 4)
         this.nonce = this.arrayToInt(remainingVAABytes.slice(4, 8), 4)
-        this.consistencyLevel = remainingVAABytes[8] //TODO: this parsing is wrong
-        this.EmitterChain = this.arrayToInt(remainingVAABytes.slice(9, 11), 2)
-        this.EmitterAddress = remainingVAABytes.slice(11, 43)
-        this.payload = new Payload(remainingVAABytes.slice(43))
+        this.consistencyLevel = remainingVAABytes[8]
+        this.EmitterChain = remainingVAABytes[9]
+        this.EmitterAddress = remainingVAABytes.slice(10, 42)
+        this.payload = new Payload(remainingVAABytes.slice(42))
     }    
 
     arrayToInt(bytes: Uint8Array, length: number) {
@@ -90,7 +86,7 @@ export default class VAA {
         return `{
             "version": ${this.version},
             "GuardianSetIndex": ${this.GuardianSetIndex},
-            "Signatures": ${this.Signatures},
+            "Signatures": [${this.Signatures.map(res => res.toHex()).join(",")}],
             "timestamp": ${this.timestamp},
             "nonce": ${this.nonce},
             "consistencyLevel": ${this.consistencyLevel},

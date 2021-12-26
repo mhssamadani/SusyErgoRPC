@@ -37,11 +37,15 @@ function verifyBoxSignatures(box: any, guardianBox: any): boolean {
     let signatures = Utils.getBoxSignatures(box)
     let guardianAddresses = Utils.getGuardianAddresses(guardianBox)
     let vaaData = Utils.getVAADataFromBox(box)
+    let verified: number = 0
 
     for (const sign of signatures) {
-        if (!verify(vaaData, sign.toHex(), guardianAddresses[sign.index])) return false
+        if (verify(vaaData, sign.toHex(), guardianAddresses[sign.index])) verified += 1
     }
-    return true
+    
+    if (verified >= 4)
+        return true
+    return false
 }
 
 export default async function signService() {
