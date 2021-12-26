@@ -1,7 +1,7 @@
 import config from "../config/conf";
 import ApiNetwork from "../network/api";
 import * as wasm from 'ergo-lib-wasm-nodejs'
-import * as Utils from '../utils/decodeEncode'
+import * as Utils from '../utils/codec'
 import { verify } from "../utils/ecdsa";
 
 const ecurve = require('ecurve')

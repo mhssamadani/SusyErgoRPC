@@ -1,7 +1,7 @@
 import VAA from "../models/models"
 import ApiNetwork from "../network/api";
 import * as wasm from 'ergo-lib-wasm-nodejs'
-import * as Utils from '../utils/decodeEncode'
+import * as Utils from '../utils/codec'
 import {verify} from "../utils/ecdsa";
 import config from "../config/conf";
 import {issueVAA} from "./transaction";
@@ -32,14 +32,7 @@ export default async function processVAA(vaaBytes: Uint8Array) {
     if(!boxes.covered){
         throw new Error("[-] insufficient box found to issue new vaa")
     }
-
-    const VAAMessage = {
-        signatures: vaa.Signatures.map(item => item.toHex()),
-        observation: vaa.hexData(),
-        payload: vaa.payload.bytes,
-    };
-    const ergoBoxes = wasm.ErgoBoxes.from_boxes_json(boxes.boxes.map(box => JSON.stringify(box)))
-    console.log(await issueVAA(ergoBoxes, VAAMessage, config.vaaSourceBoxAddress));
-
+    const ergoBoxes = wasm.ErgoBoxes.from_boxes_json(boxes.boxes.map(box => box))
+    await ApiNetwork.sendTx((await issueVAA(ergoBoxes, vaa, config.vaaSourceBoxAddress)));
     return true
 }

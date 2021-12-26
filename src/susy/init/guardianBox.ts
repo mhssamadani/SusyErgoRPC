@@ -9,6 +9,8 @@ import config from "../../config/conf";
 import {createAndSignTx, fetchBoxesAndIssueToken, getSecret, sendAndWaitTx} from "./util";
 import ApiNetwork from "../../network/api";
 import Contracts from "../contracts";
+import {wormhole} from "../../config/keys";
+import {ergo} from "../../config/keys";
 
 const wormholeAddress = () => {
     const mnemonic = bip39.generateMnemonic(160)
@@ -29,16 +31,16 @@ const ergoAddress = () => {
     return {publicKey: publicKey, mnemonic: mnemonic, seed: secretHex}
 }
 
-const createGuardianBox = async () => {
+const createGuardianBox = async (index: number) => {
     const secret = getSecret();
     const height = await ApiNetwork.getHeight();
     const contract: wasm.Contract = await Contracts.generateGuardianContract();
     const tou8 = require('buffer-to-uint8array');
-    const ergoAddresses = Array(6).fill("").map(item => ergoAddress())
-    const wormholeAddresses = Array(6).fill("").map(item => wormholeAddress())
-    console.log(ergoAddresses, wormholeAddresses)
-    const wormholePublic = wormholeAddresses.map(item => tou8(Buffer.from(item.address, "hex")))
-    const ergoPublic = ergoAddresses.map(item => tou8(Buffer.from(item.publicKey, "hex")))
+    // const ergoAddresses = Array(6).fill("").map(item => ergoAddress())
+    // const wormholeAddresses = Array(6).fill("").map(item => wormholeAddress())
+    // console.log(ergoAddresses, wormholeAddresses)
+    const wormholePublic = wormhole.map(item => tou8(Buffer.from(item.address.substring(2), "hex")))
+    const ergoPublic = ergo.map(item => tou8(Buffer.from(item.publicKey, "hex")))
     const builder = new wasm.ErgoBoxCandidateBuilder(
         wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
         contract,
@@ -46,7 +48,7 @@ const createGuardianBox = async () => {
     )
     builder.set_register_value(4, wasm.Constant.from_coll_coll_byte(wormholePublic))
     builder.set_register_value(5, wasm.Constant.from_coll_coll_byte(ergoPublic))
-    builder.set_register_value(6, wasm.Constant.from_i32(0))
+    builder.set_register_value(6, wasm.Constant.from_i32(index))
     builder.add_token(wasm.TokenId.from_str(config.token.guardianToken), wasm.TokenAmount.from_i64(wasm.I64.from_str("1")))
     const NFTBoxes = await ApiNetwork.getBoxWithToken(config.token.guardianToken)
     let boxes: Array<wasm.ErgoBox> = []

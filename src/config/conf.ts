@@ -12,7 +12,7 @@ const config = {
         registerNFT: 'b7999996b0236716d76674c893de3e360ad45ea3037cb8bc962eab2a0be7081e',
         bankToken: "37d3f4eeb9ba3e4f860f21c634d9a77e05294736cf399051d25f3b2cef304961"
     },
-    addressSecret: "bae3ef240ca2e6398ca58446a4b42aa3c24cf90a841aad72e827fbc5b29390b5",
+    addressSecret: "b1ef2a340ca2e639858446a4b42ac24cf90a84ca1aad72e827fbc5b29390b73e",
     address: "9gMbbSbYMn7KiDmvPSSHiBEu9CkjrJXb3TTDjm87NkqbVTj15NM",
     node: "http://10.10.9.3:9064",
     explorerApi: "http://10.10.9.3:7000",

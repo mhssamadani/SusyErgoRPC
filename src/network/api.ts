@@ -142,7 +142,7 @@ export default class ApiNetwork {
                             covering[asset.tokenId] -= asset.amount;
                         }
                     })
-                    if(remaining()) break
+                    if(!remaining()) break
                 }
             }
             offset += 10;

@@ -39,3 +39,25 @@ export function getVAADataFromBox(box: any) {
 export function strToUint8Array(str: string) {
     return new Uint8Array(Buffer.from(str, "hex"))
 }
+
+const arrayToInt = (bytes: Uint8Array, length: number) => {
+    return Buffer.from(bytes).readUIntBE(0, length)
+}
+
+const UInt32ToByte = (val: number) => {
+    const buff = Buffer.alloc(4, 0);
+    buff.writeUInt32BE(val)
+    return buff.toString("hex")
+}
+
+const UInt8ToByte = (val: number) => {
+    const buff = Buffer.alloc(1, 0);
+    buff.writeUInt8(val)
+    return buff.toString("hex")
+}
+
+export {
+    arrayToInt,
+    UInt8ToByte,
+    UInt32ToByte,
+}

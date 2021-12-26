@@ -15,12 +15,13 @@ import Contracts from "./susy/contracts";
 import * as bip39 from 'bip39'
 import {hdkey} from "ethereumjs-wallet";
 import processVAA from "./susy/vaaService";
+import createGuardianBox from "./susy/init/guardianBox";
 // const hdkey = require('ethereumjs-wallet/hdkey');
 
 const main = () => {
+    // createGuardianBox(1).then(() => null)
     const tou8 = require('buffer-to-uint8array');
     const vaa = generateVaa()
-    console.log(vaa)
     processVAA(tou8(Buffer.from(vaa, "hex"))).then((res) => console.log(res))
     // issueTokens().then((tokens) => console.log(tokens))
     // initializeServiceBoxes().then(() => null)

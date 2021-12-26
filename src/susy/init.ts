@@ -6,6 +6,7 @@ import createGuardianBox from "./init/guardianBox";
 import {createAndSignTx, fetchBoxesAndIssueToken, getSecret, sendAndWaitTx} from "./init/util";
 import {wormhole} from "../config/keys";
 import {sign} from "../utils/ecdsa";
+import * as codec from '../utils/codec';
 
 const issueBankIdentifier = async (secret: wasm.SecretKey) => {
     return await fetchBoxesAndIssueToken(secret, 10000, "Bank Identifier", "Wormhole Bank Boxes Identifier", 0)
@@ -169,32 +170,30 @@ const generateVaa = () => {
         BigIntToHexString(BigInt(5)),
     ]
     const observationParts = [
-        "00000000",     // timestamp
-        "00000000",     // nonce
-        "00",           // consistencyLevel,
-        "01",           // emmiter chain
+        codec.UInt32ToByte(1234567),    // timestamp
+        codec.UInt32ToByte(5327),       // nonce
+        codec.UInt8ToByte(0),           // consistencyLevel,
+        codec.UInt8ToByte(1),           // emitter chain
         "74e7b65055d170d36d4fb926102fe6e047390980f66611f541f1b8268cbd5a25",  // emitter address
         ...payload,
     ]
     const observation = observationParts.join("")
     let signatures = "06";
     signatures += wormhole.map((item, index) => `0${index}` + sign(Buffer.from(observation, "hex"),Buffer.from(item.privateKey, "hex"))).join("")
-
     const vaaParts = [
-        "02", // version
-        "00000000", // guardian set index
+        codec.UInt8ToByte(2),       // version
+        codec.UInt32ToByte(1),      // guardian set index
         signatures,
         ...observationParts
     ]
-    const vaaHex = vaaParts.join("")
-    return vaaHex
+    return vaaParts.join("")
 }
 
 const initializeServiceBoxes = async () => {
     await createWormholeBox();
     await createSponsorBox();
     await createBankBox("voUSDT1", "this is a testing token for susy version 2 ergo gateway", 2, 1e15)
-    await createGuardianBox();
+    await createGuardianBox(1);
 }
 
 export {
