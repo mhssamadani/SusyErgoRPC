@@ -12,13 +12,12 @@ export class Boxes {
             sponsorValue,
             await Contracts.generateSponsorContract(),
             0
-        )
-            .build();
+        ).build();
     }
 
-    static async getBank(tokenCount:I64){
-        const value=ergoLib.BoxValue.from_i64(ergoLib.I64.from_str("1000000000"));
-        const bankBuilder= new ergoLib.ErgoBoxCandidateBuilder(
+    static async getBank(tokenCount: I64) {
+        const value = ergoLib.BoxValue.from_i64(ergoLib.I64.from_str("1000000000"));
+        const bankBuilder = new ergoLib.ErgoBoxCandidateBuilder(
             value,
             await Contracts.generateBankContract(),
             0

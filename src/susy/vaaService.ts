@@ -32,7 +32,7 @@ export default async function processVAA(vaaBytes: Uint8Array) {
     if(!boxes.covered){
         throw new Error("[-] insufficient box found to issue new vaa")
     }
-    const ergoBoxes = wasm.ErgoBoxes.from_boxes_json(boxes.boxes.map(box => box))
+    const ergoBoxes = wasm.ErgoBoxes.from_boxes_json(boxes.boxes.map(box => JSON.stringify(box)))
     await ApiNetwork.sendTx((await issueVAA(ergoBoxes, vaa, config.vaaSourceBoxAddress)));
     return true
 }

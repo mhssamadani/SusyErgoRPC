@@ -26,8 +26,11 @@ export class WormholeSignature {
 
     fromString(signatureHexString: string) {
         if (signatureHexString.startsWith("0x")) signatureHexString = signatureHexString.slice(2)
-        this.index = parseInt(signatureHexString.slice(0, 2), 16)
-        this.signatureData = new Uint8Array(Buffer.from(signatureHexString.slice(2), "hex"))
+        if(signatureHexString.length > 65 * 2) {
+            this.index = parseInt(signatureHexString.slice(0, 2), 16)
+            signatureHexString = signatureHexString.slice(2)
+        }
+        this.signatureData = new Uint8Array(Buffer.from(signatureHexString, "hex"))
     }
 
     fromBytes(signatureBytes: Uint8Array) {
@@ -94,14 +97,20 @@ export default class VAA {
     }
 
     hexData() {
+        return this.observation()
+    }
+
+    observationWithoutPayload = () => {
         let timestamp = codec.UInt32ToByte(this.timestamp)
         let nonce = codec.UInt32ToByte(this.nonce)
         let consistency = codec.UInt8ToByte(this.consistencyLevel)
         let emitterChain = codec.UInt8ToByte(this.EmitterChain)
         let emitterAddress = Buffer.from(this.EmitterAddress).toString("hex")
-        let payload = this.payload.toString()
-        return `${timestamp}${nonce}${consistency}${emitterChain}${emitterAddress}${payload}`
+        return `${timestamp}${nonce}${consistency}${emitterChain}${emitterAddress}`
     }
 
+    observation = () => {
+        return `${this.observationWithoutPayload()}${this.payload.toString()}`
+    }
 }
 

@@ -67,7 +67,7 @@ const createGuardianBox = async (index: number) => {
         if(!ergBoxes.covered) {
             throw Error("insufficient boxes to issue guardian box")
         }
-        ergBoxes.boxes.forEach(item => boxes.push(wasm.ErgoBox.from_json(item)))
+        ergBoxes.boxes.forEach(item => boxes.push(wasm.ErgoBox.from_json(JSON.stringify(item))))
     }
     const candidate = builder.build()
     const inputBoxes = new wasm.ErgoBoxes(boxes[0])

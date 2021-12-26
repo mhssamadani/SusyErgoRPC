@@ -3,7 +3,6 @@ import config from "../config/conf";
 import Contracts from "../susy/contracts";
 const ergoLib = require("ergo-lib-wasm-nodejs");
 
-
 const URL = config.node;
 const nodeClient = axios.create({
     baseURL: URL,
@@ -76,24 +75,42 @@ export default class ApiNetwork {
         if(!box.covered){
             throw Error("guardian box not found")
         }
-        return JSON.parse(box.boxes[0])
+        return box.boxes[0]
     }
 
-    static getVAABoxes = () => {
-        return explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${config.token.VAAT}`).then(res => res.data.items)
+    static getVAABoxes = async () => {
+        const vaaAddress = await Contracts.generateVAAContract()
+        const boxes = await ApiNetwork.getCoveringErgoAndTokenForAddress(
+            vaaAddress.ergo_tree().to_base16_bytes(),
+            1e18,
+            {},
+            box => {
+                if(!box.hasOwnProperty('assets')){
+                    return false
+                }
+                let found = false
+                box.assets.forEach((item: { tokenId: string }) => {
+                    if(item.tokenId === config.token.VAAT) found = true
+                });
+                return found
+            }
+        )
+        return boxes.boxes;
     }
 
-    static getWormholeBox = () => {
-        return explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${config.token.wormholeNFT}`).then(res => res.data.items[0])
+    static getWormholeBox = async () => {
+        const box = await explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${config.token.wormholeNFT}`)
+        return await ApiNetwork.trackMemPool(box.data.items[0], 1)
     }
 
     static getBankBox = () => {
         return explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${config.token.bankNFT}`).then(res => res.data.items[0])
     }
 
-    static getSponsorBox = () => {
-        let address = Contracts.generateSponsorContract()
-        return explorerApi.get(`/api/v1/boxes/unspent/byAddress/${address}`).then(res => res.data.items[0])
+    static getSponsorBox = async () => {
+        let address = ergoLib.Address.recreate_from_ergo_tree((await Contracts.generateSponsorContract()).ergo_tree()).to_base58(config.networkType)
+        const box = await explorerApi.get(`/api/v1/boxes/unspent/byAddress/${address}`)
+        return await ApiNetwork.trackMemPool(box.data.items[0], 1)
     }
 
     static getTransaction = async (txId: string) => {
@@ -103,7 +120,7 @@ export default class ApiNetwork {
     static trackMemPool = async (box: any, index: number): Promise<any> => {
         let mempoolTxs = await explorerApi.get(`/api/v1/mempool/transactions/byAddress/${box.address}`).then(res => res.data)
         if (mempoolTxs.total == 0) return box
-        for (const tx of mempoolTxs.items.array) {
+        for (const tx of mempoolTxs.items) {
             if (tx.inputs[index].boxId == box.boxId) {
                 let newVAABox = tx.outputs[index]
                 return ApiNetwork.trackMemPool(newVAABox, index)
@@ -135,7 +152,7 @@ export default class ApiNetwork {
             for(let box of boxes.items){
                 if(filter(box)){
                     selectedIds.push(box.boxId)
-                    res.push(JSON.stringify(box));
+                    res.push(box);
                     amount -= box.value;
                     box.assets.map((asset: any) => {
                         if(covering.hasOwnProperty(asset.tokenId)){

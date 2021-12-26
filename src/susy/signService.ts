@@ -1,9 +1,9 @@
 import config from "../config/conf";
 import ApiNetwork from "../network/api";
 import * as wasm from 'ergo-lib-wasm-nodejs'
-import * as Utils from '../utils/codec'
+import * as codec from '../utils/codec'
 import { verify } from "../utils/ecdsa";
-
+import {updateVAABox} from "./transaction";
 const ecurve = require('ecurve')
 const BigInteger = require('bigi')
 const { blake2b } = require("ethereum-cryptography/blake2b")
@@ -15,7 +15,7 @@ function rand() {
 }
 
 function checkSign(box: any): boolean {
-    let checkpoint = box.additionalRegisters.R7.renderedValue.slice(1).split(",")[0]
+    let checkpoint = JSON.parse(box.additionalRegisters.R7.renderedValue)[0]
     if ((checkpoint & Math.pow(2, config.guardian.index)) > 0) return true
     return false
 }
@@ -28,24 +28,16 @@ function signMsg(msg: Uint8Array, sk: string) {
         let msgHash = blake2b(msg, 32).toString('hex')
         let z: any = r.add(BigInteger.fromHex(sk).multiply(BigInteger.fromHex(msgHash))).remainder(ecParams.n)
         if (z.bitCount() < 256) {
-            return (a.getEncoded().toString('hex'), z.toString(16))
+            return [a.getEncoded().toString('hex'), z.toString(16)]
         }
     }
 }
 
 function verifyBoxSignatures(box: any, guardianBox: any): boolean {
-    let signatures = Utils.getBoxSignatures(box)
-    let guardianAddresses = Utils.getGuardianAddresses(guardianBox)
-    let vaaData = Utils.getVAADataFromBox(box)
-    let verified: number = 0
-
-    for (const sign of signatures) {
-        if (verify(vaaData, sign.toHex(), guardianAddresses[sign.index])) verified += 1
-    }
-
-    if (verified >= 4)
-        return true
-    return false
+    let signatures = codec.getBoxSignatures(box)
+    let guardianAddresses = codec.getGuardianAddresses(guardianBox)
+    let vaaData = codec.getVAADataFromBox(box)
+    return verify(vaaData, signatures[config.guardian.index].toHex(), guardianAddresses[config.guardian.index])
 }
 
 export default async function signService() {
@@ -59,18 +51,25 @@ export default async function signService() {
 
         if (checkSign(lastBox)) continue
 
-        let guardianBoxJson = await ApiNetwork.getGuardianBox(0)
-
+        let guardianBoxJson = await ApiNetwork.getGuardianBox(1)
         if (!verifyBoxSignatures(lastBox, guardianBoxJson)) continue
 
-        let msg = Utils.strToUint8Array(Utils.getVAADataFromBox(lastBox))
+        let msg = codec.strToUint8Array(codec.getVAADataFromBox(lastBox))
         let signatureData = signMsg(msg, config.guardian.privateKey)
 
-        let wormholeBox = wasm.ErgoBox.from_json(await ApiNetwork.trackMemPool(ApiNetwork.getWormholeBox(), 1))
-        let sponsorBox = wasm.ErgoBox.from_json(await ApiNetwork.trackMemPool(ApiNetwork.getSponsorBox(), 1))
-        let guardianBox = wasm.ErgoBox.from_json(guardianBoxJson)
-
-        // TODO: import updateVAABox properly
-        // updateVAABox(wormholeBox, box, sponsorBox, guardianBox, config.guardian.index, signatureData[0], signatureData[1])
+        let wormholeBox = wasm.ErgoBox.from_json(JSON.stringify(await ApiNetwork.getWormholeBox()))
+        let sponsorBox = wasm.ErgoBox.from_json(JSON.stringify(await ApiNetwork.getSponsorBox()))
+        let guardianBox = wasm.ErgoBox.from_json(JSON.stringify(guardianBoxJson))
+        const vaaBox = wasm.ErgoBox.from_json(JSON.stringify(box));
+        console.log("start generating transaction")
+        await updateVAABox(
+            wormholeBox,
+            vaaBox,
+            sponsorBox,
+            guardianBox,
+            config.guardian.index,
+            Uint8Array.from(Buffer.from(signatureData[0], "hex")),
+            Uint8Array.from(Buffer.from(signatureData[1], "hex")),
+        )
     }
 }

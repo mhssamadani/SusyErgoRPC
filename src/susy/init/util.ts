@@ -105,7 +105,7 @@ const fetchBoxesAndIssueToken = async (
     if (!boxes.covered) {
         throw Error("insufficient boxes to issue bank identifier")
     }
-    boxes.boxes.forEach((boxStr: string) => outputBoxes.push(wasm.ErgoBox.from_json(boxStr)))
+    boxes.boxes.forEach((box) => outputBoxes.push(wasm.ErgoBox.from_json(JSON.stringify(box))))
     const inputBoxes = new wasm.ErgoBoxes(outputBoxes[0]);
     outputBoxes.slice(1,).forEach(box => inputBoxes.add(box))
     const {tx, id} = await issueToken(secret, inputBoxes, amount, name, description, decimal)

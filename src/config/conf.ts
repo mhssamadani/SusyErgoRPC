@@ -21,29 +21,16 @@ const config = {
     fee: 1100000,
     bridgeId: 10,
     guardian: {
-        index: 1,
-        privateKey: "",
+        index: 0,
+        privateKey: "3e600b60d82da99c55959df4bb4ceb139cbe434a948251b371c6d9eeb73cb723",
     },
-    service: "none",
+    service: "sign",
     initializer: {
         secret: "b1ef2a340ca2e639858446a4b42ac24cf90a84ca1aad72e827fbc5b29390b73e",
         address: "9fo5LQvJJigxgGJ4Qv5KZGq5nMHLHomX4h1nPPo1JKxcPKa3myL"
     },
     vaaSourceBoxAddress: "9fo5LQvJJigxgGJ4Qv5KZGq5nMHLHomX4h1nPPo1JKxcPKa3myL",
     port: 8080,
-    guardianPublicKey: [{
-        secret: "17b42abec839188f816f2b0c39be2a401bb05a0a152db37e87f76bb5ae38f6db",
-        address: "9fgWxhrZhv6HAYzygkT5JcKbNggu9quRAsWFmJ7V5EuyxA7Je7E"
-    }, {
-        secret: "a8e847fafe76a04a2359eadd33fb1a32ddec44ddc04aae83a3cbf344dcebf8c6",
-        address: "9fn1pqvH3ZA6WZ1tnyv3DthKqBuSAPKjpZPvNXJNd1iCHRbnjNv"
-    }, {
-        secret: "3e1c8ed6683562971b689712a24c9be2a10f5ad108e9b2ad1fb65585f14ffb62",
-        address: "9hHZCkAbXvcknUGQizg7eLGodbSgEMXsHFBLf3kefFG9QJev7jL"
-    }, {
-        secret: "3e1c8ed6683562971b689712a24c9be2a10f5ad108e9b2ad1fb65585f14ffb62",
-        address: "9hHZCkAbXvcknUGQizg7eLGodbSgEMXsHFBLf3kefFG9QJev7jL"
-    }]
 }
 
 export default config

@@ -47,7 +47,7 @@ const createWormholeBox = async () => {
     if (!ergBoxes.covered) {
         throw Error("insufficient boxes to issue bank identifier")
     }
-    ergBoxes.boxes.forEach(item => boxes.add(wasm.ErgoBox.from_json(item)))
+    ergBoxes.boxes.forEach(item => boxes.add(wasm.ErgoBox.from_json(JSON.stringify(item))))
     const candidateBuilder = new wasm.ErgoBoxCandidateBuilder(
         wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
         contract,
@@ -70,7 +70,7 @@ const createSponsorBox = async () => {
     if (!ergBoxes.covered) {
         throw Error("insufficient boxes to issue bank identifier")
     }
-    const wasmBoxes = ergBoxes.boxes.map(item => wasm.ErgoBox.from_json(item))
+    const wasmBoxes = ergBoxes.boxes.map(item => wasm.ErgoBox.from_json(JSON.stringify(item)))
     const boxes = new wasm.ErgoBoxes(wasmBoxes[0])
     wasmBoxes.slice(1).forEach(item => boxes.add(item))
     const candidate = new wasm.ErgoBoxCandidateBuilder(
@@ -105,7 +105,7 @@ const createBankBox = async (name: string, description: string, decimal: number,
         if(!ergBoxes.covered) {
             throw Error("insufficient boxes to issue bank identifier")
         }
-        ergBoxes.boxes.forEach(item => boxes.push(wasm.ErgoBox.from_json(item)))
+        ergBoxes.boxes.forEach(item => boxes.push(wasm.ErgoBox.from_json(JSON.stringify(item))))
     }
     const candidateBuilder = new wasm.ErgoBoxCandidateBuilder(
         wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
@@ -162,7 +162,7 @@ const generateVaa = () => {
     buff.writeBigUInt64BE(BigInt(100));
     const payload = [
         "00",
-        BigIntToHexString(BigInt(100)),
+        BigIntToHexString(BigInt(120)),
         wasm.TokenId.from_str(config.token.bankToken).to_str(),
         "0002",     // SOLANA
         uint8arrayToHex(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_bytes(config.networkType)),
@@ -170,8 +170,8 @@ const generateVaa = () => {
         BigIntToHexString(BigInt(5)),
     ]
     const observationParts = [
-        codec.UInt32ToByte(1234567),    // timestamp
-        codec.UInt32ToByte(5327),       // nonce
+        codec.UInt32ToByte(1231829),    // timestamp
+        codec.UInt32ToByte(25327),       // nonce
         codec.UInt8ToByte(0),           // consistencyLevel,
         codec.UInt8ToByte(1),           // emitter chain
         "74e7b65055d170d36d4fb926102fe6e047390980f66611f541f1b8268cbd5a25",  // emitter address
