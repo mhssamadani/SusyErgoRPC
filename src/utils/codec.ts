@@ -19,14 +19,14 @@ export function getGuardianAddresses(guardianBox: any) {
     return addresses
 }
 
-export function getBoxSignatures(box: any) {
-    let arr = box.register_value(5)?.to_coll_coll_byte()
+export const getBoxSignatures = (box: wasm.ErgoBox) => {
+    let arr = box.register_value(5)?.to_coll_coll_byte()!
     let signatures: Array<WormholeSignature> = []
-    for (const i of arr) {
-        let wormholeSignature = new WormholeSignature(i)
-        wormholeSignature.fromString(arr[i])
+    arr.map((item, index) => {
+        let wormholeSignature = new WormholeSignature(index)
+        wormholeSignature.fromString(Buffer.from(item).toString('hex'))
         signatures.push(wormholeSignature)
-    };
+    })
     return signatures
 }
 

@@ -144,7 +144,7 @@ const BigIntToHexString = (num: bigint) => {
 }
 
 const uint8arrayToHex = (arr: Uint8Array) => {
-    return Array.prototype.map.call(arr, x => ('00' + x.toString(16)).slice(-2)).join("")
+    return Buffer.from(arr).toString('hex')
 }
 
 const generateVaa = () => {
