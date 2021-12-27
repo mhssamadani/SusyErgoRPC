@@ -11,6 +11,7 @@ import ApiNetwork from "../../network/api";
 import Contracts from "../contracts";
 import {wormhole} from "../../config/keys";
 import {ergo} from "../../config/keys";
+import {Boxes} from "../boxes";
 
 const wormholeAddress = () => {
     const mnemonic = bip39.generateMnemonic(160)
@@ -34,22 +35,6 @@ const ergoAddress = () => {
 const createGuardianBox = async (index: number) => {
     const secret = getSecret();
     const height = await ApiNetwork.getHeight();
-    const contract: wasm.Contract = await Contracts.generateGuardianContract();
-    const tou8 = require('buffer-to-uint8array');
-    // const ergoAddresses = Array(6).fill("").map(item => ergoAddress())
-    // const wormholeAddresses = Array(6).fill("").map(item => wormholeAddress())
-    // console.log(ergoAddresses, wormholeAddresses)
-    const wormholePublic = wormhole.map(item => tou8(Buffer.from(item.address.substring(2), "hex")))
-    const ergoPublic = ergo.map(item => tou8(Buffer.from(item.publicKey, "hex")))
-    const builder = new wasm.ErgoBoxCandidateBuilder(
-        wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
-        contract,
-        height
-    )
-    builder.set_register_value(4, wasm.Constant.from_coll_coll_byte(wormholePublic))
-    builder.set_register_value(5, wasm.Constant.from_coll_coll_byte(ergoPublic))
-    builder.set_register_value(6, wasm.Constant.from_i32(index))
-    builder.add_token(wasm.TokenId.from_str(config.token.guardianToken), wasm.TokenAmount.from_i64(wasm.I64.from_str("1")))
     const NFTBoxes = await ApiNetwork.getBoxWithToken(config.token.guardianToken)
     let boxes: Array<wasm.ErgoBox> = []
     try {
@@ -69,7 +54,7 @@ const createGuardianBox = async (index: number) => {
         }
         ergBoxes.boxes.forEach(item => boxes.push(wasm.ErgoBox.from_json(JSON.stringify(item))))
     }
-    const candidate = builder.build()
+    const candidate = await Boxes.getGuardianBox(0)
     const inputBoxes = new wasm.ErgoBoxes(boxes[0])
     boxes.slice(1).forEach(item => inputBoxes.add(item))
     await sendAndWaitTx(await createAndSignTx(secret, inputBoxes, [candidate], height));

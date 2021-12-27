@@ -7,6 +7,7 @@ import {createAndSignTx, fetchBoxesAndIssueToken, getSecret, sendAndWaitTx} from
 import {wormhole} from "../config/keys";
 import {sign} from "../utils/ecdsa";
 import * as codec from '../utils/codec';
+import {Boxes} from "./boxes";
 
 const issueBankIdentifier = async (secret: wasm.SecretKey) => {
     return await fetchBoxesAndIssueToken(secret, 10000, "Bank Identifier", "Wormhole Bank Boxes Identifier", 0)
@@ -34,7 +35,6 @@ const issueGuardianToken = async (secret: wasm.SecretKey) => {
 
 const createWormholeBox = async () => {
     const height = await ApiNetwork.getHeight();
-    const contract = await Contracts.generateWormholeContract();
     const box = await ApiNetwork.getBoxWithToken(config.token.wormholeNFT)
     const secret = getSecret()
     const boxes = new wasm.ErgoBoxes(wasm.ErgoBox.from_json(JSON.stringify(box.items[0])))
@@ -48,19 +48,12 @@ const createWormholeBox = async () => {
         throw Error("insufficient boxes to issue bank identifier")
     }
     ergBoxes.boxes.forEach(item => boxes.add(wasm.ErgoBox.from_json(JSON.stringify(item))))
-    const candidateBuilder = new wasm.ErgoBoxCandidateBuilder(
-        wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
-        contract,
-        0
-    )
-    candidateBuilder.add_token(wasm.TokenId.from_str(config.token.wormholeNFT), wasm.TokenAmount.from_i64(wasm.I64.from_str("1")))
-    const candidate = candidateBuilder.build()
+    const candidate = await Boxes.getWormholeBox()
     await sendAndWaitTx(await createAndSignTx(secret, boxes, [candidate], height))
 }
 
 const createSponsorBox = async () => {
     const height = await ApiNetwork.getHeight();
-    const contract = await Contracts.generateSponsorContract();
     const secret = getSecret()
     const ergBoxes = await ApiNetwork.getCoveringForAddress(
         secret.get_address().to_ergo_tree().to_base16_bytes().toString(),
@@ -73,11 +66,7 @@ const createSponsorBox = async () => {
     const wasmBoxes = ergBoxes.boxes.map(item => wasm.ErgoBox.from_json(JSON.stringify(item)))
     const boxes = new wasm.ErgoBoxes(wasmBoxes[0])
     wasmBoxes.slice(1).forEach(item => boxes.add(item))
-    const candidate = new wasm.ErgoBoxCandidateBuilder(
-        wasm.BoxValue.from_i64(wasm.I64.from_str(1e9.toString())),
-        contract,
-        0
-    ).build()
+    const candidate = await Boxes.getSponsorBox(1e9)
     await sendAndWaitTx(await createAndSignTx(secret, boxes, [candidate], height))
 }
 
@@ -96,13 +85,13 @@ const createBankBox = async (name: string, description: string, decimal: number,
         throw Error("bank identifier or nft not found")
     }
     const required = 3 * config.fee - boxes.map(box => box.value().as_i64().as_num()).reduce((a, b) => a + b, 0)
-    if(required > 0){
+    if (required > 0) {
         const ergBoxes = await ApiNetwork.getCoveringForAddress(
             secret.get_address().to_ergo_tree().to_base16_bytes().toString(),
             required,
             (box) => wasm.ErgoBox.from_json(JSON.stringify(box)).tokens().len() === 0
         )
-        if(!ergBoxes.covered) {
+        if (!ergBoxes.covered) {
             throw Error("insufficient boxes to issue bank identifier")
         }
         ergBoxes.boxes.forEach(item => boxes.push(wasm.ErgoBox.from_json(JSON.stringify(item))))
@@ -129,6 +118,7 @@ const createBankBox = async (name: string, description: string, decimal: number,
 
 const issueTokens = async () => {
     const secret = getSecret();
+    console.log(secret.get_address().to_base58(config.networkType))
     const bankIdentifier = await issueBankIdentifier(secret);
     const vaaIdentifier = await issueVaaIdentifier(secret)
     const wormholeNFT = await issueWormHoleNFT(secret)
@@ -154,16 +144,16 @@ const BigIntToHexString = (num: bigint) => {
 }
 
 const uint8arrayToHex = (arr: Uint8Array) => {
-    return Array.prototype.map.call(arr, x=> ('00' + x.toString(16)).slice(-2)).join("")
+    return Buffer.from(arr).toString('hex')
 }
 
 const generateVaa = () => {
     let buff = (new Buffer(32)).fill(0)
     buff.writeBigUInt64BE(BigInt(100));
     const payload = [
-        "00",
-        BigIntToHexString(BigInt(120)),
-        wasm.TokenId.from_str(config.token.bankToken).to_str(),
+        "00",   // id
+        BigIntToHexString(BigInt(120)),     // amount
+        wasm.TokenId.from_str(config.token.bankToken).to_str(),     //
         "0002",     // SOLANA
         uint8arrayToHex(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_bytes(config.networkType)),
         "0003",
@@ -179,7 +169,7 @@ const generateVaa = () => {
     ]
     const observation = observationParts.join("")
     let signatures = "06";
-    signatures += wormhole.map((item, index) => `0${index}` + sign(Buffer.from(observation, "hex"),Buffer.from(item.privateKey, "hex"))).join("")
+    signatures += wormhole.map((item, index) => `0${index}` + sign(Buffer.from(observation, "hex"), Buffer.from(item.privateKey, "hex"))).join("")
     const vaaParts = [
         codec.UInt8ToByte(2),       // version
         codec.UInt32ToByte(1),      // guardian set index

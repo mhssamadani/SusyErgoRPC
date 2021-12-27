@@ -1,12 +1,14 @@
 import Contracts from "./contracts";
 import config from "../config/conf";
-import {I64} from "ergo-lib-wasm-nodejs";
+import * as wasm from "ergo-lib-wasm-nodejs";
+import {ergo, wormhole} from "../config/keys";
+import {Buffer} from "buffer";
 
 const ergoLib = require("ergo-lib-wasm-nodejs");
 
 export class Boxes {
     // TODO: should checked I64 or number is ok
-    static async getSponsor(value: number) {
+    static getSponsorBox = async (value: number) => {
         const sponsorValue = ergoLib.BoxValue.from_i64(ergoLib.I64.from_str(value.toString()));
         return new ergoLib.ErgoBoxCandidateBuilder(
             sponsorValue,
@@ -15,7 +17,7 @@ export class Boxes {
         ).build();
     }
 
-    static async getBank(tokenCount: I64) {
+    static getBank = async (tokenCount: wasm.I64) => {
         const value = ergoLib.BoxValue.from_i64(ergoLib.I64.from_str("1000000000"));
         const bankBuilder = new ergoLib.ErgoBoxCandidateBuilder(
             value,
@@ -37,5 +39,33 @@ export class Boxes {
         //     )
         // );
         return bankBuilder.build();
+    }
+
+    static getWormholeBox = async () => {
+        const contract = await Contracts.generateWormholeContract();
+        const candidateBuilder = new wasm.ErgoBoxCandidateBuilder(
+            wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
+            contract,
+            0
+        )
+        candidateBuilder.add_token(wasm.TokenId.from_str(config.token.wormholeNFT), wasm.TokenAmount.from_i64(wasm.I64.from_str("1")))
+        return candidateBuilder.build()
+    }
+
+    static getGuardianBox = async (index: number) => {
+        const contract: wasm.Contract = await Contracts.generateGuardianContract();
+        const tou8 = require('buffer-to-uint8array');
+        const wormholePublic = wormhole.map(item => tou8(Buffer.from(item.address.substring(2), "hex")))
+        const ergoPublic = ergo.map(item => tou8(Buffer.from(item.publicKey, "hex")))
+        const builder = new wasm.ErgoBoxCandidateBuilder(
+            wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
+            contract,
+            0
+        )
+        builder.set_register_value(4, wasm.Constant.from_coll_coll_byte(wormholePublic))
+        builder.set_register_value(5, wasm.Constant.from_coll_coll_byte(ergoPublic))
+        builder.set_register_value(6, wasm.Constant.from_i32(index))
+        builder.add_token(wasm.TokenId.from_str(config.token.guardianToken), wasm.TokenAmount.from_i64(wasm.I64.from_str("1")))
+        return builder.build()
     }
 }
