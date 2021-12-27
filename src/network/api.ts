@@ -3,6 +3,7 @@ import config from "../config/conf";
 import Contracts from "../susy/contracts";
 const ergoLib = require("ergo-lib-wasm-nodejs");
 
+
 const URL = config.node;
 const nodeClient = axios.create({
     baseURL: URL,
@@ -38,7 +39,7 @@ export default class ApiNetwork {
     };
 
     // TODO: should checked with new function
-    static getErgoStateContexet = async () => {
+    static getErgoStateContext = async () => {
         const blockHeaderJson = await this.getLastBlockHeader();
         const blockHeaders = ergoLib.BlockHeaders.from_json(blockHeaderJson);
         const preHeader = ergoLib.PreHeader.from_block_header(blockHeaders.get(0));
@@ -49,8 +50,33 @@ export default class ApiNetwork {
         return explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${token}`).then(res => res.data)
     }
 
-    static getGuardianBox = () => {
-        ApiNetwork.getBoxWithToken(config.token.guardianNFT).then(res => res.items[0])
+    static getGuardianBox = async (setIndex: number) => {
+        const guardianAddress = await Contracts.generateGuardianContract()
+        const box = await ApiNetwork.getCoveringErgoAndTokenForAddress(
+            guardianAddress.ergo_tree().to_base16_bytes(),
+            0,
+            {[config.token.guardianToken]: 1},
+            box => {
+                if(!box.hasOwnProperty('assets')){
+                    return false
+                }
+                let found = false
+                box.assets.forEach((item: { tokenId: string }) => {
+                    if(item.tokenId === config.token.guardianToken) found = true
+                });
+                if(!found) return false
+                if(box.hasOwnProperty('additionalRegisters')){
+                    if(box.additionalRegisters.hasOwnProperty('R6')){
+                        return box.additionalRegisters.R6.renderedValue === setIndex.toString()
+                    }
+                }
+                return false
+            }
+        )
+        if(!box.covered){
+            throw Error("guardian box not found")
+        }
+        return JSON.parse(box.boxes[0])
     }
 
     static getVAABoxes = () => {
@@ -70,13 +96,17 @@ export default class ApiNetwork {
         return explorerApi.get(`/api/v1/boxes/unspent/byAddress/${address}`).then(res => res.data.items[0])
     }
 
-    static trackMempool = async (box: any, index: number): Promise<any> => {
+    static getTransaction = async (txId: string) => {
+        return await explorerApi.get(`/api/v1/transactions/${txId}`).then(res => res.data)
+    }
+
+    static trackMemPool = async (box: any, index: number): Promise<any> => {
         let mempoolTxs = await explorerApi.get(`/api/v1/mempool/transactions/byAddress/${box.address}`).then(res => res.data)
         if (mempoolTxs.total == 0) return box
         for (const tx of mempoolTxs.items.array) {
             if (tx.inputs[index].boxId == box.boxId) {
                 let newVAABox = tx.outputs[index]
-                return ApiNetwork.trackMempool(newVAABox, index)
+                return ApiNetwork.trackMemPool(newVAABox, index)
             }
         }
         return box
@@ -86,23 +116,38 @@ export default class ApiNetwork {
         return explorerApi.get(`/api/v1/boxes/unspent/byErgoTree/${tree}?offset=${offset}&limit=${limit}`).then(res => res.data);
     }
 
-    static getCoveringForAddress = async (tree: string, amount: number, ignoreBoxes: Array<string> = [], filter: (box: any) => boolean = () => true) => {
+    static getCoveringForAddress = async (tree: string, amount: number, filter: (box: any) => boolean = () => true) => {
+        return ApiNetwork.getCoveringErgoAndTokenForAddress(tree, amount);
+    }
+
+    static getCoveringErgoAndTokenForAddress = async (tree: string, amount: number, covering: {[id: string]: number} = {}, filter: (box: any) => boolean = () => true) => {
         let res = []
         const boxesItems = await ApiNetwork.getBoxesForAddress(tree, 0, 1)
         const total = boxesItems.total;
         let offset = 0;
         let selectedIds: Array<string> = [];
-        while (offset < total && amount > 0){
+        const remaining = () => {
+            const tokenRemain = Object.entries(covering).map(([key, amount]) => Math.max(amount, 0)).reduce((a,b) => a+b, 0);
+            return tokenRemain + Math.max(amount, 0) > 0;
+        }
+        while (offset < total && remaining()){
             const boxes = await ApiNetwork.getBoxesForAddress(tree, offset, 10)
             for(let box of boxes.items){
-                if(ignoreBoxes.indexOf(box.boxId) < 0 && filter(box)){
+                if(filter(box)){
                     selectedIds.push(box.boxId)
                     res.push(JSON.stringify(box));
                     amount -= box.value;
-                    if(amount <= 0) break
+                    box.assets.map((asset: any) => {
+                        if(covering.hasOwnProperty(asset.tokenId)){
+                            covering[asset.tokenId] -= asset.amount;
+                        }
+                    })
+                    if(!remaining()) break
                 }
             }
+            offset += 10;
         }
-        return {boxes: res, covered: amount <= 0, selectedIds: selectedIds}
+        return {boxes: res, covered: !remaining(), selectedIds: selectedIds}
+
     }
 }

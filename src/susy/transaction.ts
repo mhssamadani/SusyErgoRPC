@@ -1,88 +1,38 @@
-import {ErgoBox} from "ergo-lib-wasm-nodejs";
+import {ErgoBoxes, ErgoBox} from "ergo-lib-wasm-nodejs";
 import config from "../config/conf";
 import {Boxes} from "./boxes";
 import Contracts from "./contracts";
 import ApiNetwork from "../network/api";
-import {hexStringToByte, strToUint8Array} from "../utils/decodeEncode";
+import {hexStringToByte, strToUint8Array} from "../utils/codec";
 import VAA from "../models/models";
-
+import * as codec from '../utils/codec';
+import {createAndSignTx} from "./init/util";
 const ergoLib = require("ergo-lib-wasm-nodejs");
 
 
-const issueVAA = async (VAASourceBox: ErgoBox, VAAMessage: any, VAAAuthorityAddress: string) => {
+const issueVAA = async (VAASourceBox: ErgoBoxes, VAAMessage: VAA, VAAAuthorityAddress: string) => {
+    const height = await ApiNetwork.getHeight();
     const VAAAuthorityAddressSigma = ergoLib.Address.from_base58(VAAAuthorityAddress);
     const VAABuilder = new ergoLib.ErgoBoxCandidateBuilder(
-        ergoLib.BoxValue.from_i64(
-            ergoLib.I64.from_str(
-                config.fee.toString()
-            )
-        ),
+        ergoLib.BoxValue.from_i64(ergoLib.I64.from_str(config.fee.toString())),
         await Contracts.generateVAAContract(),
         0
     );
 
     VAABuilder.add_token(
-        ergoLib.token.from_str(config.token.VAAT),
-        ergoLib.token.TokenAmount.from_i64(
-            ergoLib.I64.from_str(
-                "1"
-            )
-        )
+        ergoLib.TokenId.from_str(config.token.VAAT),
+        ergoLib.TokenAmount.from_i64(ergoLib.I64.from_str("1"))
     );
+    VAABuilder.set_register_value(4, ergoLib.Constant.from_coll_coll_byte([codec.strToUint8Array(VAAMessage.hexData()), VAAMessage.payload.bytes]));
+    VAABuilder.set_register_value(5, ergoLib.Constant.from_coll_coll_byte(VAAMessage.Signatures.map(item => codec.strToUint8Array(item.toHex()))));
 
-
-    // TODO: should check
-    VAABuilder.set_register_value(
-        4,
-        ergoLib.Constant.from_coll_coll_byte(
-            VAAMessage["observation"],
-            VAAMessage["payload"]
-        )
-    );
-    VAABuilder.set_register_value(
-        5,
-        ergoLib.Constant.from_coll_coll_byte(
-            VAAMessage["signature"])
-    );
-    VAABuilder.set_register_value(
-        6,
-        ergoLib.Constant.from_byte_array(
-            VAAAuthorityAddressSigma.to_bytes(
-                0
-            )
-        )
-    );
-    VAABuilder.set_register_value(
-        7,
-        ergoLib.Constant.from_i32_array(
-            [0, 0, 0]
-        )
-    );
+    VAABuilder.set_register_value(6, ergoLib.Constant.from_byte_array(VAAAuthorityAddressSigma.to_bytes(0)));
+    VAABuilder.set_register_value(7, ergoLib.Constant.from_i32_array([0, 0, 0]));
+    const secret = ergoLib.SecretKey.dlog_from_bytes(hexStringToByte(config.addressSecret))
     const outVAA = VAABuilder.build();
-    const inputBoxes = new ergoLib.ErgoBoxes(VAASourceBox);
-    const txOutput = new ergoLib.ErgoBoxCandidates(outVAA);
-    const boxSelection = new ergoLib.BoxSelection(inputBoxes, new ergoLib.ErgoBoxAssetsDataList());
-    const tx = ergoLib.TxBuilder.new(
-        boxSelection,
-        txOutput,
-        0,
-        ergoLib.BoxValue.from_i64(
-            ergoLib.I64.from_str(
-                config.fee.toString()
-            )
-        ),
-        ergoLib.Address.recreate_from_ergo_tree(VAAAuthorityAddressSigma.ergo_tree()),
-        ergoLib.BoxValue.SAFE_USER_MIN()
-    ).build();
-    const sks = new ergoLib.SecretKeys();
-    sks.add(ergoLib.SecretKey.dlog_from_bytes(strToUint8Array(config.addressSecret)));
-    const wallet = ergoLib.Wallet.from_secrets(sks);
-    const tx_data_inputs = ergoLib.ErgoBoxes.from_boxes_json([])
-
-    const ctx = await ApiNetwork.getErgoStateContexet();
-    const signedTx = wallet.sign_transaction(ctx, tx, inputBoxes, tx_data_inputs)
-    return signedTx.to_json();
+    return (await createAndSignTx(secret, VAASourceBox, [outVAA], height)).to_json()
 }
+
 
 const updateVAABox = async (
     wormhole: ErgoBox,
@@ -139,7 +89,7 @@ const updateVAABox = async (
     sks.add(ergoLib.SecretKey.dlog_from_bytes(hexStringToByte(ergoLib.Address.config.updateSK)));
     const wallet = ergoLib.Wallet.from_secrets(sks);
     const tx_data_inputs = new ergoLib.ErgoBoxes(guardianBox);
-    const ctx = await ApiNetwork.getErgoStateContexet();
+    const ctx = await ApiNetwork.getErgoStateContext();
     const signedTx = wallet.sign_transaction(ctx, tx, inputBoxes, tx_data_inputs)
     return signedTx.to_json();
 
@@ -216,7 +166,7 @@ const createPayment = async (bank: ErgoBox, VAABox: ErgoBox, sponsor: ErgoBox, g
     sks.add(ergoLib.SecretKey.dlog_from_bytes(strToUint8Array(config.addressSecret)));
     const wallet = ergoLib.Wallet.from_secrets(sks);
     const tx_data_inputs = new ergoLib.ErgoBoxes(guardianBox);
-    const ctx = await ApiNetwork.getErgoStateContexet();
+    const ctx = await ApiNetwork.getErgoStateContext();
     const signedTx = wallet.sign_transaction(ctx, tx, inputBoxes, tx_data_inputs)
     return signedTx.to_json();
 
@@ -274,10 +224,10 @@ const createRequest = async (bank: ErgoBox, application: ErgoBox, amount: number
     const wallet = ergoLib.Wallet.from_secrets(sks);
     const tx_data_inputs = ergoLib.ErgoBoxes.from_boxes_json([])
 
-    const ctx = await ApiNetwork.getErgoStateContexet();
+    const ctx = await ApiNetwork.getErgoStateContext();
     const signedTx = wallet.sign_transaction(ctx, tx, inputBoxes, tx_data_inputs)
     return signedTx.to_json();
 
 }
 
-export {createRequest};
+export {createRequest, issueVAA};

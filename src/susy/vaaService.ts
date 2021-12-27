@@ -1,46 +1,38 @@
 import VAA from "../models/models"
 import ApiNetwork from "../network/api";
 import * as wasm from 'ergo-lib-wasm-nodejs'
-import * as Utils from '../utils/decodeEncode'
-import { verify } from "../utils/ecdsa";
+import * as Utils from '../utils/codec'
+import {verify} from "../utils/ecdsa";
 import config from "../config/conf";
+import {issueVAA} from "./transaction";
 
-export function verifyVAASignatures(vaa: any, guardianBox: any): boolean {
+export function verifyVAASignatures(vaa: VAA, guardianBox: any): boolean {
     let signatures = vaa.Signatures
     let guardianAddresses = Utils.getGuardianAddresses(guardianBox)
     let vaaData = vaa.hexData()
-
+    let verified: number = 0
     for (const sign of signatures) {
-        if (!verify(vaaData, sign.toHex(), guardianAddresses[sign.index])) return false
+        if (verify(vaaData, sign.toHex(), guardianAddresses[sign.index])) verified += 1
     }
-    return true
+    return verified >= 4;
 }
 
 export default async function processVAA(vaaBytes: Uint8Array) {
     let vaa = new VAA(vaaBytes)
-    let msg = vaa.hexData()
-
-    let guardianBoxJson = await ApiNetwork.getGuardianBox()
-    let vaaSourceBox = wasm.ErgoBox.from_json(await ApiNetwork.getVAABoxes().then(res => {
-        for (const box of res) {
-            if (box.address == config.vaaSourceBoxAddress && box.value > 2 * config.fee) {
-                for (const token of box.assets) {
-                    if (token.tokenId == config.token.VAAT && token.value > 1) return box
-                }
-            }
-        }
-        throw new Error("[-] No VAA Source Box found")
-    }))
-
-    if (!verifyVAASignatures(msg, guardianBoxJson)) {
+    let guardianBoxJson = await ApiNetwork.getGuardianBox(vaa.GuardianSetIndex)
+    if (!verifyVAASignatures(vaa, guardianBoxJson)) {
         console.log("[-] verify signature failed")
         return false
     }
-    let wormholeBox = wasm.ErgoBox.from_json(await ApiNetwork.trackMempool(ApiNetwork.getBankBox(), 1))
-
-    // TODO: import issueVAABox properly
-    // issueVAABox(vaa)
-
-
+    const boxes = await ApiNetwork.getCoveringErgoAndTokenForAddress(
+        wasm.Address.from_base58(config.vaaSourceBoxAddress).to_ergo_tree().to_base16_bytes(),
+        config.fee * 3,
+        {[config.token.VAAT]: 1}
+    )
+    if(!boxes.covered){
+        throw new Error("[-] insufficient box found to issue new vaa")
+    }
+    const ergoBoxes = wasm.ErgoBoxes.from_boxes_json(boxes.boxes.map(box => box))
+    await ApiNetwork.sendTx((await issueVAA(ergoBoxes, vaa, config.vaaSourceBoxAddress)));
     return true
 }

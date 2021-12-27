@@ -12,7 +12,7 @@ export function getGuardianAddresses(guardianBox: any) {
     let addresses: Array<string> = []
 
     let arr = guardianBox.additionalRegisters.R4.renderedValue
-    arr.slice(1, arr.length - 1).split(",").array.forEach((element: string) => {
+    arr.slice(1, arr.length - 1).split(",").forEach((element: string) => {
         addresses.push(element)
     });
     return addresses
@@ -38,4 +38,26 @@ export function getVAADataFromBox(box: any) {
 
 export function strToUint8Array(str: string) {
     return new Uint8Array(Buffer.from(str, "hex"))
+}
+
+const arrayToInt = (bytes: Uint8Array, length: number) => {
+    return Buffer.from(bytes).readUIntBE(0, length)
+}
+
+const UInt32ToByte = (val: number) => {
+    const buff = Buffer.alloc(4, 0);
+    buff.writeUInt32BE(val)
+    return buff.toString("hex")
+}
+
+const UInt8ToByte = (val: number) => {
+    const buff = Buffer.alloc(1, 0);
+    buff.writeUInt8(val)
+    return buff.toString("hex")
+}
+
+export {
+    arrayToInt,
+    UInt8ToByte,
+    UInt32ToByte,
 }

@@ -1,8 +1,9 @@
-import { TextEncoder } from "util";
+import {TextEncoder} from "util";
 import ApiNetwork from "../network/api";
+import * as codec from '../utils/codec';
 
 // TODO: complete Payload implementation if necessary or remove it if not
-class Payload  {
+class Payload {
     bytes: Uint8Array
 
     constructor(paylaodBytes: Uint8Array) {
@@ -24,13 +25,13 @@ export class WormholeSignature {
     }
 
     fromString(signatureHexString: string) {
-        if(signatureHexString.startsWith("0x")) signatureHexString = signatureHexString.slice(2)
+        if (signatureHexString.startsWith("0x")) signatureHexString = signatureHexString.slice(2)
         this.index = parseInt(signatureHexString.slice(0, 2), 16)
         this.signatureData = new Uint8Array(Buffer.from(signatureHexString.slice(2), "hex"))
     }
 
     fromBytes(signatureBytes: Uint8Array) {
-        this.index = parseInt(signatureBytes[0].toString(), 16) //TODO: this parsing is wrong
+        this.index = signatureBytes[0]
         this.signatureData = signatureBytes.slice(1)
     }
 
@@ -50,38 +51,30 @@ export default class VAA {
     EmitterAddress: Uint8Array;
     payload: Payload;
 
-    // TODO: Fix parsing with new model
-    //      Also there is a signatureSize value in bytes which should be considered
     constructor(vaaBytes: Uint8Array) {
-        let signaturesSize: number = (vaaBytes.length - 56 - 133)
-        if (signaturesSize % 65 != 0) throw new Error(`cannot parse vaa signatures (length is ${signaturesSize} it's not dividable by 65)`)
-        
-        let signatures: Array<WormholeSignature> = this.signatureParser(vaaBytes.slice(5, 5 + signaturesSize))
-        let remainingVAABytes: Uint8Array = vaaBytes.slice(5 + signaturesSize)
+        let signaturesSize: number = vaaBytes[5]
+        let signatures: Array<WormholeSignature> = this.signatureParser(vaaBytes.slice(6, 6 + signaturesSize * 66))
+        let remainingVAABytes: Uint8Array = vaaBytes.slice(6 + signaturesSize * 66)
 
-        this.version = parseInt(vaaBytes[0].toString(16), 16) //TODO: this parsing is wrong
-        this.GuardianSetIndex = this.arrayToInt(vaaBytes.slice(1, 5), 4)
+        this.version = vaaBytes[0]
+        this.GuardianSetIndex = codec.arrayToInt(vaaBytes.slice(1, 5), 4)
         this.Signatures = signatures
-        this.timestamp = this.arrayToInt(remainingVAABytes.slice(0, 4), 4)
-        this.nonce = this.arrayToInt(remainingVAABytes.slice(4, 8), 4)
-        this.consistencyLevel = remainingVAABytes[8] //TODO: this parsing is wrong
-        this.EmitterChain = this.arrayToInt(remainingVAABytes.slice(9, 11), 2)
-        this.EmitterAddress = remainingVAABytes.slice(11, 43)
-        this.payload = new Payload(remainingVAABytes.slice(43))
-    }    
-
-    arrayToInt(bytes: Uint8Array, length: number) {
-        return Buffer.from(bytes).readUIntLE(0, length)
+        this.timestamp = codec.arrayToInt(remainingVAABytes.slice(0, 4), 4)
+        this.nonce = codec.arrayToInt(remainingVAABytes.slice(4, 8), 4)
+        this.consistencyLevel = remainingVAABytes[8]
+        this.EmitterChain = remainingVAABytes[9]
+        this.EmitterAddress = remainingVAABytes.slice(10, 42)
+        this.payload = new Payload(remainingVAABytes.slice(42))
     }
-    
+
     signatureParser(signatureBytes: Uint8Array) {
         let signatures: Array<WormholeSignature> = []
         let remainingBytes = signatureBytes
         while (remainingBytes.length > 0) {
             let wormholeSignature = new WormholeSignature()
-            wormholeSignature.fromBytes(remainingBytes.slice(0, 65))
+            wormholeSignature.fromBytes(remainingBytes.slice(0, 66))
             signatures.push(wormholeSignature)
-            remainingBytes = remainingBytes.slice(65)
+            remainingBytes = remainingBytes.slice(66)
         }
         return signatures
     }
@@ -90,7 +83,7 @@ export default class VAA {
         return `{
             "version": ${this.version},
             "GuardianSetIndex": ${this.GuardianSetIndex},
-            "Signatures": ${this.Signatures},
+            "Signatures": [${this.Signatures.map(res => res.toHex()).join(",")}],
             "timestamp": ${this.timestamp},
             "nonce": ${this.nonce},
             "consistencyLevel": ${this.consistencyLevel},
@@ -101,14 +94,14 @@ export default class VAA {
     }
 
     hexData() {
-        let timestamp = this.timestamp.toString(16)
-        let nonce = this.nonce.toString(16)
-        let consistency = this.consistencyLevel.toString(16)
-        let emitterChain = this.EmitterChain.toString(16)
+        let timestamp = codec.UInt32ToByte(this.timestamp)
+        let nonce = codec.UInt32ToByte(this.nonce)
+        let consistency = codec.UInt8ToByte(this.consistencyLevel)
+        let emitterChain = codec.UInt8ToByte(this.EmitterChain)
         let emitterAddress = Buffer.from(this.EmitterAddress).toString("hex")
         let payload = this.payload.toString()
-        return `${timestamp}${nonce}${consistency}${emitterChain}${payload}${payload}`
+        return `${timestamp}${nonce}${consistency}${emitterChain}${emitterAddress}${payload}`
     }
-    
+
 }
 
