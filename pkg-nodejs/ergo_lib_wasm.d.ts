@@ -398,6 +398,12 @@ export class Constant {
 */
   static from_ecpoint_bytes(bytes: Uint8Array): Constant;
 /**
+* Parse raw [`EcPoint`] value from bytes and make [`groupElement`] constant
+* @param {Uint8Array} bytes
+* @returns {Constant}
+*/
+  static from_ecpoint_bytes_group_element(bytes: Uint8Array): Constant;
+/**
 * Create `(Coll[Byte], Coll[Byte])` tuple Constant
 * @param {Uint8Array} bytes1
 * @param {Uint8Array} bytes2

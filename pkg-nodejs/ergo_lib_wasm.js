@@ -1022,6 +1022,17 @@ class Constant {
         return Constant.__wrap(ret);
     }
     /**
+    * Parse raw [`EcPoint`] value from bytes and make [`groupElement`] constant
+    * @param {Uint8Array} bytes
+    * @returns {Constant}
+    */
+    static from_ecpoint_bytes_group_element(bytes) {
+        var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+        var len0 = WASM_VECTOR_LEN;
+        var ret = wasm.constant_from_ecpoint_bytes_group_element(ptr0, len0);
+        return Constant.__wrap(ret);
+    }
+    /**
     * Create `(Coll[Byte], Coll[Byte])` tuple Constant
     * @param {Uint8Array} bytes1
     * @param {Uint8Array} bytes2
