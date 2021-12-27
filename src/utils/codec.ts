@@ -50,6 +50,12 @@ const UInt32ToByte = (val: number) => {
     return buff.toString("hex")
 }
 
+const UInt16ToByte = (val: number) => {
+    const buff = Buffer.alloc(2, 0);
+    buff.writeUInt16BE(val)
+    return buff.toString("hex")
+}
+
 const UInt8ToByte = (val: number) => {
     const buff = Buffer.alloc(1, 0);
     buff.writeUInt8(val)
@@ -59,5 +65,6 @@ const UInt8ToByte = (val: number) => {
 export {
     arrayToInt,
     UInt8ToByte,
+    UInt16ToByte,
     UInt32ToByte,
 }

@@ -4,15 +4,91 @@ import * as codec from '../utils/codec';
 import { Readable } from 'stream'
 
 // TODO: complete Payload implementation if necessary or remove it if not
-class Payload {
-    bytes: Uint8Array
+interface Payload {
+    payloadLength: number;
 
-    constructor(paylaodBytes: Uint8Array) {
-        this.bytes = paylaodBytes
+    toBytes(): Uint8Array
+
+    toString(): string
+}
+
+export class transferPayload implements Payload {
+    payloadId: number;
+    amount: Uint8Array;
+    tokenAddress: Uint8Array;
+    tokenChain: number;
+    to: Uint8Array;
+    toChain: number;
+    fee: Uint8Array;
+    payloadLength: number = 1 + 32 + 32 + 2 + 38 + 2 + 32;
+
+    constructor(payloadBytes: Uint8Array) {
+        if (payloadBytes.length != this.payloadLength) throw Error(`Expected ${this.payloadLength} payload length, found: ${payloadBytes.length}`)
+
+        let stream = new Readable()
+        stream._read = () => {}
+        stream.push(payloadBytes)
+
+        this.payloadId = stream.read(1)[0]
+        this.amount = stream.read(32)
+        this.tokenAddress = stream.read(32)
+        this.tokenChain = codec.arrayToInt(stream.read(2), 2)
+        this.to = stream.read(38)
+        this.toChain = codec.arrayToInt(stream.read(2), 2)
+        this.fee = stream.read(32)
     }
 
-    toString() {
-        return Buffer.from(this.bytes).toString("hex")
+    toBytes(): Uint8Array {
+        return new Uint8Array(Buffer.from(this.toString(), 'hex'))
+    }
+
+    toString(): string {
+        return [
+            codec.UInt8ToByte(this.payloadId),
+            Buffer.from(this.amount).toString('hex'),
+            Buffer.from(this.tokenAddress).toString('hex'),
+            codec.UInt16ToByte(this.tokenChain),
+            Buffer.from(this.to).toString('hex'),
+            codec.UInt16ToByte(this.toChain),
+            Buffer.from(this.fee).toString('hex')
+        ].join("")
+    }
+}
+
+export class registerChainPayload {
+    module: Uint8Array;
+    action: number;
+    chainId: number;
+    emitterChainId: number;
+    emitterAddress: Uint8Array;
+    payloadLength: number = 32 + 1 + 2 + 2 + 32;
+
+    constructor(payloadBytes: Uint8Array) {
+        if (payloadBytes.length != this.payloadLength) throw Error(`Expected ${this.payloadLength} payload length, found: ${payloadBytes.length}`)
+        
+        let stream = new Readable()
+        stream._read = () => {}
+        stream.push(payloadBytes)
+
+        this.module = stream.read(32)
+        this.action = stream.read(1)[0]
+        this.chainId = codec.arrayToInt(stream.read(2), 2)
+        this.emitterChainId = codec.arrayToInt(stream.read(2), 2)
+        this.emitterAddress = stream.read(32)
+    }
+
+    toBytes(): Uint8Array {
+        return new Uint8Array(Buffer.from(this.toString(), 'hex'))
+    }
+
+    toString(): string {
+        return [
+            Buffer.from(this.module).toString('hex'),
+            codec.UInt8ToByte(this.action),
+            codec.UInt16ToByte(this.chainId),
+            codec.UInt16ToByte(this.emitterChainId),
+            Buffer.from(this.emitterAddress).toString('hex')
+        ].join("")
     }
 }
 
@@ -84,7 +160,7 @@ export default class VAA {
         this.consistencyLevel = stream.read(1)[0]
         this.EmitterChain = stream.read(1)[0]
         this.EmitterAddress = new Uint8Array(stream.read(32))
-        this.payload = new Payload(stream.read())
+        this.payload = new transferPayload(stream.read())
     }
 
     toJson() {
