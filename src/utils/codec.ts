@@ -1,4 +1,5 @@
 import {WormholeSignature} from "../models/models"
+import * as wasm from 'ergo-lib-wasm-nodejs'
 
 export function hexStringToByte(str: string) {
     let a = [];
@@ -19,8 +20,7 @@ export function getGuardianAddresses(guardianBox: any) {
 }
 
 export function getBoxSignatures(box: any) {
-    let arr = box.additionalRegisters.R5.renderedValue.slice
-    arr = arr.slice(1, arr.length - 1).split(",")
+    let arr = box.register_value(5)?.to_coll_coll_byte()
     let signatures: Array<WormholeSignature> = []
     for (const i of arr) {
         let wormholeSignature = new WormholeSignature(i)
@@ -30,10 +30,9 @@ export function getBoxSignatures(box: any) {
     return signatures
 }
 
-export function getVAADataFromBox(box: any) {
-    let arr = box.additionalRegisters.R4.renderedValue
-    let R4 = arr.slice(1, arr.length - 1).split(",")
-    return R4[0] + R4[1]
+export function getVAADataFromBox(box: wasm.ErgoBox) {
+    let R4 = box.register_value(4)?.to_coll_coll_byte()!
+    return Buffer.from(R4[0]).toString('hex') + Buffer.from(R4[1]).toString('hex')
 }
 
 export function strToUint8Array(str: string) {

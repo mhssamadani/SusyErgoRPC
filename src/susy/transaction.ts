@@ -1,4 +1,4 @@
-import {ErgoBoxes, ErgoBox} from "ergo-lib-wasm-nodejs";
+import {ErgoBoxes, ErgoBox, ErgoStateContext} from "ergo-lib-wasm-nodejs";
 import config from "../config/conf";
 import {Boxes} from "./boxes";
 import Contracts from "./contracts";
@@ -37,9 +37,10 @@ const updateVAABox = async (
     guardianBox: ErgoBox,
     index: number,
     signA: Uint8Array,
-    signZ: Uint8Array
+    signZ: Uint8Array,
+    ctx?: ErgoStateContext
 ): Promise<any> => {
-    const outSponsor = await Boxes.getSponsor(sponsor.value().as_i64().as_num() - config.fee);
+    const outSponsor = await Boxes.getSponsorBox(sponsor.value().as_i64().as_num() - config.fee);
     const signatureCount = VAABox.register_value(7)!.to_i32_array()[1];
     const checksum = VAABox.register_value(7)!.to_i32_array()[0]
 
@@ -64,18 +65,17 @@ const updateVAABox = async (
     const inputBoxes = new wasm.ErgoBoxes(wormhole);
     inputBoxes.add(VAABox);
     inputBoxes.add(sponsor);
-    inputBoxes.add(guardianBox);
+    // inputBoxes.add(guardianBox);
     const tx = generateTx(inputBoxes, [outWormhole, outVAA, outSponsor], sponsor);
     const dataInputs = new wasm.DataInputs()
     dataInputs.add(new wasm.DataInput(guardianBox.box_id()))
     tx.set_data_inputs(dataInputs);
-    // TODO:should check signer secret key
     const sks = new wasm.SecretKeys();
     const wallet = wasm.Wallet.from_secrets(sks);
     const tx_data_inputs = new wasm.ErgoBoxes(guardianBox);
-    const ctx = await ApiNetwork.getErgoStateContext();
+    const internalCtx =  ctx ? ctx : await ApiNetwork.getErgoStateContext();
     console.log(tx.build().to_json())
-    const signedTx = wallet.sign_transaction(ctx, tx.build(), inputBoxes, tx_data_inputs)
+    const signedTx = wallet.sign_transaction(internalCtx, tx.build(), inputBoxes, tx_data_inputs)
     return console.log(signedTx.to_json());
 }
 
@@ -139,7 +139,7 @@ const createPayment = async (bank: ErgoBox, VAABox: ErgoBox, sponsor: ErgoBox, g
 
     for (let i = 0; i < 3; i++) VAABuilder.set_register_value(i, VAABox.register_value(i)!);
     const outVAA = VAABuilder.build();
-    const outSponsor = await Boxes.getSponsor(sponsor.value().as_i64().as_num() - config.fee * 2);
+    const outSponsor = await Boxes.getSponsorBox(sponsor.value().as_i64().as_num() - config.fee * 2);
     const inputBoxes = new wasm.ErgoBoxes(bank);
     inputBoxes.add(VAABox);
     inputBoxes.add(sponsor);

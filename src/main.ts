@@ -20,7 +20,7 @@ import VAA from "./models/models";
 // const hdkey = require('ethereumjs-wallet/hdkey');
 
 const main = () => {
-    // createGuardianBox(1).then(() => null)
+
     // const tou8 = require('buffer-to-uint8array');
     // const vaa = generateVaa()
     // console.log(vaa)
@@ -34,7 +34,7 @@ const main = () => {
     // createSponsorBox().then(tx => ApiNetwork.sendTx(tx.to_json()))
     // createWormholeBox().then((tx) => ApiNetwork.sendTx(tx.to_json()));
     // initializeServiceToken().then(res => res.map(item => ApiNetwork.sendTx(item.to_json())))
-    
+
     if (config.service === "rpc") {
         setupRPC();
     } else if (config.service === "sign") {

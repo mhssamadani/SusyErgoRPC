@@ -21,7 +21,7 @@ function checkSign(box: any): boolean {
     return false
 }
 
-function signMsg(msg: Uint8Array, sk: string) {
+export function signMsg(msg: Uint8Array, sk: string) {
     while (true) {
         let r = rand()
         let ecParams = ecurve.getCurveByName('secp256k1')
