@@ -121,7 +121,7 @@ export const wormholeScript = `
     val eInt = byteArrayToBigInt(e) // challenge as big integer
     val g: GroupElement = groupGenerator
     val l = g.exp(OUTPUTS(1).R9[BigInt].get)
-    // val r = OUTPUTS(1).R8[GroupElement].get.multiply(Pk.exp(eInt))
+    val r = OUTPUTS(1).R8[GroupElement].get.multiply(Pk.exp(eInt))
     sigmaProp(
       allOf(
         Coll(
@@ -134,8 +134,7 @@ export const wormholeScript = `
           OUTPUTS(1).tokens(0)._1 == VAAToken,
           // (OUTPUTS(1).tokens(0)._1 == VAAToken) || (OUTPUTS(1).tokens(0)._1 == guardianToken),
           // Verify Sign
-          l == groupGenerator, 
-          r == r
+          l == r,
         )
       )
     )
