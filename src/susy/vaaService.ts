@@ -1,4 +1,4 @@
-import VAA from "../models/models"
+import { VAA } from "../models/models"
 import ApiNetwork from "../network/api";
 import * as wasm from 'ergo-lib-wasm-nodejs'
 import * as Utils from '../utils/codec'

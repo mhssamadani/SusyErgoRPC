@@ -16,7 +16,7 @@ import * as bip39 from 'bip39'
 import {hdkey} from "ethereumjs-wallet";
 import processVAA from "./susy/vaaService";
 import createGuardianBox from "./susy/init/guardianBox";
-import VAA from "./models/models";
+import { VAA } from "./models/models";
 // const hdkey = require('ethereumjs-wallet/hdkey');
 
 const main = () => {

@@ -8,7 +8,7 @@ import ApiNetwork from "./network/api";
 import guardianBox from "./susy/init/guardianBox";
 import {generateVaa} from "./susy/init";
 import {issueVAA, updateVAABox} from "./susy/transaction";
-import VAA from "./models/models";
+import { VAA, registerChainPayload, transferPayload } from "./models/models";
 import * as codec from "./utils/codec";
 
 const inputBoxes = wasm.ErgoBoxes.from_boxes_json([JSON.stringify({
@@ -130,6 +130,20 @@ const test_update_vaa = async () => {
         Uint8Array.from(Buffer.from(signatureData[0], "hex")),
         Uint8Array.from(Buffer.from(signatureData[1], "hex")),
     )
+}
+
+const test_payloads = () => {
+    let registerChainString = "000000000000000000000000000000000000000000546f6b656e42726964676501000000080102030400000000000000000000000000000000000000000000000000000000"
+    let registerChainBytes = Buffer.from(registerChainString, 'hex')
+    
+    let registerChain = new registerChainPayload(registerChainBytes)
+    if (registerChain.toString() !== registerChainString) console.log("[-] registerChainPayload test failed")
+
+    let transferString = "00000000000000007800000000000000000000000000000000000000000000000037d3f4eeb9ba3e4f860f21c634d9a77e05294736cf399051d25f3b2cef30496100020102764ea2b0b9b06b5730a4257bba71fd7797eb1ec12bc3ae6025a01d7fba53830e229592eb00030000000000000005000000000000000000000000000000000000000000000000"
+    let transferBytes = Buffer.from(transferString, 'hex')
+    
+    let transfer = new transferPayload(transferBytes)
+    if (transfer.toString() !== transferString) console.log("[-] transferPayload test failed")
 }
 
 test_update_vaa().then(() => null)

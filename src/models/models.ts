@@ -12,7 +12,7 @@ interface Payload {
     toString(): string
 }
 
-export class transferPayload implements Payload {
+class transferPayload implements Payload {
     payloadId: number;
     amount: Uint8Array;
     tokenAddress: Uint8Array;
@@ -55,7 +55,7 @@ export class transferPayload implements Payload {
     }
 }
 
-export class registerChainPayload {
+class registerChainPayload {
     module: Uint8Array;
     action: number;
     chainId: number;
@@ -128,7 +128,7 @@ export class WormholeSignature {
     }
 }
 
-export default class VAA {
+class VAA {
     version: number;
     GuardianSetIndex: number;
     Signatures: Array<WormholeSignature>;
@@ -195,3 +195,4 @@ export default class VAA {
     }
 }
 
+export { VAA, transferPayload, registerChainPayload }
