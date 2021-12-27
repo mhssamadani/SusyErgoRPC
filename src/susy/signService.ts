@@ -4,12 +4,13 @@ import * as wasm from 'ergo-lib-wasm-nodejs'
 import * as codec from '../utils/codec'
 import { verify } from "../utils/ecdsa";
 import {updateVAABox} from "./transaction";
+import BigInteger from 'bigi';
+
 const ecurve = require('ecurve')
-const BigInteger = require('bigi')
 const { blake2b } = require("ethereum-cryptography/blake2b")
 const secureRandom = require('secure-random')
 
-function rand() {
+const rand = (): BigInteger =>  {
     let r = secureRandom.randomBuffer(32)
     return BigInteger.fromHex(r.toString('hex'))
 }
@@ -28,6 +29,7 @@ function signMsg(msg: Uint8Array, sk: string) {
         let msgHash = blake2b(msg, 32).toString('hex')
         let z: any = r.add(BigInteger.fromHex(sk).multiply(BigInteger.fromHex(msgHash))).remainder(ecParams.n)
         if (z.bitCount() < 256) {
+            console.log(z.toString(), z.toString(16), a.getEncoded().toString('hex'))
             return [a.getEncoded().toString('hex'), z.toString(16)]
         }
     }

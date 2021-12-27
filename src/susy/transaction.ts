@@ -9,7 +9,6 @@ import * as codec from '../utils/codec';
 import {createAndSignTx} from "./init/util";
 import * as wasm from 'ergo-lib-wasm-nodejs'
 
-
 const issueVAA = async (VAASourceBox: ErgoBoxes, VAAMessage: VAA, VAAAuthorityAddress: string) => {
     const height = await ApiNetwork.getHeight();
     const VAAAuthorityAddressSigma = wasm.Address.from_base58(VAAAuthorityAddress);
@@ -47,9 +46,12 @@ const updateVAABox = async (
     const VAABuilder = new wasm.ErgoBoxCandidateBuilder(VAABox.value(), await Contracts.generateVAAContract(), 0);
     VAABuilder.add_token(wasm.TokenId.from_str(config.token.VAAT), wasm.TokenAmount.from_i64(wasm.I64.from_str("1")));
     for (let i = 4; i < 7; i++) VAABuilder.set_register_value(i, VAABox.register_value(i)!);
-    VAABuilder.set_register_value(7, wasm.Constant.from_i32_array(Int32Array.from([Math.pow(2, index), checksum, (signatureCount + 1), index])));
+    const R7 = VAABox.register_value(7)?.to_i32_array()!
+    const guardianIndex = R7[3]
+    const emitterIndex = R7[4]
+    VAABuilder.set_register_value(7, wasm.Constant.from_i32_array(Int32Array.from([Math.pow(2, index) + checksum, (signatureCount + 1), index, guardianIndex, emitterIndex])));
     // TODO: should check
-    VAABuilder.set_register_value(8, wasm.Constant.from_ecpoint_bytes(signA));
+    VAABuilder.set_register_value(8, wasm.Constant.from_ecpoint_bytes_group_element(signA));
     VAABuilder.set_register_value(9, wasm.Constant.from_bigint_signed_bytes_be(signZ));
     const outVAA = VAABuilder.build();
     const wormholeBuilder = new wasm.ErgoBoxCandidateBuilder(
@@ -62,7 +64,7 @@ const updateVAABox = async (
     const inputBoxes = new wasm.ErgoBoxes(wormhole);
     inputBoxes.add(VAABox);
     inputBoxes.add(sponsor);
-    // inputBoxes.add(guardianBox);
+    inputBoxes.add(guardianBox);
     const tx = generateTx(inputBoxes, [outWormhole, outVAA, outSponsor], sponsor);
     const dataInputs = new wasm.DataInputs()
     dataInputs.add(new wasm.DataInput(guardianBox.box_id()))
