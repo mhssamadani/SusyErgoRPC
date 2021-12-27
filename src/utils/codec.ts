@@ -19,12 +19,15 @@ export function getGuardianAddresses(guardianBox: any) {
 }
 
 export function getBoxSignatures(box: any) {
-    let arr = box.additionalRegisters.R5.renderedValue
-    return arr.slice(1, arr.length - 1).split(",").map((element: string) => {
-        let wormholeSignature = new WormholeSignature()
-        wormholeSignature.fromString(element)
-        return wormholeSignature
-    });
+    let arr = box.additionalRegisters.R5.renderedValue.slice
+    arr = arr.slice(1, arr.length - 1).split(",")
+    let signatures: Array<WormholeSignature> = []
+    for (const i of arr) {
+        let wormholeSignature = new WormholeSignature(i)
+        wormholeSignature.fromString(arr[i])
+        signatures.push(wormholeSignature)
+    };
+    return signatures
 }
 
 export function getVAADataFromBox(box: any) {

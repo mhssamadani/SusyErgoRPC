@@ -1,6 +1,7 @@
 import {TextEncoder} from "util";
 import ApiNetwork from "../network/api";
 import * as codec from '../utils/codec';
+import { Readable } from 'stream'
 
 // TODO: complete Payload implementation if necessary or remove it if not
 class Payload {
@@ -19,8 +20,8 @@ export class WormholeSignature {
     index: number;
     signatureData: Uint8Array;
 
-    constructor() {
-        this.index = -1
+    constructor(index: number) {
+        this.index = index
         this.signatureData = new Uint8Array()
     }
 
@@ -34,8 +35,16 @@ export class WormholeSignature {
     }
 
     fromBytes(signatureBytes: Uint8Array) {
-        this.index = signatureBytes[0]
-        this.signatureData = signatureBytes.slice(1)
+        if (signatureBytes.length == 66) {
+            this.index = signatureBytes[0]
+            this.signatureData = signatureBytes.slice(1)
+        }
+        else if (signatureBytes.length == 65) {
+            this.signatureData = signatureBytes
+        }
+        else {
+            throw Error("Wrong signature size")
+        }
     }
 
     toHex() {
@@ -55,31 +64,27 @@ export default class VAA {
     payload: Payload;
 
     constructor(vaaBytes: Uint8Array) {
-        let signaturesSize: number = vaaBytes[5]
-        let signatures: Array<WormholeSignature> = this.signatureParser(vaaBytes.slice(6, 6 + signaturesSize * 66))
-        let remainingVAABytes: Uint8Array = vaaBytes.slice(6 + signaturesSize * 66)
+        let stream = new Readable()
+        stream._read = () => {}
+        stream.push(vaaBytes)
 
-        this.version = vaaBytes[0]
-        this.GuardianSetIndex = codec.arrayToInt(vaaBytes.slice(1, 5), 4)
-        this.Signatures = signatures
-        this.timestamp = codec.arrayToInt(remainingVAABytes.slice(0, 4), 4)
-        this.nonce = codec.arrayToInt(remainingVAABytes.slice(4, 8), 4)
-        this.consistencyLevel = remainingVAABytes[8]
-        this.EmitterChain = remainingVAABytes[9]
-        this.EmitterAddress = remainingVAABytes.slice(10, 42)
-        this.payload = new Payload(remainingVAABytes.slice(42))
-    }
+        this.version = stream.read(1)[0]
+        this.GuardianSetIndex = codec.arrayToInt(stream.read(4), 4)
+        let signaturesSize: number = stream.read(1)[0]
+        this.Signatures = []
 
-    signatureParser(signatureBytes: Uint8Array) {
-        let signatures: Array<WormholeSignature> = []
-        let remainingBytes = signatureBytes
-        while (remainingBytes.length > 0) {
-            let wormholeSignature = new WormholeSignature()
-            wormholeSignature.fromBytes(remainingBytes.slice(0, 66))
-            signatures.push(wormholeSignature)
-            remainingBytes = remainingBytes.slice(66)
+        for (var i = 0; i < signaturesSize; i++ ) {
+            let wormholeSignature = new WormholeSignature(stream.read(1)[0])
+            wormholeSignature.fromBytes(stream.read(65))
+            this.Signatures.push(wormholeSignature)
         }
-        return signatures
+
+        this.timestamp = codec.arrayToInt(stream.read(4), 4)
+        this.nonce = codec.arrayToInt(stream.read(4), 4)
+        this.consistencyLevel = stream.read(1)[0]
+        this.EmitterChain = stream.read(1)[0]
+        this.EmitterAddress = new Uint8Array(stream.read(32))
+        this.payload = new Payload(stream.read())
     }
 
     toJson() {
