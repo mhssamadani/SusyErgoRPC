@@ -4,7 +4,7 @@ import {Boxes} from "./boxes";
 import Contracts from "./contracts";
 import ApiNetwork from "../network/api";
 import {hexStringToByte, strToUint8Array} from "../utils/codec";
-import VAA from "../models/models";
+import { VAA } from "../models/models";
 import * as codec from '../utils/codec';
 import {createAndSignTx} from "./init/util";
 import * as wasm from 'ergo-lib-wasm-nodejs'

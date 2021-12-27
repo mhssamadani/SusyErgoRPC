@@ -3,7 +3,6 @@ import ApiNetwork from "../network/api";
 import * as codec from '../utils/codec';
 import { Readable } from 'stream'
 
-// TODO: complete Payload implementation if necessary or remove it if not
 interface Payload {
     payloadLength: number;
 
@@ -88,6 +87,48 @@ class registerChainPayload {
             codec.UInt16ToByte(this.chainId),
             codec.UInt16ToByte(this.emitterChainId),
             Buffer.from(this.emitterAddress).toString('hex')
+        ].join("")
+    }
+}
+
+class updateGuardianPayload {
+    module: Uint8Array;
+    action: number;
+    chainId: number;
+    newIndex: number;
+    keyLength: number;
+    guardianPubkeys: Array<Uint8Array>;
+    payloadLength: number = 32 + 1 + 2 + 4 + 1 + 6*(32);
+
+    constructor(payloadBytes: Uint8Array) {
+        if (payloadBytes.length != this.payloadLength) throw Error(`Expected ${this.payloadLength} payload length, found: ${payloadBytes.length}`)
+        
+        let stream = new Readable()
+        stream._read = () => {}
+        stream.push(payloadBytes)
+
+        this.module = stream.read(32)
+        this.action = stream.read(1)[0]
+        this.chainId = codec.arrayToInt(stream.read(2), 2)
+        this.newIndex = codec.arrayToInt(stream.read(4), 4)
+        this.keyLength = stream.read(1)[0]
+
+        this.guardianPubkeys = []
+        for (var i = 0; i < 6; i++) this.guardianPubkeys.push(stream.read(32))
+    }
+
+    toBytes(): Uint8Array {
+        return new Uint8Array(Buffer.from(this.toString(), 'hex'))
+    }
+
+    toString(): string {
+        return [
+            Buffer.from(this.module).toString('hex'),
+            codec.UInt8ToByte(this.action),
+            codec.UInt16ToByte(this.chainId),
+            codec.UInt32ToByte(this.newIndex),
+            codec.UInt8ToByte(this.keyLength),
+            this.guardianPubkeys.map(pubkey => Buffer.from(pubkey).toString('hex')).join("")
         ].join("")
     }
 }
@@ -195,4 +236,4 @@ class VAA {
     }
 }
 
-export { VAA, transferPayload, registerChainPayload }
+export { VAA, transferPayload, registerChainPayload, updateGuardianPayload }

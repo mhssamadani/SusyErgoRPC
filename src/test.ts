@@ -8,7 +8,7 @@ import ApiNetwork from "./network/api";
 import guardianBox from "./susy/init/guardianBox";
 import {generateVaa} from "./susy/init";
 import {issueVAA, updateVAABox} from "./susy/transaction";
-import { VAA, registerChainPayload, transferPayload } from "./models/models";
+import { VAA, registerChainPayload, transferPayload, updateGuardianPayload } from "./models/models";
 import * as codec from "./utils/codec";
 
 const inputBoxes = wasm.ErgoBoxes.from_boxes_json([JSON.stringify({
@@ -144,6 +144,12 @@ const test_payloads = () => {
     
     let transfer = new transferPayload(transferBytes)
     if (transfer.toString() !== transferString) console.log("[-] transferPayload test failed")
+
+    let updateGuardianString = "000000000000000000000000000000000000000000546f6b656e427269646765320003000000013602992ac27c178c07371da6c9d623d05174e2fae90cc656346e9edf5a5a5c76f202a5a670080865606db7b6fe14d238589a875b9cf810e55e9247b68a0dbb0d18036c6c34d1dcda1d0d5d855ade5ff4f66734be43458ae2ab3c902526b81712d6036c6c34d1dcda1d0d5d855ade5ff4f66734be43458ae2ab3c902526b81712d602a5a670080865606db7b6fe14d238589a875b9cf810e55e9247b68a0dbb0d18036c6c34d1dcda1d0d5d855ade5ff4f66734be43458ae2ab3c902526b81712d6"
+    let updateGuardianBytes = Buffer.from(updateGuardianString, 'hex')
+    
+    let updateGuardian = new updateGuardianPayload(updateGuardianBytes)
+    if (updateGuardian.toString() !== updateGuardianString) console.log("[-] updateGuardianPayload test failed")
 }
 
 test_update_vaa().then(() => null)
