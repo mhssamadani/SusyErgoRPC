@@ -8,7 +8,7 @@ interface Payload {
 
     toBytes(): Uint8Array
 
-    toString(): string
+    toHex(): string
 }
 
 class transferPayload implements Payload {
@@ -38,10 +38,10 @@ class transferPayload implements Payload {
     }
 
     toBytes(): Uint8Array {
-        return new Uint8Array(Buffer.from(this.toString(), 'hex'))
+        return new Uint8Array(Buffer.from(this.toHex(), 'hex'))
     }
 
-    toString(): string {
+    toHex(): string {
         return [
             codec.UInt8ToByte(this.payloadId),
             Buffer.from(this.amount).toString('hex'),
@@ -54,7 +54,7 @@ class transferPayload implements Payload {
     }
 }
 
-class registerChainPayload {
+class registerChainPayload implements Payload {
     module: Uint8Array;
     action: number;
     chainId: number;
@@ -77,10 +77,10 @@ class registerChainPayload {
     }
 
     toBytes(): Uint8Array {
-        return new Uint8Array(Buffer.from(this.toString(), 'hex'))
+        return new Uint8Array(Buffer.from(this.toHex(), 'hex'))
     }
 
-    toString(): string {
+    toHex(): string {
         return [
             Buffer.from(this.module).toString('hex'),
             codec.UInt8ToByte(this.action),
@@ -91,7 +91,7 @@ class registerChainPayload {
     }
 }
 
-class updateGuardianPayload {
+class updateGuardianPayload implements Payload {
     module: Uint8Array;
     action: number;
     chainId: number;
@@ -118,10 +118,10 @@ class updateGuardianPayload {
     }
 
     toBytes(): Uint8Array {
-        return new Uint8Array(Buffer.from(this.toString(), 'hex'))
+        return new Uint8Array(Buffer.from(this.toHex(), 'hex'))
     }
 
-    toString(): string {
+    toHex(): string {
         return [
             Buffer.from(this.module).toString('hex'),
             codec.UInt8ToByte(this.action),
@@ -180,7 +180,7 @@ class VAA {
     EmitterAddress: Uint8Array;
     payload: Payload;
 
-    constructor(vaaBytes: Uint8Array) {
+    constructor(vaaBytes: Uint8Array, payloadType: string) {
         let stream = new Readable()
         stream._read = () => {}
         stream.push(vaaBytes)
@@ -201,7 +201,11 @@ class VAA {
         this.consistencyLevel = stream.read(1)[0]
         this.EmitterChain = stream.read(1)[0]
         this.EmitterAddress = new Uint8Array(stream.read(32))
-        this.payload = new transferPayload(stream.read())
+        
+        if (payloadType === "transfer") this.payload = new transferPayload(stream.read())
+        else if (payloadType === "register_chain") this.payload = new registerChainPayload(stream.read())
+        else if (payloadType === "update_guardian") this.payload = new updateGuardianPayload(stream.read())
+        else throw Error(`Unknown payloadType ${payloadType}`)
     }
 
     toJson() {
@@ -232,7 +236,7 @@ class VAA {
     }
 
     observation = () => {
-        return `${this.observationWithoutPayload()}${this.payload.toString()}`
+        return `${this.observationWithoutPayload()}${this.payload.toHex()}`
     }
 }
 
