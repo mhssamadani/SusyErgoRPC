@@ -4,15 +4,15 @@ import * as wasm from 'ergo-lib-wasm-nodejs';
 
 const config = {
     token: {
-        VAAT: 'c985cf8865c6f42dc34bc6e9b021916e603e7654844bf32fbd74597a8a456733',
-        registerNFT: 'f2b0dddc968aa5dfd5814cabe6bb037e25371e035c6bed22aa6f11540a3228cf',
-        guardianNFT: 'afcf07e5d6d1300ecc7054e51b4b64e962ad4bde79f3fdec6abcfcd971d0115b',
-        guardianToken: 'df5d4bd170dc6f1fb6287593d90c927b70f6914e881009916feb87f4a5ba2cb8',
-        bankNFT: '5d7744e9c83dc9914297b5fd0d6cd4e2cc3505fa807b5f9d4069e19641d37b2d',
-        wormholeNFT: '80bcc185786d9e75819224275011bab8d219d9bbe2767371e38eced385df6e5a',
-        bankToken: '32601c0ceff820187f7deb17061950da0113ef75ef27dc6e80403c9b99918eb6'
+        VAAT: '1a60b4e5eaabc03bfed57423170ba5051c7b0a3cabf7b236495f3eea873b35f7',
+        wormholeNFT: '475ebf03a2470a53444570913fabd31c70ed05de8a9dec742c6affbf1d19b916',
+        guardianNFT: 'f0cf6c756187d12c418b70928c98ac77eb2cbbc079f8e4ec50393678507865b9',
+        guardianToken: '06d6a016913cf26b2a431b85382a73ddc2957059cab90c5db6769e27056bb871',
+        bankNFT: '089b1fab6673d3946df753c286b3161ed8aa4555e47d826c5a8da22ad5fa5c96',
+        registerNFT: '2392f056add6ab87c6da07f32e42491a3b24c4a0e5d1825b4e73cb2ef9c324a0',
+        bankToken: '2392f056add6ab87c6da07f32e42491a3b24c4a0e5d1825b4e73cb2ef9c324a0'
     },
-    addressSecret: "b12a340ca2eef9858446a634b42ac24cf90a84ca1aad72e827fbc5b29390b73e",
+    addressSecret: "DD5D8C423D87109C85785F8D8D2B25255A5870B29EA73FE098B8F4090C3BA9A1",
     address: "9gMbbSbYMn7KiDmvPSSHiBEu9CkjrJXb3TTDjm87NkqbVTj15NM",
     node: "http://10.10.9.3:9064",
     explorerApi: "http://10.10.9.3:7000",
@@ -26,10 +26,10 @@ const config = {
     },
     service: "sign",
     initializer: {
-        secret: "b12a340ca2eef9858446a634b42ac24cf90a84ca1aad72e827fbc5b29390b73e",
+        secret: "DD5D8C423D87109C85785F8D8D2B25255A5870B29EA73FE098B8F4090C3BA9A1",
         address: "9gqZkAPjFQ3kn2dFMu3FaSvbZ4j2Ph51qSHzyXt6vMwjthYDpoM"
     },
-    vaaSourceBoxAddress: "9gqZkAPjFQ3kn2dFMu3FaSvbZ4j2Ph51qSHzyXt6vMwjthYDpoM",
+    vaaSourceBoxAddress: "9gzavousDyHQFDPvywESitnyiFfHhoS2CJAQQ7z3xbJSBNCjvwJ",
     port: 8080,
 }
 

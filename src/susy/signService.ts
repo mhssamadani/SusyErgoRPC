@@ -22,20 +22,23 @@ function checkSign(box: any): boolean {
 }
 
 export function signMsg(msg: Uint8Array, sk: string) {
+    const maxBigInt = BigInteger.fromHex("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
+    // const maxBigInt = BigInteger.fromHex("1ee194860333e2bc66c86840d051be002b851655c04d824e2dfa8ff02c0524e2")
     while (true) {
         let r = rand()
         let ecParams = ecurve.getCurveByName('secp256k1')
         let a = ecParams.G.multiply(r)
         let msgHash = blake2b(msg, 32).toString('hex')
-        let z: any = r.add(BigInteger.fromHex(sk).multiply(BigInteger.fromHex(msgHash))).remainder(ecParams.n)
-        if (z.bitCount() < 256) {
-            console.log(z.toString(), z.toString(16), a.getEncoded().toString('hex'))
+        let z: BigInteger = r.add(BigInteger.fromHex(sk).multiply(BigInteger.fromHex(msgHash))).remainder(ecParams.n)
+        const zHex = z.toHex();
+        console.log(z.toString(), z.toString(16), a.getEncoded().toString('hex'))
+        if (zHex.length < 64 || (zHex.length == 64 && Number(zHex[0]) <= 7)) {
             return [a.getEncoded().toString('hex'), z.toString(16)]
         }
     }
 }
 
-function verifyBoxSignatures(box: any, guardianBox: any): boolean {
+function verifyBoxSignatures(box: wasm.ErgoBox, guardianBox: any): boolean {
     let signatures = codec.getBoxSignatures(box)
     let guardianAddresses = codec.getGuardianAddresses(guardianBox)
     let vaaData = codec.getVAADataFromBox(box)
@@ -53,10 +56,10 @@ export default async function signService() {
 
         if (checkSign(lastBox)) continue
 
-        let guardianBoxJson = await ApiNetwork.getGuardianBox(1)
-        if (!verifyBoxSignatures(lastBox, guardianBoxJson)) continue
+        let guardianBoxJson = await ApiNetwork.getGuardianBox(0)
+        if (!verifyBoxSignatures(wasm.ErgoBox.from_json(JSON.stringify(lastBox)), guardianBoxJson)) continue
 
-        let msg = codec.strToUint8Array(codec.getVAADataFromBox(lastBox))
+        let msg = codec.strToUint8Array(codec.getVAADataFromBox(wasm.ErgoBox.from_json(JSON.stringify(lastBox))))
         let signatureData = signMsg(msg, config.guardian.privateKey)
 
         let wormholeBox = wasm.ErgoBox.from_json(JSON.stringify(await ApiNetwork.getWormholeBox()))

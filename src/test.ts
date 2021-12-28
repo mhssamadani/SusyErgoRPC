@@ -10,6 +10,7 @@ import {generateVaa} from "./susy/init";
 import {issueVAA, updateVAABox} from "./susy/transaction";
 import VAA from "./models/models";
 import * as codec from "./utils/codec";
+import BigInteger from "bigi";
 
 const inputBoxes = wasm.ErgoBoxes.from_boxes_json([JSON.stringify({
     "boxId": "332a628eb197d6fc59c3c6e7dbdd309ddb53d1f7350c68e2c7e456b2509640a7",
@@ -132,4 +133,11 @@ const test_update_vaa = async () => {
     )
 }
 
-test_update_vaa().then(() => null)
+const maxBigInt = BigInteger.fromHex("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
+const mb = BigInteger.fromHex("DD5D8C423D87109C85785F8D8D2B25255A5870B29EA73FE098B8F4090C3BA9A1")
+
+console.log(mb.toString())
+console.log(maxBigInt.toString())
+console.log(mb.compareTo(maxBigInt))
+console.log(maxBigInt.compareTo(mb) )
+// test_update_vaa().then(() => null)

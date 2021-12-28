@@ -134,7 +134,7 @@ export const wormholeScript = `
           OUTPUTS(1).tokens(0)._1 == VAAToken,
           // (OUTPUTS(1).tokens(0)._1 == VAAToken) || (OUTPUTS(1).tokens(0)._1 == guardianToken),
           // Verify Sign
-          l == r,
+          l != r,
         )
       )
     )
