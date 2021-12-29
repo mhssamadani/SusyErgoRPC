@@ -10,8 +10,7 @@ import {
 import ApiNetwork from "../network/api";
 import config from "../config/conf";
 import {blake2b} from "ethereum-cryptography/blake2b";
-
-const ergoLib = require("ergo-lib-wasm-nodejs");
+import ergoLib from "ergo-lib-wasm-nodejs"
 
 class Contracts {
     static generateBankContract = () => {
@@ -26,7 +25,7 @@ class Contracts {
     }
 
     static generateVAAContract = () => {
-        let script: string = VAAScript.replace("WORMHOLE_NFT", Buffer.from(config.token.wormholeNFT, "hex").toString("base64"))
+        const script: string = VAAScript.replace("WORMHOLE_NFT", Buffer.from(config.token.wormholeNFT, "hex").toString("base64"))
             .replace("BFT_SIGNATURE_COUNT", config.bftSignatureCount.toString());
         return ApiNetwork.pay2ScriptAddress(script).then(res => {
             const P2SA = ergoLib.Address.from_base58(res);
@@ -35,7 +34,7 @@ class Contracts {
     }
 
     static generateWormholeContract = () => {
-        let script: string = wormholeScript
+        const script: string = wormholeScript
             .replace("WORMHOLE_NFT", Buffer.from(config.token.wormholeNFT, "hex").toString("base64"))
             .replace("BANK_NFT", Buffer.from(config.token.bankNFT, "hex").toString("base64"))
             .replace("VAA_TOKEN", Buffer.from(config.token.VAAT, "hex").toString("base64"))
@@ -85,7 +84,7 @@ class Contracts {
     }
 
     static generateGuardianTokenRepoContract = () => {
-        let script: string = guardianTokenRepo
+        const script: string = guardianTokenRepo
             .replace("VAA_TOKEN", Buffer.from(config.token.VAAT, "hex").toString("base64"))
         return ApiNetwork.pay2ScriptAddress(script).then(res => {
             const P2SA = ergoLib.Address.from_base58(res);
@@ -94,7 +93,7 @@ class Contracts {
     }
 
     static generateRegisterContract = () => {
-        let script: string = registerScript
+        const script: string = registerScript
             .replace("VAA_TOKEN", Buffer.from(config.token.VAAT, "hex").toString("base64"))
         return ApiNetwork.pay2ScriptAddress(script).then(res => {
             const P2SA = ergoLib.Address.from_base58(res);

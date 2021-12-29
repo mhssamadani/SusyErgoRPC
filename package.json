@@ -21,6 +21,7 @@
     "@types/bigi": "^1.4.2",
     "@types/ecurve": "^1.0.0",
     "@types/node": "^17.0.0",
+    "@types/secure-random": "^1.1.0",
     "nodemon": "^2.0.15",
     "rimraf": "^3.0.2",
     "ts-node": "^10.4.0",

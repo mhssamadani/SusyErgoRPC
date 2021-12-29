@@ -1,7 +1,7 @@
 import axios from "axios";
 import config from "../config/conf";
 import Contracts from "../susy/contracts";
-const ergoLib = require("ergo-lib-wasm-nodejs");
+import ergoLib from "ergo-lib-wasm-nodejs"
 
 const URL = config.node;
 const nodeClient = axios.create({
@@ -15,7 +15,7 @@ const explorerApi = axios.create({
     timeout: 8000
 })
 
-export default class ApiNetwork {
+class ApiNetwork {
     static pay2ScriptAddress = (script: string) => {
         return nodeClient.post("/script/p2sAddress", {source: script}).then(
             res => res.data.address
@@ -108,7 +108,7 @@ export default class ApiNetwork {
     }
 
     static getSponsorBox = async () => {
-        let address = ergoLib.Address.recreate_from_ergo_tree((await Contracts.generateSponsorContract()).ergo_tree()).to_base58(config.networkType)
+        const address = ergoLib.Address.recreate_from_ergo_tree((await Contracts.generateSponsorContract()).ergo_tree()).to_base58(config.networkType)
         const box = await explorerApi.get(`/api/v1/boxes/unspent/byAddress/${address}`)
         return await ApiNetwork.trackMemPool(box.data.items[0], 1)
     }
@@ -168,3 +168,5 @@ export default class ApiNetwork {
 
     }
 }
+
+export default ApiNetwork;

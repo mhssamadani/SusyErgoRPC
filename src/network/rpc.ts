@@ -5,7 +5,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const { JSONRPCServer } = require("json-rpc-2.0");
 
-export default function setupRPC() {
+const setupRPC = () => {
     const server = new JSONRPCServer();
 
     server.addMethod("vaa", (args: { bytes: Uint8Array }) => {
@@ -31,3 +31,5 @@ export default function setupRPC() {
     });
     app.listen(config.port);
 }
+
+export default setupRPC;

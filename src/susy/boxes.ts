@@ -4,13 +4,11 @@ import * as wasm from "ergo-lib-wasm-nodejs";
 import {ergo, wormhole} from "../config/keys";
 import {Buffer} from "buffer";
 
-const ergoLib = require("ergo-lib-wasm-nodejs");
-
-export class Boxes {
+class Boxes {
     // TODO: should checked I64 or number is ok
     static getSponsorBox = async (value: number) => {
-        const sponsorValue = ergoLib.BoxValue.from_i64(ergoLib.I64.from_str(value.toString()));
-        return new ergoLib.ErgoBoxCandidateBuilder(
+        const sponsorValue = wasm.BoxValue.from_i64(wasm.I64.from_str(value.toString()));
+        return new wasm.ErgoBoxCandidateBuilder(
             sponsorValue,
             await Contracts.generateSponsorContract(),
             0
@@ -18,23 +16,23 @@ export class Boxes {
     }
 
     static getBank = async (tokenCount: wasm.I64) => {
-        const value = ergoLib.BoxValue.from_i64(ergoLib.I64.from_str("1000000000"));
-        const bankBuilder = new ergoLib.ErgoBoxCandidateBuilder(
+        const value = wasm.BoxValue.from_i64(wasm.I64.from_str("1000000000"));
+        const bankBuilder = new wasm.ErgoBoxCandidateBuilder(
             value,
             await Contracts.generateBankContract(),
             0
         );
         bankBuilder.add_token(
-            ergoLib.token.from_str(config.token.bankNFT),
-            ergoLib.token.TokenAmount.from_i64(
-                ergoLib.I64.from_str(
+            wasm.TokenId.from_str(config.token.bankNFT),
+            wasm.TokenAmount.from_i64(
+                wasm.I64.from_str(
                     "1"
                 )
             )
         );
         // bankBuilder.add_token(
-        //     ergoLib.token.from_str(config.token.bankToken),
-        //     ergoLib.token.TokenAmount.from_i64(
+        //     wasm.token.from_str(config.token.bankToken),
+        //     wasm.token.TokenAmount.from_i64(
         //     tokenCount
         //     )
         // );
@@ -69,3 +67,5 @@ export class Boxes {
         return builder.build()
     }
 }
+
+export { Boxes };

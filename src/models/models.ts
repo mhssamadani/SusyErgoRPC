@@ -1,11 +1,9 @@
-import {TextEncoder} from "util";
-import ApiNetwork from "../network/api";
 import * as codec from '../utils/codec';
 import { Readable } from 'stream'
 
 abstract class Payload {
     protected byteToStream: (payloadBytes: Uint8Array) => Readable = (payloadBytes: Uint8Array) => {
-        let stream = new Readable()
+        const stream = new Readable()
         stream._read = () => {}
         stream.push(payloadBytes)
         return stream
@@ -129,7 +127,7 @@ class updateGuardianPayload extends Payload {
     }
 }
 
-export class WormholeSignature {
+class WormholeSignature {
     private index: number;
     private signatureData: Uint8Array;
 
@@ -142,7 +140,7 @@ export class WormholeSignature {
         return this.index
     }
 
-    fromString(signatureHexString: string) {
+    fromString = (signatureHexString: string) => {
         if (signatureHexString.startsWith("0x")) signatureHexString = signatureHexString.slice(2)
         if(signatureHexString.length > 65 * 2) {
             this.index = parseInt(signatureHexString.slice(0, 2), 16)
@@ -151,7 +149,7 @@ export class WormholeSignature {
         this.signatureData = new Uint8Array(Buffer.from(signatureHexString, "hex"))
     }
 
-    fromBytes(signatureBytes: Uint8Array) {
+    fromBytes = (signatureBytes: Uint8Array) => {
         if (signatureBytes.length == 66) {
             this.index = signatureBytes[0]
             this.signatureData = signatureBytes.slice(1)
@@ -164,7 +162,7 @@ export class WormholeSignature {
         }
     }
 
-    toHex() {
+    toHex = () => {
         return Buffer.from(this.signatureData).toString("hex")
     }
 }
@@ -181,13 +179,13 @@ class VAA {
     private payload: Payload;
 
     constructor(vaaBytes: Uint8Array, payloadType: string) {
-        let stream = new Readable()
+        const stream = new Readable()
         stream._read = () => {}
         stream.push(vaaBytes)
 
         this.version = stream.read(1)[0]
         this.GuardianSetIndex = codec.arrayToInt(stream.read(4), 4)
-        let signaturesSize: number = stream.read(1)[0]
+        const signaturesSize: number = stream.read(1)[0]
         this.Signatures = []
 
         for (var i = 0; i < signaturesSize; i++ ) {
@@ -208,7 +206,7 @@ class VAA {
         else throw Error(`Unknown payloadType ${payloadType}`)
     }
 
-    toJson() {
+    toJson = () => {
         return `{
             "version": ${this.version},
             "GuardianSetIndex": ${this.GuardianSetIndex},
@@ -222,7 +220,7 @@ class VAA {
         }`
     }
 
-    hexData() {
+    hexData = () => {
         return this.observation()
     }
 
@@ -256,4 +254,4 @@ class VAA {
     }
 }
 
-export { VAA, transferPayload, registerChainPayload, updateGuardianPayload }
+export { VAA, WormholeSignature, transferPayload, registerChainPayload, updateGuardianPayload }

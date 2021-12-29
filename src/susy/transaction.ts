@@ -9,7 +9,7 @@ import * as codec from '../utils/codec';
 import {createAndSignTx} from "./init/util";
 import * as wasm from 'ergo-lib-wasm-nodejs'
 
-const issueVAA = async (VAASourceBox: ErgoBoxes, VAAMessage: VAA, VAAAuthorityAddress: string) => {
+const issueVAA = async (VAASourceBox: ErgoBoxes, VAAMessage: VAA, VAAAuthorityAddress: string): Promise<string> => {
     const height = await ApiNetwork.getHeight();
     const VAAAuthorityAddressSigma = wasm.Address.from_base58(VAAAuthorityAddress);
     const VAABuilder = new wasm.ErgoBoxCandidateBuilder(
@@ -79,7 +79,7 @@ const updateVAABox = async (
     return console.log(signedTx.to_json());
 }
 
-function generateTx(inputBoxes: any, outputs: [any, ...any[]], sponsor: any) {
+const generateTx = (inputBoxes: any, outputs: [any, ...any[]], sponsor: any): wasm.TxBuilder => {
     const boxSelection = new wasm.BoxSelection(inputBoxes, new wasm.ErgoBoxAssetsDataList());
     const txOutput = new wasm.ErgoBoxCandidates(outputs[0]);
     for (let i = 1; i < outputs.length; i++) txOutput.add(outputs[i]);
@@ -158,7 +158,7 @@ const createPayment = async (bank: ErgoBox, VAABox: ErgoBox, sponsor: ErgoBox, g
 
 }
 
-const createRequest = async (bank: ErgoBox, application: ErgoBox, amount: number, fee: number) => {
+const createRequest = async (bank: ErgoBox, application: ErgoBox, amount: number, fee: number): Promise<string> => {
     // hex string of "6obZ6DUGj8qLVwVB28U2tCwa13jVrAFvo3jzMuxTgSeY"
     const receiverAddress = strToUint8Array("563a38ab1f1be9e8c57f66f6cd56ed08e2b906e7e0310067f50171245906c21d");
     console.log(receiverAddress)
