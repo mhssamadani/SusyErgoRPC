@@ -20,7 +20,7 @@ const checkSign = (box: any): boolean => {
     return false
 }
 
-const signMsg = (msg: Uint8Array, sk: string): string[] => {
+const signMsg = (msg: Uint8Array, sk: string): Array<string> => {
     const maxBigInt = BigInteger.fromHex("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
     // const maxBigInt = BigInteger.fromHex("1ee194860333e2bc66c86840d051be002b851655c04d824e2dfa8ff02c0524e2")
     while (true) {

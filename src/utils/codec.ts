@@ -9,7 +9,7 @@ const hexStringToByte = (str: string): Uint8Array => {
     return new Uint8Array(a);
 }
 
-const getGuardianAddresses = (guardianBox: any): string[] => {
+const getGuardianAddresses = (guardianBox: any): Array<string> => {
     let addresses: Array<string> = []
 
     let arr = guardianBox.additionalRegisters.R4.renderedValue
@@ -19,7 +19,7 @@ const getGuardianAddresses = (guardianBox: any): string[] => {
     return addresses
 }
 
-const getBoxSignatures = (box: wasm.ErgoBox): WormholeSignature[] => {
+const getBoxSignatures = (box: wasm.ErgoBox): Array<WormholeSignature> => {
     let arr = box.register_value(5)?.to_coll_coll_byte()!
     let signatures: Array<WormholeSignature> = []
     arr.map((item, index) => {
