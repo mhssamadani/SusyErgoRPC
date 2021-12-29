@@ -19,11 +19,11 @@ const issueVAA = async (VAASourceBox: ErgoBoxes, VAAMessage: VAA, VAAAuthorityAd
     );
 
     VAABuilder.add_token(wasm.TokenId.from_str(config.token.VAAT), wasm.TokenAmount.from_i64(wasm.I64.from_str("1")));
-    VAABuilder.set_register_value(4, wasm.Constant.from_coll_coll_byte([codec.strToUint8Array(VAAMessage.observationWithoutPayload()), VAAMessage.payload.toBytes()]));
-    VAABuilder.set_register_value(5, wasm.Constant.from_coll_coll_byte(VAAMessage.Signatures.map(item => codec.strToUint8Array(item.toHex()))));
+    VAABuilder.set_register_value(4, wasm.Constant.from_coll_coll_byte([codec.strToUint8Array(VAAMessage.observationWithoutPayload()), VAAMessage.getPayload().toBytes()]));
+    VAABuilder.set_register_value(5, wasm.Constant.from_coll_coll_byte(VAAMessage.getSignatures().map(item => codec.strToUint8Array(item.toHex()))));
 
     VAABuilder.set_register_value(6, wasm.Constant.from_byte_array(VAAAuthorityAddressSigma.to_bytes(0)));
-    VAABuilder.set_register_value(7, wasm.Constant.from_i32_array(Int32Array.from([0, 0, 0, VAAMessage.GuardianSetIndex, VAAMessage.EmitterChain])));
+    VAABuilder.set_register_value(7, wasm.Constant.from_i32_array(Int32Array.from([0, 0, 0, VAAMessage.getGuardianSetIndex(), VAAMessage.getEmitterChain()])));
     const secret = wasm.SecretKey.dlog_from_bytes(hexStringToByte(config.addressSecret))
     const outVAA = VAABuilder.build();
     return (await createAndSignTx(secret, VAASourceBox, [outVAA], height)).to_json()
