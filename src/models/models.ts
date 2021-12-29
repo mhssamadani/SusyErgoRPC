@@ -3,26 +3,143 @@ import ApiNetwork from "../network/api";
 import * as codec from '../utils/codec';
 import { Readable } from 'stream'
 
-// TODO: complete Payload implementation if necessary or remove it if not
-class Payload {
-    bytes: Uint8Array
-
-    constructor(paylaodBytes: Uint8Array) {
-        this.bytes = paylaodBytes
+abstract class Payload {
+    protected byteToStream: (payloadBytes: Uint8Array) => Readable = (payloadBytes: Uint8Array) => {
+        let stream = new Readable()
+        stream._read = () => {}
+        stream.push(payloadBytes)
+        return stream
     }
 
-    toString() {
-        return Buffer.from(this.bytes).toString("hex")
+    abstract toHex: () => string
+
+    toBytes: () => Uint8Array = () => {
+        return new Uint8Array(Buffer.from(this.toHex(), 'hex'))
+    }
+}
+
+class transferPayload extends Payload {
+    static readonly payloadLength: number = 1 + 32 + 32 + 2 + 38 + 2 + 32;
+    private payloadId: number;
+    private amount: Uint8Array;
+    private tokenAddress: Uint8Array;
+    private tokenChain: number;
+    private to: Uint8Array;
+    private toChain: number;
+    private fee: Uint8Array;
+
+    constructor(payloadBytes: Uint8Array) {
+        super()
+        if (payloadBytes.length != transferPayload.payloadLength) throw Error(`Expected ${transferPayload.payloadLength} payload length, found: ${payloadBytes.length}`)
+
+        const stream = this.byteToStream(payloadBytes)
+
+        this.payloadId = stream.read(1)[0]
+        this.amount = stream.read(32)
+        this.tokenAddress = stream.read(32)
+        this.tokenChain = codec.arrayToInt(stream.read(2), 2)
+        this.to = stream.read(38)
+        this.toChain = codec.arrayToInt(stream.read(2), 2)
+        this.fee = stream.read(32)
+    }
+
+    toHex = () => {
+        return [
+            codec.UInt8ToByte(this.payloadId),
+            Buffer.from(this.amount).toString('hex'),
+            Buffer.from(this.tokenAddress).toString('hex'),
+            codec.UInt16ToByte(this.tokenChain),
+            Buffer.from(this.to).toString('hex'),
+            codec.UInt16ToByte(this.toChain),
+            Buffer.from(this.fee).toString('hex')
+        ].join("")
+    }
+}
+
+class registerChainPayload extends Payload {
+    static readonly payloadLength: number = 32 + 1 + 2 + 2 + 32;
+    private module: Uint8Array;
+    private action: number;
+    private chainId: number;
+    private emitterChainId: number;
+    private emitterAddress: Uint8Array;
+
+    constructor(payloadBytes: Uint8Array) {
+        super()
+        if (payloadBytes.length != registerChainPayload.payloadLength) throw Error(`Expected ${registerChainPayload.payloadLength} payload length, found: ${payloadBytes.length}`)
+        
+        let stream = new Readable()
+        stream._read = () => {}
+        stream.push(payloadBytes)
+
+        this.module = stream.read(32)
+        this.action = stream.read(1)[0]
+        this.chainId = codec.arrayToInt(stream.read(2), 2)
+        this.emitterChainId = codec.arrayToInt(stream.read(2), 2)
+        this.emitterAddress = stream.read(32)
+    }
+
+    toHex = () => {
+        return [
+            Buffer.from(this.module).toString('hex'),
+            codec.UInt8ToByte(this.action),
+            codec.UInt16ToByte(this.chainId),
+            codec.UInt16ToByte(this.emitterChainId),
+            Buffer.from(this.emitterAddress).toString('hex')
+        ].join("")
+    }
+}
+
+class updateGuardianPayload extends Payload {
+    static readonly payloadLength: number = 32 + 1 + 2 + 4 + 1 + 6*(32);
+    private module: Uint8Array;
+    private action: number;
+    private chainId: number;
+    private newIndex: number;
+    private keyLength: number;
+    private guardianPubkeys: Array<Uint8Array>;
+
+    constructor(payloadBytes: Uint8Array) {
+        super()
+        if (payloadBytes.length != updateGuardianPayload.payloadLength) throw Error(`Expected ${updateGuardianPayload.payloadLength} payload length, found: ${payloadBytes.length}`)
+        
+        let stream = new Readable()
+        stream._read = () => {}
+        stream.push(payloadBytes)
+
+        this.module = stream.read(32)
+        this.action = stream.read(1)[0]
+        this.chainId = codec.arrayToInt(stream.read(2), 2)
+        this.newIndex = codec.arrayToInt(stream.read(4), 4)
+        this.keyLength = stream.read(1)[0]
+
+        this.guardianPubkeys = []
+        for (var i = 0; i < 6; i++) this.guardianPubkeys.push(stream.read(32))
+    }
+
+    toHex = () => {
+        return [
+            Buffer.from(this.module).toString('hex'),
+            codec.UInt8ToByte(this.action),
+            codec.UInt16ToByte(this.chainId),
+            codec.UInt32ToByte(this.newIndex),
+            codec.UInt8ToByte(this.keyLength),
+            this.guardianPubkeys.map(pubkey => Buffer.from(pubkey).toString('hex')).join("")
+        ].join("")
     }
 }
 
 export class WormholeSignature {
-    index: number;
-    signatureData: Uint8Array;
+    private index: number;
+    private signatureData: Uint8Array;
 
     constructor(index: number) {
         this.index = index
         this.signatureData = new Uint8Array()
+    }
+
+    getIndex = () => {
+        return this.index
     }
 
     fromString(signatureHexString: string) {
@@ -52,18 +169,18 @@ export class WormholeSignature {
     }
 }
 
-export default class VAA {
-    version: number;
-    GuardianSetIndex: number;
-    Signatures: Array<WormholeSignature>;
-    timestamp: number;
-    nonce: number;
-    consistencyLevel: number;
-    EmitterChain: number;
-    EmitterAddress: Uint8Array;
-    payload: Payload;
+class VAA {
+    private version: number;
+    private GuardianSetIndex: number;
+    private Signatures: Array<WormholeSignature>;
+    private timestamp: number;
+    private nonce: number;
+    private consistencyLevel: number;
+    private EmitterChain: number;
+    private EmitterAddress: Uint8Array;
+    private payload: Payload;
 
-    constructor(vaaBytes: Uint8Array) {
+    constructor(vaaBytes: Uint8Array, payloadType: string) {
         let stream = new Readable()
         stream._read = () => {}
         stream.push(vaaBytes)
@@ -84,7 +201,11 @@ export default class VAA {
         this.consistencyLevel = stream.read(1)[0]
         this.EmitterChain = stream.read(1)[0]
         this.EmitterAddress = new Uint8Array(stream.read(32))
-        this.payload = new Payload(stream.read())
+        
+        if (payloadType === "transfer") this.payload = new transferPayload(stream.read())
+        else if (payloadType === "register_chain") this.payload = new registerChainPayload(stream.read())
+        else if (payloadType === "update_guardian") this.payload = new updateGuardianPayload(stream.read())
+        else throw Error(`Unknown payloadType ${payloadType}`)
     }
 
     toJson() {
@@ -105,6 +226,22 @@ export default class VAA {
         return this.observation()
     }
 
+    getGuardianSetIndex = () => {
+        return this.GuardianSetIndex
+    }
+
+    getEmitterChain = () => {
+        return this.EmitterChain
+    }
+
+    getSignatures = () => {
+        return this.Signatures
+    }
+
+    getPayload = () => {
+        return this.payload
+    }
+
     observationWithoutPayload = () => {
         let timestamp = codec.UInt32ToByte(this.timestamp)
         let nonce = codec.UInt32ToByte(this.nonce)
@@ -115,7 +252,8 @@ export default class VAA {
     }
 
     observation = () => {
-        return `${this.observationWithoutPayload()}${this.payload.toString()}`
+        return `${this.observationWithoutPayload()}${this.payload.toHex()}`
     }
 }
 
+export { VAA, transferPayload, registerChainPayload, updateGuardianPayload }

@@ -1,4 +1,4 @@
-import VAA from "../models/models"
+import { VAA } from "../models/models"
 import ApiNetwork from "../network/api";
 import * as wasm from 'ergo-lib-wasm-nodejs'
 import * as Utils from '../utils/codec'
@@ -7,19 +7,19 @@ import config from "../config/conf";
 import {issueVAA} from "./transaction";
 
 export function verifyVAASignatures(vaa: VAA, guardianBox: any): boolean {
-    let signatures = vaa.Signatures
+    let signatures = vaa.getSignatures()
     let guardianAddresses = Utils.getGuardianAddresses(guardianBox)
     let vaaData = vaa.hexData()
     let verified: number = 0
     for (const sign of signatures) {
-        if (verify(vaaData, sign.toHex(), guardianAddresses[sign.index])) verified += 1
+        if (verify(vaaData, sign.toHex(), guardianAddresses[sign.getIndex()])) verified += 1
     }
     return verified >= 4;
 }
 
 export default async function processVAA(vaaBytes: Uint8Array) {
-    let vaa = new VAA(vaaBytes)
-    let guardianBoxJson = await ApiNetwork.getGuardianBox(vaa.GuardianSetIndex)
+    let vaa = new VAA(vaaBytes, 'transfer')
+    let guardianBoxJson = await ApiNetwork.getGuardianBox(vaa.getGuardianSetIndex())
     if (!verifyVAASignatures(vaa, guardianBoxJson)) {
         console.log("[-] verify signature failed")
         return false
