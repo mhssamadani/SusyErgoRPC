@@ -135,25 +135,25 @@ const test_update_vaa = async () => {
 
 // TODO: should change to testcase
 const test_payloads = () => {
-    let transferString = "00000000000000007800000000000000000000000000000000000000000000000037d3f4eeb9ba3e4f860f21c634d9a77e05294736cf399051d25f3b2cef30496100020102764ea2b0b9b06b5730a4257bba71fd7797eb1ec12bc3ae6025a01d7fba53830e229592eb00030000000000000005000000000000000000000000000000000000000000000000"
-    let transferBytes = Buffer.from(transferString, 'hex')
+    const transferString = "00000000000000007800000000000000000000000000000000000000000000000037d3f4eeb9ba3e4f860f21c634d9a77e05294736cf399051d25f3b2cef30496100020102764ea2b0b9b06b5730a4257bba71fd7797eb1ec12bc3ae6025a01d7fba53830e229592eb00030000000000000005000000000000000000000000000000000000000000000000"
+    const transferBytes = Buffer.from(transferString, 'hex')
     
-    let transfer = new transferPayload(transferBytes)
+    const transfer = new transferPayload(transferBytes)
     if (transfer.toHex() !== transferString) console.log("[-] transferPayload test failed")
 
-    let registerChainString = "000000000000000000000000000000000000000000546f6b656e42726964676501000000080102030400000000000000000000000000000000000000000000000000000000"
-    let registerChainBytes = Buffer.from(registerChainString, 'hex')
+    const registerChainString = "000000000000000000000000000000000000000000546f6b656e42726964676501000000080102030400000000000000000000000000000000000000000000000000000000"
+    const registerChainBytes = Buffer.from(registerChainString, 'hex')
     
-    let registerChain = new registerChainPayload(registerChainBytes)
+    const registerChain = new registerChainPayload(registerChainBytes)
     if (registerChain.toHex() !== registerChainString) console.log("[-] registerChainPayload test failed")
 
-    let updateGuardianString = "000000000000000000000000000000000000000000546f6b656e427269646765320003000000013602992ac27c178c07371da6c9d623d05174e2fae90cc656346e9edf5a5a5c76f202a5a670080865606db7b6fe14d238589a875b9cf810e55e9247b68a0dbb0d18036c6c34d1dcda1d0d5d855ade5ff4f66734be43458ae2ab3c902526b81712d6036c6c34d1dcda1d0d5d855ade5ff4f66734be43458ae2ab3c902526b81712d602a5a670080865606db7b6fe14d238589a875b9cf810e55e9247b68a0dbb0d18036c6c34d1dcda1d0d5d855ade5ff4f66734be43458ae2ab3c902526b81712d6"
-    let updateGuardianBytes = Buffer.from(updateGuardianString, 'hex')
+    const updateGuardianString = "000000000000000000000000000000000000000000546f6b656e427269646765320003000000013602992ac27c178c07371da6c9d623d05174e2fae90cc656346e9edf5a5a5c76f202a5a670080865606db7b6fe14d238589a875b9cf810e55e9247b68a0dbb0d18036c6c34d1dcda1d0d5d855ade5ff4f66734be43458ae2ab3c902526b81712d6036c6c34d1dcda1d0d5d855ade5ff4f66734be43458ae2ab3c902526b81712d602a5a670080865606db7b6fe14d238589a875b9cf810e55e9247b68a0dbb0d18036c6c34d1dcda1d0d5d855ade5ff4f66734be43458ae2ab3c902526b81712d6"
+    const updateGuardianBytes = Buffer.from(updateGuardianString, 'hex')
     
-    let updateGuardian = new updateGuardianPayload(updateGuardianBytes)
+    const updateGuardian = new updateGuardianPayload(updateGuardianBytes)
     if (updateGuardian.toHex() !== updateGuardianString) console.log("[-] updateGuardianPayload test failed")
 }
 
-//test_update_vaa().then(() => null)
+test_update_vaa().then(() => null)
 
 test_payloads()

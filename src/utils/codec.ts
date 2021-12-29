@@ -1,7 +1,7 @@
 import {WormholeSignature} from "../models/models"
 import * as wasm from 'ergo-lib-wasm-nodejs'
 
-export function hexStringToByte(str: string) {
+const hexStringToByte = (str: string): Uint8Array => {
     let a = [];
     for (let i = 0, len = str.length; i < len; i += 2) {
         a.push(parseInt(str.substr(i, 2), 16));
@@ -9,7 +9,7 @@ export function hexStringToByte(str: string) {
     return new Uint8Array(a);
 }
 
-export function getGuardianAddresses(guardianBox: any) {
+const getGuardianAddresses = (guardianBox: any): Array<string> => {
     let addresses: Array<string> = []
 
     let arr = guardianBox.additionalRegisters.R4.renderedValue
@@ -19,7 +19,7 @@ export function getGuardianAddresses(guardianBox: any) {
     return addresses
 }
 
-export const getBoxSignatures = (box: wasm.ErgoBox) => {
+const getBoxSignatures = (box: wasm.ErgoBox): Array<WormholeSignature> => {
     let arr = box.register_value(5)?.to_coll_coll_byte()!
     let signatures: Array<WormholeSignature> = []
     arr.map((item, index) => {
@@ -30,40 +30,45 @@ export const getBoxSignatures = (box: wasm.ErgoBox) => {
     return signatures
 }
 
-export function getVAADataFromBox(box: wasm.ErgoBox) {
-    let R4 = box.register_value(4)?.to_coll_coll_byte()!
+const getVAADataFromBox = (box: wasm.ErgoBox): string => {
+    const R4 = box.register_value(4)?.to_coll_coll_byte()!
     return Buffer.from(R4[0]).toString('hex') + Buffer.from(R4[1]).toString('hex')
 }
 
-export function strToUint8Array(str: string) {
+const strToUint8Array = (str: string): Uint8Array => {
     return new Uint8Array(Buffer.from(str, "hex"))
 }
 
-const arrayToInt = (bytes: Uint8Array, length: number) => {
+const arrayToInt = (bytes: Uint8Array, length: number): number => {
     return Buffer.from(bytes).readUIntBE(0, length)
 }
 
-const UInt32ToByte = (val: number) => {
+const UInt32ToByte = (val: number): string => {
     const buff = Buffer.alloc(4, 0);
     buff.writeUInt32BE(val)
     return buff.toString("hex")
 }
 
-const UInt16ToByte = (val: number) => {
+const UInt16ToByte = (val: number): string => {
     const buff = Buffer.alloc(2, 0);
     buff.writeUInt16BE(val)
     return buff.toString("hex")
 }
 
-const UInt8ToByte = (val: number) => {
+const UInt8ToByte = (val: number): string => {
     const buff = Buffer.alloc(1, 0);
     buff.writeUInt8(val)
     return buff.toString("hex")
 }
 
 export {
+    hexStringToByte,
+    getGuardianAddresses,
+    getBoxSignatures,
+    getVAADataFromBox,
+    strToUint8Array,
     arrayToInt,
     UInt8ToByte,
     UInt16ToByte,
-    UInt32ToByte,
+    UInt32ToByte
 }

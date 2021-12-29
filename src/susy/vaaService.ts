@@ -6,10 +6,10 @@ import {verify} from "../utils/ecdsa";
 import config from "../config/conf";
 import {issueVAA} from "./transaction";
 
-export function verifyVAASignatures(vaa: VAA, guardianBox: any): boolean {
-    let signatures = vaa.getSignatures()
-    let guardianAddresses = Utils.getGuardianAddresses(guardianBox)
-    let vaaData = vaa.hexData()
+const verifyVAASignatures = (vaa: VAA, guardianBox: any): boolean => {
+    const signatures = vaa.getSignatures()
+    const guardianAddresses = Utils.getGuardianAddresses(guardianBox)
+    const vaaData = vaa.hexData()
     let verified: number = 0
     for (const sign of signatures) {
         if (verify(vaaData, sign.toHex(), guardianAddresses[sign.getIndex()])) verified += 1
@@ -17,9 +17,9 @@ export function verifyVAASignatures(vaa: VAA, guardianBox: any): boolean {
     return verified >= 4;
 }
 
-export default async function processVAA(vaaBytes: Uint8Array) {
-    let vaa = new VAA(vaaBytes, 'transfer')
-    let guardianBoxJson = await ApiNetwork.getGuardianBox(vaa.getGuardianSetIndex())
+const processVAA = async (vaaBytes: Uint8Array) => {
+    const vaa = new VAA(vaaBytes, 'transfer')
+    const guardianBoxJson = await ApiNetwork.getGuardianBox(vaa.getGuardianSetIndex())
     if (!verifyVAASignatures(vaa, guardianBoxJson)) {
         console.log("[-] verify signature failed")
         return false
@@ -36,3 +36,6 @@ export default async function processVAA(vaaBytes: Uint8Array) {
     await ApiNetwork.sendTx((await issueVAA(ergoBoxes, vaa, config.vaaSourceBoxAddress)));
     return true
 }
+
+export default processVAA;
+export { verifyVAASignatures }
