@@ -157,4 +157,3 @@ const test_payloads = () => {
 //test_update_vaa().then(() => null)
 
 test_payloads()
-

@@ -118,14 +118,14 @@ export default class ApiNetwork {
     }
 
     static trackMemPool = async (box: any, index: number): Promise<any> => {
-        let mempoolTxs = await explorerApi.get(`/api/v1/mempool/transactions/byAddress/${box.address}`).then(res => res.data)
-        if (mempoolTxs.total == 0) return box
-        for (const tx of mempoolTxs.items) {
-            if (tx.inputs[index].boxId == box.boxId) {
-                let newVAABox = tx.outputs[index]
-                return ApiNetwork.trackMemPool(newVAABox, index)
-            }
-        }
+        // let mempoolTxs = await explorerApi.get(`/api/v1/mempool/transactions/byAddress/${box.address}`).then(res => res.data)
+        // if (mempoolTxs.total == 0) return box
+        // for (const tx of mempoolTxs.items) {
+        //     if (tx.inputs[index].boxId == box.boxId) {
+        //         let newVAABox = tx.outputs[index]
+        //         return ApiNetwork.trackMemPool(newVAABox, index)
+        //     }
+        // }
         return box
     }
 
