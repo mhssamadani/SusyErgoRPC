@@ -33,7 +33,9 @@ class ApiNetwork {
     }
 
     static sendTx = (tx: any) => {
-        return nodeClient.post("/transactions", JSON.parse(tx)).then(response => ({"txId": response.data as string}));
+        return nodeClient.post("/transactions", JSON.parse(tx)).then(response => ({"txId": response.data as string})).catch(exp => {
+            console.log(exp)
+        });
     };
 
     // TODO: should checked with new function
