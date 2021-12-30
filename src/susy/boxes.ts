@@ -24,11 +24,7 @@ class Boxes {
         );
         bankBuilder.add_token(
             wasm.TokenId.from_str(config.token.bankNFT),
-            wasm.TokenAmount.from_i64(
-                wasm.I64.from_str(
-                    "1"
-                )
-            )
+            wasm.TokenAmount.from_i64(wasm.I64.from_str("1"))
         );
         // bankBuilder.add_token(
         //     wasm.token.from_str(config.token.bankToken),
@@ -68,4 +64,4 @@ class Boxes {
     }
 }
 
-export { Boxes };
+export {Boxes};

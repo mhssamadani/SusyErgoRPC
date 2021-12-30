@@ -18,24 +18,27 @@ import {hdkey} from "ethereumjs-wallet";
 import processVAA from "./susy/vaaService";
 import createGuardianBox from "./susy/init/guardianBox";
 import { VAA } from "./models/models";
+import {wormholeScript} from "./susy/scripts";
 // const hdkey = require('ethereumjs-wallet/hdkey');
 
 const main = () => {
     // console.log(wasm.SecretKey.dlog_from_bytes(Buffer.from(config.initializer.secret, "hex")).get_address().to_base58(config.networkType))
     // issueTokens().then((tokens) => console.log(tokens))
-    // const tou8 = require('buffer-to-uint8array');
-    // const vaa = generateVaa()
-    // console.log(vaa)
-    // processVAA(tou8(Buffer.from(vaa, "hex"))).then((res) => console.log(res))
-    // initializeServiceBoxes().then(() => null)
-
-    if (config.service === "rpc") {
-        setupRPC();
-    } else if (config.service === "sign") {
+    const tou8 = require('buffer-to-uint8array');
+    const vaa = generateVaa()
+    console.log(vaa)
+    processVAA(tou8(Buffer.from(vaa, "hex")), true).then(() => {
         signService().then(() => null)
-    } else {
-        console.log(`invalid service type ${config.service}`)
-    }
+    })
+    // initializeServiceBoxes().then(() => null)
+    //
+    // if (config.service === "rpc") {
+    //     setupRPC();
+    // } else if (config.service === "sign") {
+    //     signService().then(() => null)
+    // } else {
+    //     console.log(`invalid service type ${config.service}`)
+    // }
 }
 
 main()

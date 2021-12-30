@@ -9,7 +9,7 @@ import * as codec from '../utils/codec';
 import {createAndSignTx} from "./init/util";
 import * as wasm from 'ergo-lib-wasm-nodejs'
 
-const issueVAA = async (VAASourceBox: ErgoBoxes, VAAMessage: VAA, VAAAuthorityAddress: string): Promise<string> => {
+const issueVAA = async (VAASourceBox: ErgoBoxes, VAAMessage: VAA, VAAAuthorityAddress: string): Promise<wasm.Transaction> => {
     const height = await ApiNetwork.getHeight();
     const VAAAuthorityAddressSigma = wasm.Address.from_base58(VAAAuthorityAddress);
     const VAABuilder = new wasm.ErgoBoxCandidateBuilder(
@@ -26,7 +26,7 @@ const issueVAA = async (VAASourceBox: ErgoBoxes, VAAMessage: VAA, VAAAuthorityAd
     VAABuilder.set_register_value(7, wasm.Constant.from_i32_array(Int32Array.from([0, 0, 0, VAAMessage.getGuardianSetIndex(), VAAMessage.getEmitterChain()])));
     const secret = wasm.SecretKey.dlog_from_bytes(hexStringToByte(config.addressSecret))
     const outVAA = VAABuilder.build();
-    return (await createAndSignTx(secret, VAASourceBox, [outVAA], height)).to_json()
+    return (await createAndSignTx(secret, VAASourceBox, [outVAA], height))
 }
 
 
@@ -65,18 +65,20 @@ const updateVAABox = async (
     const inputBoxes = new wasm.ErgoBoxes(wormhole);
     inputBoxes.add(VAABox);
     inputBoxes.add(sponsor);
-    // inputBoxes.add(guardianBox);
     const tx = generateTx(inputBoxes, [outWormhole, outVAA, outSponsor], sponsor);
     const dataInputs = new wasm.DataInputs()
     dataInputs.add(new wasm.DataInput(guardianBox.box_id()))
     tx.set_data_inputs(dataInputs);
-    const sks = new wasm.SecretKeys();
-    const wallet = wasm.Wallet.from_secrets(sks);
+    const wallet = wasm.Wallet.from_secrets(new wasm.SecretKeys());
     const tx_data_inputs = new wasm.ErgoBoxes(guardianBox);
     const internalCtx =  ctx ? ctx : await ApiNetwork.getErgoStateContext();
-    console.log(tx.build().to_json())
     const signedTx = wallet.sign_transaction(internalCtx, tx.build(), inputBoxes, tx_data_inputs)
-    return console.log(signedTx.to_json());
+    try {
+        await ApiNetwork.sendTx(signedTx.to_json())
+    }catch (exp: any){
+        console.log(exp)
+    }
+    console.log(`transaction signed and submitted with id ${signedTx.id().to_str()}`)
 }
 
 const generateTx = (inputBoxes: any, outputs: [any, ...any[]], sponsor: any): wasm.TxBuilder => {

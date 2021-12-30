@@ -180,10 +180,10 @@ const generateVaa = () => {
 }
 
 const initializeServiceBoxes = async () => {
-    // await createWormholeBox();
+    await createWormholeBox();
     await createSponsorBox();
-    // await createBankBox("voUSDT1", "this is a testing token for susy version 2 ergo gateway", 2, 1e15)
-    // await createGuardianBox(1);
+    await createBankBox("voUSDT1", "this is a testing token for susy version 2 ergo gateway", 2, 1e15)
+    await createGuardianBox(1);
 }
 
 export {

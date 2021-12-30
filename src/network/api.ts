@@ -32,9 +32,8 @@ class ApiNetwork {
         return nodeClient.get("/info").then((info: any) => info.fullHeight)
     }
 
-    static sendTx = async (tx: any) => {
-        const response = await nodeClient.post("/transactions", JSON.parse(tx));
-        return { "txId": response.data as string };
+    static sendTx = (tx: any) => {
+        return nodeClient.post("/transactions", JSON.parse(tx)).then(response => ({"txId": response.data as string}));
     };
 
     // TODO: should checked with new function
@@ -56,23 +55,23 @@ class ApiNetwork {
             0,
             {[config.token.guardianToken]: 1},
             box => {
-                if(!box.hasOwnProperty('assets')){
+                if (!box.hasOwnProperty('assets')) {
                     return false
                 }
                 let found = false
                 box.assets.forEach((item: { tokenId: string }) => {
-                    if(item.tokenId === config.token.guardianToken) found = true
+                    if (item.tokenId === config.token.guardianToken) found = true
                 });
-                if(!found) return false
-                if(box.hasOwnProperty('additionalRegisters')){
-                    if(box.additionalRegisters.hasOwnProperty('R6')){
+                if (!found) return false
+                if (box.hasOwnProperty('additionalRegisters')) {
+                    if (box.additionalRegisters.hasOwnProperty('R6')) {
                         return box.additionalRegisters.R6.renderedValue === setIndex.toString()
                     }
                 }
                 return false
             }
         )
-        if(!box.covered){
+        if (!box.covered) {
             throw Error("guardian box not found")
         }
         return box.boxes[0]
@@ -85,12 +84,12 @@ class ApiNetwork {
             1e18,
             {},
             box => {
-                if(!box.hasOwnProperty('assets')){
+                if (!box.hasOwnProperty('assets')) {
                     return false
                 }
                 let found = false
                 box.assets.forEach((item: { tokenId: string }) => {
-                    if(item.tokenId === config.token.VAAT) found = true
+                    if (item.tokenId === config.token.VAAT) found = true
                 });
                 return found
             }
@@ -129,7 +128,7 @@ class ApiNetwork {
         return box
     }
 
-    static getBoxesForAddress = async (tree: string, offset=0, limit=100) => {
+    static getBoxesForAddress = async (tree: string, offset = 0, limit = 100) => {
         return explorerApi.get(`/api/v1/boxes/unspent/byErgoTree/${tree}?offset=${offset}&limit=${limit}`).then(res => res.data);
     }
 
@@ -137,29 +136,29 @@ class ApiNetwork {
         return ApiNetwork.getCoveringErgoAndTokenForAddress(tree, amount);
     }
 
-    static getCoveringErgoAndTokenForAddress = async (tree: string, amount: number, covering: {[id: string]: number} = {}, filter: (box: any) => boolean = () => true) => {
+    static getCoveringErgoAndTokenForAddress = async (tree: string, amount: number, covering: { [id: string]: number } = {}, filter: (box: any) => boolean = () => true) => {
         let res = []
         const boxesItems = await ApiNetwork.getBoxesForAddress(tree, 0, 1)
         const total = boxesItems.total;
         let offset = 0;
         let selectedIds: Array<string> = [];
         const remaining = () => {
-            const tokenRemain = Object.entries(covering).map(([key, amount]) => Math.max(amount, 0)).reduce((a,b) => a+b, 0);
+            const tokenRemain = Object.entries(covering).map(([key, amount]) => Math.max(amount, 0)).reduce((a, b) => a + b, 0);
             return tokenRemain + Math.max(amount, 0) > 0;
         }
-        while (offset < total && remaining()){
+        while (offset < total && remaining()) {
             const boxes = await ApiNetwork.getBoxesForAddress(tree, offset, 10)
-            for(let box of boxes.items){
-                if(filter(box)){
+            for (let box of boxes.items) {
+                if (filter(box)) {
                     selectedIds.push(box.boxId)
                     res.push(box);
                     amount -= box.value;
                     box.assets.map((asset: any) => {
-                        if(covering.hasOwnProperty(asset.tokenId)){
+                        if (covering.hasOwnProperty(asset.tokenId)) {
                             covering[asset.tokenId] -= asset.amount;
                         }
                     })
-                    if(!remaining()) break
+                    if (!remaining()) break
                 }
             }
             offset += 10;

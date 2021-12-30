@@ -8,6 +8,7 @@ import BigInteger from 'bigi';
 import ecurve from 'ecurve'
 import { blake2b } from "ethereum-cryptography/blake2b"
 import secureRandom from 'secure-random'
+import {sendAndWaitTx} from "./init/util";
 
 const rand = (): BigInteger => {
     const r = secureRandom.randomBuffer(32)

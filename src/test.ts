@@ -109,8 +109,7 @@ const fakeGuardian = async () => {
 
 const fakeVAA = async (vaa: string) => {
     const tou8 = require('buffer-to-uint8array');
-    const txJson = await issueVAA(inputBoxes, new VAA(tou8(Buffer.from(vaa, "hex")), 'transfer'), config.initializer.address)
-    const tx = wasm.Transaction.from_json(txJson)
+    const tx = await issueVAA(inputBoxes, new VAA(tou8(Buffer.from(vaa, "hex")), 'transfer'), config.initializer.address)
     return tx.outputs().get(0)
 }
 
@@ -137,19 +136,19 @@ const test_update_vaa = async () => {
 const test_payloads = () => {
     const transferString = "00000000000000007800000000000000000000000000000000000000000000000037d3f4eeb9ba3e4f860f21c634d9a77e05294736cf399051d25f3b2cef30496100020102764ea2b0b9b06b5730a4257bba71fd7797eb1ec12bc3ae6025a01d7fba53830e229592eb00030000000000000005000000000000000000000000000000000000000000000000"
     const transferBytes = Buffer.from(transferString, 'hex')
-    
+
     const transfer = new transferPayload(transferBytes)
     if (transfer.toHex() !== transferString) console.log("[-] transferPayload test failed")
 
     const registerChainString = "000000000000000000000000000000000000000000546f6b656e42726964676501000000080102030400000000000000000000000000000000000000000000000000000000"
     const registerChainBytes = Buffer.from(registerChainString, 'hex')
-    
+
     const registerChain = new registerChainPayload(registerChainBytes)
     if (registerChain.toHex() !== registerChainString) console.log("[-] registerChainPayload test failed")
 
     const updateGuardianString = "000000000000000000000000000000000000000000546f6b656e427269646765320003000000013602992ac27c178c07371da6c9d623d05174e2fae90cc656346e9edf5a5a5c76f202a5a670080865606db7b6fe14d238589a875b9cf810e55e9247b68a0dbb0d18036c6c34d1dcda1d0d5d855ade5ff4f66734be43458ae2ab3c902526b81712d6036c6c34d1dcda1d0d5d855ade5ff4f66734be43458ae2ab3c902526b81712d602a5a670080865606db7b6fe14d238589a875b9cf810e55e9247b68a0dbb0d18036c6c34d1dcda1d0d5d855ade5ff4f66734be43458ae2ab3c902526b81712d6"
     const updateGuardianBytes = Buffer.from(updateGuardianString, 'hex')
-    
+
     const updateGuardian = new updateGuardianPayload(updateGuardianBytes)
     if (updateGuardian.toHex() !== updateGuardianString) console.log("[-] updateGuardianPayload test failed")
 }

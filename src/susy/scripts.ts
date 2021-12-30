@@ -75,11 +75,14 @@ export const VAAScript = `
   }
   else {
     val emitterIndex = SELF.R7[Coll[Int]].get(4)
+    if(CONTEXT.dataInputs.size > 0){
     sigmaProp(allOf(Coll(
       // INPUTS: [Bank, VAABox, sponsor] --> OUTPUTS: [Bank, VAATokenokenRedeem, payment, sponsor]
       // DataINPUTS: register
 
       // Verify emitter
+
+
       SELF.R4[Coll[Coll[Byte]]].get(2) == CONTEXT.dataInputs(0).R4[Coll[Coll[Byte]]].get(emitterIndex),
       SELF.R4[Coll[Coll[Byte]]].get(3) == CONTEXT.dataInputs(0).R5[Coll[Coll[Byte]]].get(emitterIndex),
 
@@ -89,6 +92,8 @@ export const VAAScript = `
       OUTPUTS(2).tokens(0)._2 == amount - fee,
       OUTPUTS(2).propositionBytes == address,
 
+
+
       // verify VAA Authority and token redeem
       OUTPUTS(1).propositionBytes == SELF.R6[Coll[Byte]].get,
       OUTPUTS(1).tokens(0)._1 == SELF.tokens(0)._1,
@@ -97,6 +102,9 @@ export const VAAScript = `
       OUTPUTS(0).tokens(1)._2 == INPUTS(0).tokens(1)._2 - (amount - fee),
       OUTPUTS(0).tokens(1)._1 == tokenId,
     )))
+    }else{
+    sigmaProp(false);
+    }
   }
 }`;
 

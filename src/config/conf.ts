@@ -4,16 +4,17 @@ import * as wasm from 'ergo-lib-wasm-nodejs';
 
 const config = {
     token: {
-        VAAT: '1a60b4e5eaabc03bfed57423170ba5051c7b0a3cabf7b236495f3eea873b35f7',
-        wormholeNFT: '475ebf03a2470a53444570913fabd31c70ed05de8a9dec742c6affbf1d19b916',
-        guardianNFT: 'f0cf6c756187d12c418b70928c98ac77eb2cbbc079f8e4ec50393678507865b9',
-        guardianToken: '06d6a016913cf26b2a431b85382a73ddc2957059cab90c5db6769e27056bb871',
-        bankNFT: '089b1fab6673d3946df753c286b3161ed8aa4555e47d826c5a8da22ad5fa5c96',
-        registerNFT: '2392f056add6ab87c6da07f32e42491a3b24c4a0e5d1825b4e73cb2ef9c324a0',
-        bankToken: '2392f056add6ab87c6da07f32e42491a3b24c4a0e5d1825b4e73cb2ef9c324a0'
+        VAAT: '39d180612dd83ed8cadc80c2cf5663ae6118e9e44c7200342daf6d412e6521e1',
+        wormholeNFT: 'cafb170f38fc39f75325f4468f971a45a4235ba8c41ea22902acf01e2ef81dcf',
+        guardianNFT: '4ae0771e40d1081f6f2c7c9599df04d891eeb9eda80e6aba9f0512b34a84a28a',
+        guardianToken: 'aac61c50e994fb544c7641219a427f42a0c6909678112e113ef3bff37063ee8b',
+        bankNFT: '5ec0ad0781b644b905481b0eec30765b3ad4770b5997c27584e568a2c6191811',
+        registerNFT: 'fc1204c2021ef6438e1d267cb328b8db20c4982ed1acd972d1307dfab93c6bd4',
+
+        bankToken: '96c81ac45d955198687d49202d8c1f77e42376046f42dd552801e1bee5e0c301'
     },
-    addressSecret: "DD5D8C423D87109C85785F8D8D2B25255A5870B29EA73FE098B8F4090C3BA9A1",
-    address: "9gMbbSbYMn7KiDmvPSSHiBEu9CkjrJXb3TTDjm87NkqbVTj15NM",
+    addressSecret: "9ea73fe098b8f409009c85785f8d8dc3ba9a1dd5d8c423d8712b25255a5870b2",
+    address: "9gCvobk88Ga4RHrqjdDN6fc4FefV3wfxaj5xmTXy34DwzR8V1Nz",
     node: "http://10.10.9.3:9064",
     explorerApi: "http://10.10.9.3:7000",
     networkType: wasm.NetworkPrefix.Mainnet,
@@ -26,10 +27,10 @@ const config = {
     },
     service: "sign",
     initializer: {
-        secret: "DD5D8C423D87109C85785F8D8D2B25255A5870B29EA73FE098B8F4090C3BA9A1",
-        address: "9gqZkAPjFQ3kn2dFMu3FaSvbZ4j2Ph51qSHzyXt6vMwjthYDpoM"
+        secret: "9ea73fe098b8f409009c85785f8d8dc3ba9a1dd5d8c423d8712b25255a5870b2",
+        address: "9gCvobk88Ga4RHrqjdDN6fc4FefV3wfxaj5xmTXy34DwzR8V1Nz"
     },
-    vaaSourceBoxAddress: "9gzavousDyHQFDPvywESitnyiFfHhoS2CJAQQ7z3xbJSBNCjvwJ",
+    vaaSourceBoxAddress: "9gCvobk88Ga4RHrqjdDN6fc4FefV3wfxaj5xmTXy34DwzR8V1Nz",
     port: 8080,
 }
 

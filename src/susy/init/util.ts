@@ -120,7 +120,7 @@ const sendAndWaitTx = async (tx: wasm.Transaction) => {
     console.log(`transaction submitted with id ${tx.id().to_str()}. waiting to be mined`)
     let counter = 0;
     while (true) {
-        await sleep(60 * 1000)
+        await sleep(10 * 1000)
         counter++;
         try {
             await ApiNetwork.getTransaction(tx.id().to_str())
