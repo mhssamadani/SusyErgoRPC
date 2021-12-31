@@ -126,7 +126,7 @@ const sendAndWaitTx = async (tx: wasm.Transaction) => {
             await ApiNetwork.getTransaction(tx.id().to_str())
             break;
         } catch (exp: any) {
-            if (counter % 5 === 0) {
+            if (counter % 60 === 0) {
                 console.log(`retry sending transaction with id ${tx.id().to_str()}`)
                 await ApiNetwork.sendTx(tx.to_json())
             }

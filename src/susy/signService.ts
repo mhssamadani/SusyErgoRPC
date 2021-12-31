@@ -2,11 +2,11 @@ import config from "../config/conf";
 import ApiNetwork from "../network/api";
 import * as wasm from 'ergo-lib-wasm-nodejs'
 import * as codec from '../utils/codec'
-import { verify } from "../utils/ecdsa";
+import {verify} from "../utils/ecdsa";
 import {updateVAABox} from "./transaction";
 import BigInteger from 'bigi';
 import ecurve from 'ecurve'
-import { blake2b } from "ethereum-cryptography/blake2b"
+import {blake2b} from "ethereum-cryptography/blake2b"
 import secureRandom from 'secure-random'
 import {sendAndWaitTx} from "./init/util";
 
@@ -28,7 +28,7 @@ const signMsg = (msg: Uint8Array, sk: string): Array<string> => {
         const r = rand()
         const ecParams = ecurve.getCurveByName('secp256k1')
         const a = ecParams.G.multiply(r)
-        const msgHash = blake2b(Buffer.from(msg), 32).toString('hex')
+        const msgHash = blake2b(Buffer.from(msg), 32).toString('hex').slice(2, 64)
         const z: BigInteger = r.add(BigInteger.fromHex(sk).multiply(BigInteger.fromHex(msgHash))).remainder(ecParams.n)
         const zHex = z.toHex();
         console.log(z.toString(), z.toString(16), a.getEncoded().toString('hex'))
@@ -80,4 +80,4 @@ const signService = async (): Promise<void> => {
 }
 
 export default signService;
-export { signMsg }
+export {signMsg}

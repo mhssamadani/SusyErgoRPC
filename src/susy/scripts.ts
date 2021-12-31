@@ -112,7 +112,7 @@ export const wormholeScript = `
   ))
   if(INPUTS(0).tokens(0)._1 == wormholeNFT) {
     // INPUTS: [wormhole, VAABox, sponsor] --> OUTPUTS: [wormhole, VAABox, sponsor]
-    val e: Coll[Byte] = blake2b256(VAADigest) // weak Fiat-Shamir
+    val e: Coll[Byte] = blake2b256(VAADigest).slice(1,32) // weak Fiat-Shamir
     val eInt = byteArrayToBigInt(e) // challenge as big integer
     val g: GroupElement = groupGenerator
     val l = g.exp(OUTPUTS(1).R9[BigInt].get)
@@ -129,7 +129,7 @@ export const wormholeScript = `
           OUTPUTS(1).tokens(0)._1 == VAAToken,
           // (OUTPUTS(1).tokens(0)._1 == VAAToken) || (OUTPUTS(1).tokens(0)._1 == guardianToken),
           // Verify Sign
-          l != r,
+          l == r,
         )
       )
     )

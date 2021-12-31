@@ -147,13 +147,13 @@ const uint8arrayToHex = (arr: Uint8Array) => {
     return Buffer.from(arr).toString('hex')
 }
 
-const generateVaa = () => {
+const generateVaa = (tokenId: string) => {
     let buff = (new Buffer(32)).fill(0)
     buff.writeBigUInt64BE(BigInt(100));
     const payload = [
         "00",   // id
         BigIntToHexString(BigInt(120)),     // amount
-        wasm.TokenId.from_str(config.token.bankToken).to_str(),     //
+        wasm.TokenId.from_str(tokenId).to_str(),     //
         "0002",     // SOLANA
         uint8arrayToHex(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_bytes(config.networkType)),
         "0003",
