@@ -1,5 +1,9 @@
 import * as codec from '../utils/codec';
 import { Readable } from 'stream'
+import { ErgoBox } from 'ergo-lib-wasm-nodejs';
+import Contracts from '../susy/contracts';
+import * as wasm from 'ergo-lib-wasm-nodejs'
+import config from '../config/conf';
 
 abstract class Payload {
     protected byteToStream: (payloadBytes: Uint8Array) => Readable = (payloadBytes: Uint8Array) => {
@@ -204,6 +208,32 @@ class VAA {
         else if (payloadType === "register_chain") this.payload = new registerChainPayload(stream.read())
         else if (payloadType === "update_guardian") this.payload = new updateGuardianPayload(stream.read())
         else throw Error(`Unknown payloadType ${payloadType}`)
+    }
+
+    static fromBox = async (box: ErgoBox): Promise<VAA> => {
+        const r4: Array<Uint8Array> = box.register_value(4)?.to_coll_coll_byte()!
+        const observation: Uint8Array = r4[0]
+        const payload: Uint8Array = r4[1]
+        const boxErgoTree: wasm.ErgoTree = box.ergo_tree()
+
+        const transferVAAErgoTree: wasm.ErgoTree = (await Contracts.generateVAAContract()).ergo_tree()
+        const registerChainVAAErgoTree: wasm.ErgoTree = (await Contracts.generateRegisterVAAContract()).ergo_tree()
+        const guardianUpdateVAAErgoTree: wasm.ErgoTree = (await Contracts.generateGuardianVAAContract()).ergo_tree()
+        const payloadType: string = (boxErgoTree === transferVAAErgoTree) ? "transfer"
+            : (boxErgoTree === transferVAAErgoTree) ? "register_chain"
+            : (boxErgoTree === transferVAAErgoTree) ? "update_guardian"
+            : ""
+        if (payloadType == "") throw Error(`Box address was not compatible to any Payload types ${wasm.Address.recreate_from_ergo_tree(boxErgoTree).to_base58(config.networkType)}`)
+
+        const guardianSetIndex: number = box.register_value(7)?.to_i32_array()[3]!
+        const version: number = 0 // we don't have version, so we set it 0
+        
+        const signatures: Array<WormholeSignature> = [] // TODO: parse signatures from R5
+
+        // TODO: concat all data
+
+        // TODO: call vaa constructor
+        return new VAA(new Uint8Array(Buffer.from("", 'hex')), payloadType)
     }
 
     toJson = () => {
