@@ -110,7 +110,6 @@ class Contracts {
             .replace("REGISTER_SCRIPT_HASH", registerScriptHash.toString("base64"))
             .replace("WORMHOLE_NFT", Buffer.from(config.token.wormholeNFT, "hex").toString("base64"))
         return ApiNetwork.pay2ScriptAddress(script).then(res => {
-            console.log(res)
             const P2SA = ergoLib.Address.from_base58(res);
             return ergoLib.Contract.pay_to_address(P2SA);
         })
