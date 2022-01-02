@@ -103,7 +103,7 @@ const fakeSponsor = async () => {
 }
 
 const fakeGuardian = async () => {
-    const guardian = await Boxes.getGuardianBox(1)
+    const guardian = await Boxes.getGuardianBox(0)
     return fakeBox(guardian)
 }
 

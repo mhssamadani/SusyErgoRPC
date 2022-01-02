@@ -22,11 +22,12 @@ const checkSign = (box: any): boolean => {
 }
 
 const signMsg = (msg: Uint8Array, sk: string): Array<string> => {
+    const msgHash = "00" + blake2b(Buffer.from(msg), 32).toString('hex').slice(2)
+    console.log(Buffer.from(msgHash, "hex").toString("base64"))
+    const ecParams = ecurve.getCurveByName('secp256k1')
     while (true) {
         const r = rand()
-        const ecParams = ecurve.getCurveByName('secp256k1')
         const a = ecParams.G.multiply(r)
-        const msgHash = "00"+blake2b(Buffer.from(msg), 32).toString('hex').slice(2)
         // const msgHash = blake2b(Buffer.from(msg), 32).toString('hex').slice(2, 64)
         const z: BigInteger = r.add(BigInteger.fromHex(sk).multiply(BigInteger.fromHex(msgHash))).remainder(ecParams.n)
         const zHex = z.toHex();

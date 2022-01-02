@@ -114,7 +114,7 @@ export const wormholeScript = `
     // INPUTS: [wormhole, VAABox, sponsor] --> OUTPUTS: [wormhole, VAABox, sponsor]
     val e: Coll[Byte] = blake2b256(VAADigest) // weak Fiat-Shamir
     val test:Coll[Byte] = Coll(0.toByte)
-    val eInt = byteArrayToBigInt(e.updated(0, 0.toByte) // challenge as big integer
+    val eInt = byteArrayToBigInt(test ++ e.slice(1, 32)) // challenge as big integer
     val g: GroupElement = groupGenerator
     val l = g.exp(OUTPUTS(1).R9[BigInt].get)
     val r = OUTPUTS(1).R8[GroupElement].get.multiply(Pk.exp(eInt))

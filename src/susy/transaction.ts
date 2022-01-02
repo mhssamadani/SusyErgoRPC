@@ -39,7 +39,7 @@ const updateVAABox = async (
     signA: Uint8Array,
     signZ: Uint8Array,
     ctx?: ErgoStateContext,
-    wait: boolean = false
+    wait: boolean = false,
 ): Promise<any> => {
     const outSponsor = await Boxes.getSponsorBox(sponsor.value().as_i64().as_num() - config.fee);
     const signatureCount = VAABox.register_value(7)!.to_i32_array()[1];
