@@ -32,7 +32,7 @@ const signMsg = (msg: Uint8Array, sk: string): Array<string> => {
         const zHex = z.toHex();
         // console.log(z.toString(), z.toString(16), a.getEncoded().toString('hex'))
         if (zHex.length < 64 || (zHex.length == 64 && Number(zHex[0]) <= 7)) {
-            return [a.getEncoded().toString('hex'), z.toString(16)]
+            return [a.getEncoded().toString('hex'), z.toString(16).padStart(64, '0')]
         }
     }
 }
