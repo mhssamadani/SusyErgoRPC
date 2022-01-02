@@ -55,6 +55,10 @@ class VAABox extends Box {
         const r4 = this.getObservationPayloadTuple()
         return Buffer.from(r4[0]).toString("hex") + Buffer.from(r4[1]).toString("hex")
     }
+
+    getCheckpoint = (): number => {
+        return this.ergoBox.register_value(7)?.to_i32_array()[0]!
+    }
 }
 
 class GuardianBox extends Box {

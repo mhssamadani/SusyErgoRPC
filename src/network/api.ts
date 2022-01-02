@@ -50,7 +50,7 @@ class ApiNetwork {
         return explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${token}`).then(res => res.data)
     }
 
-    static getGuardianBox = async (setIndex: number) => {
+    static getGuardianBox = async (setIndex: number): Promise<JSON> => {
         const guardianAddress = await Contracts.generateGuardianContract()
         const box = await ApiNetwork.getCoveringErgoAndTokenForAddress(
             guardianAddress.ergo_tree().to_base16_bytes(),
@@ -79,7 +79,7 @@ class ApiNetwork {
         return box.boxes[0]
     }
 
-    static getVAABoxes = async () => {
+    static getVAABoxes = async (): Promise<Array<JSON>> => {
         const vaaAddress = await Contracts.generateVAAContract()
         const boxes = await ApiNetwork.getCoveringErgoAndTokenForAddress(
             vaaAddress.ergo_tree().to_base16_bytes(),

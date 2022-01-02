@@ -118,14 +118,14 @@ const fakeVAA = async (vaa: string) => {
 const test_update_vaa = async () => {
     const vaaBytesHex = await generateVaa()
     const wormholeBox = await fakeWormhole()
-    const vaaBox = await fakeVAA(vaaBytesHex)
-    let msg = codec.strToUint8Array(codec.getVAADataFromBox(vaaBox))
+    const vaaBox = new VAABox(JSON.parse((await fakeVAA(vaaBytesHex)).to_json()))
+    let msg = codec.strToUint8Array(vaaBox.getObservation())
     let signatureData = signMsg(msg, config.guardian.privateKey)
     const sponsorBox = await fakeSponsor()
     const guardianBox = await fakeGuardian()
     await updateVAABox(
         wormholeBox,
-        vaaBox,
+        vaaBox.getErgoBox(),
         sponsorBox,
         guardianBox,
         config.guardian.index,
@@ -183,11 +183,11 @@ const test_guardian_box_parse = () => {
     
 }
 
-//test_update_vaa().then(() => null)
+test_update_vaa().then(() => null)
 
 //test_payloads()
 
 //Contracts.generateGuardianContract().then(contract => console.log(wasm.Address.recreate_from_ergo_tree(contract.ergo_tree()).to_base58(config.networkType)))
 
-test_vaa_box_parse()
-test_guardian_box_parse()
+//test_vaa_box_parse()
+//test_guardian_box_parse()
