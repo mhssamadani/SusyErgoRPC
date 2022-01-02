@@ -1,26 +1,75 @@
 import setupRPC from "./network/rpc"
-import config from "./config/conf";
+import config, {setGuardianIndex} from "./config/conf";
 import signService, {signMsg} from "./susy/signService";
 import * as wasm from 'ergo-lib-wasm-nodejs'
 import {Boxes} from "./susy/boxes";
 import {getSecret} from "./susy/init/util";
 import ApiNetwork from "./network/api";
-import guardianBox from "./susy/init/guardianBox";
 import {generateVaa} from "./susy/init";
 import {issueVAA, updateVAABox} from "./susy/transaction";
-import { VAA, registerChainPayload, transferPayload, updateGuardianPayload } from "./models/models";
+import {VAA, registerChainPayload, transferPayload, updateGuardianPayload} from "./models/models";
 import * as codec from "./utils/codec";
 import BigInteger from 'bigi';
 import Contracts from "./susy/contracts";
 import { GuardianBox, VAABox } from "./models/boxes";
 
-const inputBoxes = wasm.ErgoBoxes.from_boxes_json([JSON.stringify({"boxId":"6dd87efe55ab7e2b94c4cc984d15f91f08b3899a50a4f4ab9f2066e909ef3d6e","transactionId":"a77749aad395d019f3a540b648838496c1af1c0a5bb2eca5011abc48ce6bc780","blockId":"5792d25d970070daaedad4a093b31a440a5e6825a313dd5e6a8a0d783f56a594","value":3963700000,"index":1,"globalIndex":248070,"creationHeight":0,"settlementHeight":108051,"ergoTree":"0008cd02de381861e093c2d35d76d4664a246f56fd15dd53b928ed539bd621f9190b06f8","address":"9gCvobk88Ga4RHrqjdDN6fc4FefV3wfxaj5xmTXy34DwzR8V1Nz","assets":[{"tokenId":"aac61c50e994fb544c7641219a427f42a0c6909678112e113ef3bff37063ee8b","index":0,"amount":999,"name":"Guardian Token","decimals":0,"type":"EIP-004"},{"tokenId":"5ec0ad0781b644b905481b0eec30765b3ad4770b5997c27584e568a2c6191811","index":1,"amount":9999,"name":"Bank Identifier","decimals":0,"type":"EIP-004"},{"tokenId":"fc1204c2021ef6438e1d267cb328b8db20c4982ed1acd972d1307dfab93c6bd4","index":2,"amount":1,"name":"register NFT","decimals":0,"type":"EIP-004"},{"tokenId":"4ae0771e40d1081f6f2c7c9599df04d891eeb9eda80e6aba9f0512b34a84a28a","index":3,"amount":1,"name":"Guardian NFT","decimals":0,"type":"EIP-004"},{"tokenId":"39d180612dd83ed8cadc80c2cf5663ae6118e9e44c7200342daf6d412e6521e1","index":4,"amount":9991,"name":"VAA Identifier","decimals":0,"type":"EIP-004"}],"additionalRegisters":{},"spentTransactionId":null,"mainChain":true})])
+const inputBoxes = wasm.ErgoBoxes.from_boxes_json([JSON.stringify({
+    "boxId": "da7c86513d48f5081825effbec947f36c4f201abb49a1d0863f427dc4ffa750a",
+    "transactionId": "c427c64f8934fce495417ea5e36d2655d7e85ed9d3a6627eff038d577932d4e2",
+    "blockId": "8fa4a885c6a0a331d40c11497ed4fde9920752dedf2f7d079784955f95b72af7",
+    "value": 3978000000,
+    "index": 1,
+    "globalIndex": 251545,
+    "creationHeight": 0,
+    "settlementHeight": 109673,
+    "ergoTree": "0008cd02aae3107235e1eebb54a87fbd34d0656ef20e871c3568090b63302e6767720d0f",
+    "address": "9fpKbN9rDg5pSjrfNPZQWZpQxWfv2QeQK7wwYtPdbPsxMMFe7Eq",
+    "assets": [{
+        "tokenId": "cadeadd7f480be7725cab8bf3254e8fd3e60a878dc89094aeb5b3fc7999f6f80",
+        "index": 0,
+        "amount": 999,
+        "name": "Guardian Token",
+        "decimals": 0,
+        "type": "EIP-004"
+    }, {
+        "tokenId": "4662cfff004341503d24338bf8b24f90f3c660e0a1378292832e31419a2486d0",
+        "index": 1,
+        "amount": 9999,
+        "name": "Bank Identifier",
+        "decimals": 0,
+        "type": "EIP-004"
+    }, {
+        "tokenId": "466d0a2ce63bce0fafce842ef249f9cb56a574716f653206589b918240a886c4",
+        "index": 2,
+        "amount": 1,
+        "name": "register NFT",
+        "decimals": 0,
+        "type": "EIP-004"
+    }, {
+        "tokenId": "96ea478bb2f03b20c1ffff2ebea302880c55746ec0f52d6aeb4fe1d75a780374",
+        "index": 3,
+        "amount": 1,
+        "name": "Guardian NFT",
+        "decimals": 0,
+        "type": "EIP-004"
+    }, {
+        "tokenId": "6bb7e2a6245cea46acd5ea363389c274444903210a1d51aeac3c879ba92f2a24",
+        "index": 4,
+        "amount": 9997,
+        "name": "VAA Identifier",
+        "decimals": 0,
+        "type": "EIP-004"
+    }],
+    "additionalRegisters": {},
+    "spentTransactionId": null,
+    "mainChain": true
+})])
 const fee = wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString()))
 let ctx: wasm.ErgoStateContext | null = null
 const emptyBoxes = wasm.ErgoBoxes.from_boxes_json([])
 
 const getCtx = async () => {
-    if(!ctx){
+    if (!ctx) {
         ctx = await ApiNetwork.getErgoStateContext();
     }
     return ctx!
@@ -38,7 +87,9 @@ const fakeBox = async (candidate: wasm.ErgoBoxCandidate) => {
         wasm.BoxValue.SAFE_USER_MIN()
     )
     const sks = new wasm.SecretKeys();
-    sks.add(getSecret());
+    const secret = getSecret()
+    console.log(secret.get_address().to_base58(config.networkType))
+    sks.add(secret);
     const wallet = wasm.Wallet.from_secrets(sks);
     const signedTx = wallet.sign_transaction(await getCtx(), builder.build(), inputBoxes, emptyBoxes);
     return signedTx.outputs().get(0)
@@ -55,7 +106,7 @@ const fakeSponsor = async () => {
 }
 
 const fakeGuardian = async () => {
-    const guardian = await Boxes.getGuardianBox(1)
+    const guardian = await Boxes.getGuardianBox(0)
     return fakeBox(guardian)
 }
 
@@ -66,22 +117,33 @@ const fakeVAA = async (vaa: string) => {
 }
 
 const test_update_vaa = async () => {
-    const vaaBytesHex = await generateVaa()
+    const tokenId = "803935d89d5e33acc6e24bbb835212ee3997abbc7f756ccc37a07258fb7b9fd3"
+    const vaaBytesHex = await generateVaa(tokenId)
     const wormholeBox = await fakeWormhole()
-    const vaaBox = new VAABox(JSON.parse((await fakeVAA(vaaBytesHex)).to_json()))
-    let msg = codec.strToUint8Array(vaaBox.getObservation())
-    let signatureData = signMsg(msg, config.guardian.privateKey)
+    let vaaBox = await fakeVAA(vaaBytesHex)
+    const vaaBoxObject = new VAABox(JSON.parse(vaaBox.to_json()))
+    let msg = codec.strToUint8Array(vaaBoxObject.getObservation())
     const sponsorBox = await fakeSponsor()
     const guardianBox = await fakeGuardian()
-    await updateVAABox(
-        wormholeBox,
-        vaaBox.getErgoBox(),
-        sponsorBox,
-        guardianBox,
-        config.guardian.index,
-        Uint8Array.from(Buffer.from(signatureData[0], "hex")),
-        Uint8Array.from(Buffer.from(signatureData[1], "hex")),
-    )
+    for(let i = 0; i < 6; i++) {
+        console.log(`start processing guardian ${i}`)
+        setGuardianIndex(i)
+        let signatureData = signMsg(msg, config.guardian.privateKey)
+        try {
+            const tx = await updateVAABox(
+                wormholeBox,
+                vaaBox,
+                sponsorBox,
+                guardianBox,
+                config.guardian.index,
+                Uint8Array.from(Buffer.from(signatureData[0], "hex")),
+                Uint8Array.from(Buffer.from(signatureData[1], "hex")),
+            )
+            vaaBox = tx.outputs().get(1)
+        }catch (exp: any) {
+            console.log(exp)
+        }
+    }
 }
 
 // TODO: should change to testcase
@@ -142,3 +204,4 @@ test_update_vaa().then(() => null)
 //test_vaa_box_parse()
 //test_guardian_box_parse()
 
+// test_payloads()

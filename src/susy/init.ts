@@ -1,6 +1,6 @@
 import * as wasm from 'ergo-lib-wasm-nodejs'
 import ApiNetwork from "../network/api";
-import config from "../config/conf";
+import config, {setGuardianIndex, setTokens} from "../config/conf";
 import Contracts from "./contracts";
 import createGuardianBox from "./init/guardianBox";
 import {createAndSignTx, fetchBoxesAndIssueToken, getSecret, sendAndWaitTx} from "./init/util";
@@ -8,6 +8,10 @@ import {wormhole} from "../config/keys";
 import {sign} from "../utils/ecdsa";
 import * as codec from '../utils/codec';
 import {Boxes} from "./boxes";
+import fs from 'fs';
+import {blake2b} from "ethereum-cryptography/blake2b";
+import processVAA from "./vaaService";
+import signService from "./signService";
 
 const issueBankIdentifier = async (secret: wasm.SecretKey) => {
     return await fetchBoxesAndIssueToken(secret, 10000, "Bank Identifier", "Wormhole Bank Boxes Identifier", 0)
@@ -138,7 +142,7 @@ const issueTokens = async () => {
 }
 
 const BigIntToHexString = (num: bigint) => {
-    let buff = (new Buffer(32)).fill(0)
+    let buff = Buffer.alloc(32, 0)
     buff.writeBigUInt64BE(num)
     return buff.toString("hex")
 }
@@ -147,13 +151,13 @@ const uint8arrayToHex = (arr: Uint8Array) => {
     return Buffer.from(arr).toString('hex')
 }
 
-const generateVaa = () => {
-    let buff = (new Buffer(32)).fill(0)
+const generateVaa = (tokenId: string) => {
+    let buff = Buffer.alloc(32, 0)
     buff.writeBigUInt64BE(BigInt(100));
     const payload = [
         "00",   // id
         BigIntToHexString(BigInt(120)),     // amount
-        wasm.TokenId.from_str(config.token.bankToken).to_str(),     //
+        wasm.TokenId.from_str(tokenId).to_str(),     //
         "0002",     // SOLANA
         uint8arrayToHex(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_bytes(config.networkType)),
         "0003",
@@ -182,15 +186,34 @@ const generateVaa = () => {
 const initializeServiceBoxes = async () => {
     await createWormholeBox();
     await createSponsorBox();
-    await createBankBox("voUSDT1", "this is a testing token for susy version 2 ergo gateway", 2, 1e15)
+    const tokenId = await createBankBox("voUSDT1", "this is a testing token for susy version 2 ergo gateway", 2, 1e15)
     await createGuardianBox(1);
+    return tokenId
 }
 
+const initializeAll = async (test: boolean = false) => {
+    // console.log(wasm.SecretKey.dlog_from_bytes(Buffer.from(config.initializer.secret, "hex")).get_address().to_base58(config.networkType))
+    // const tokens = await issueTokens()
+    // fs.writeFileSync("src/config/tokens.json", JSON.stringify(tokens))
+    // setTokens(tokens);
+    // const tokenId = await initializeServiceBoxes()
+    // const tokenId = "803935d89d5e33acc6e24bbb835212ee3997abbc7f756ccc37a07258fb7b9fd3"
+    if(test) {
+        // const tou8 = require('buffer-to-uint8array');
+        // const vaa = generateVaa(tokenId)
+        // await processVAA(tou8(Buffer.from(vaa, "hex")), true)
+        for (let index = 0; index < 6; index++) {
+            setGuardianIndex(index)
+            await signService(true)
+        }
+    }
+}
 export {
     createWormholeBox,
     createSponsorBox,
     createBankBox,
     issueTokens,
     initializeServiceBoxes,
-    generateVaa
+    generateVaa,
+    initializeAll
 }
