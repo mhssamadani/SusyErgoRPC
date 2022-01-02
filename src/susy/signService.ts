@@ -22,13 +22,12 @@ const checkSign = (box: any): boolean => {
 }
 
 const signMsg = (msg: Uint8Array, sk: string): Array<string> => {
-    const maxBigInt = BigInteger.fromHex("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
-    // const maxBigInt = BigInteger.fromHex("1ee194860333e2bc66c86840d051be002b851655c04d824e2dfa8ff02c0524e2")
     while (true) {
         const r = rand()
         const ecParams = ecurve.getCurveByName('secp256k1')
         const a = ecParams.G.multiply(r)
-        const msgHash = blake2b(Buffer.from(msg), 32).toString('hex').slice(2, 64)
+        const msgHash = "00"+blake2b(Buffer.from(msg), 32).toString('hex').slice(2)
+        // const msgHash = blake2b(Buffer.from(msg), 32).toString('hex').slice(2, 64)
         const z: BigInteger = r.add(BigInteger.fromHex(sk).multiply(BigInteger.fromHex(msgHash))).remainder(ecParams.n)
         const zHex = z.toHex();
         console.log(z.toString(), z.toString(16), a.getEncoded().toString('hex'))
@@ -45,7 +44,7 @@ const verifyBoxSignatures = (box: wasm.ErgoBox, guardianBox: any): boolean => {
     return verify(vaaData, signatures[config.guardian.index].toHex(), guardianAddresses[config.guardian.index])
 }
 
-const signService = async (): Promise<void> => {
+const signService = async (wait: boolean = false): Promise<void> => {
     // loop this procedure (e.g. once in 3 minutes)
 
     const vaaBoxes = await ApiNetwork.getVAABoxes()
@@ -75,6 +74,8 @@ const signService = async (): Promise<void> => {
             config.guardian.index,
             Uint8Array.from(Buffer.from(signatureData[0], "hex")),
             Uint8Array.from(Buffer.from(signatureData[1], "hex")),
+            undefined,
+            wait
         )
     }
 }

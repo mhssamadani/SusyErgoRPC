@@ -6,7 +6,7 @@ import ApiNetwork from "../network/api";
 import {hexStringToByte, strToUint8Array} from "../utils/codec";
 import {transferPayload, VAA} from "../models/models";
 import * as codec from '../utils/codec';
-import {createAndSignTx} from "./init/util";
+import {createAndSignTx, sendAndWaitTx} from "./init/util";
 import * as wasm from 'ergo-lib-wasm-nodejs'
 
 const issueVAA = async (VAASourceBox: ErgoBoxes, VAAMessage: VAA, VAAAuthorityAddress: string): Promise<wasm.Transaction> => {
@@ -38,7 +38,8 @@ const updateVAABox = async (
     index: number,
     signA: Uint8Array,
     signZ: Uint8Array,
-    ctx?: ErgoStateContext
+    ctx?: ErgoStateContext,
+    wait: boolean = false
 ): Promise<any> => {
     const outSponsor = await Boxes.getSponsorBox(sponsor.value().as_i64().as_num() - config.fee);
     const signatureCount = VAABox.register_value(7)!.to_i32_array()[1];
@@ -74,7 +75,11 @@ const updateVAABox = async (
     const internalCtx = ctx ? ctx : await ApiNetwork.getErgoStateContext();
     const signedTx = wallet.sign_transaction(internalCtx, tx.build(), inputBoxes, tx_data_inputs)
     try {
-        await ApiNetwork.sendTx(signedTx.to_json())
+        if(wait){
+            await sendAndWaitTx(signedTx)
+        }else {
+            await ApiNetwork.sendTx(signedTx.to_json())
+        }
     } catch (exp: any) {
         console.log(exp)
     }

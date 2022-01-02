@@ -2,7 +2,7 @@ import setupRPC from "./network/rpc"
 import config from "./config/conf";
 import signService from "./susy/signService";
 import {processPayments} from "./susy/payment";
-import {generateVaa, initializeServiceBoxes, issueTokens} from "./susy/init";
+import {generateVaa, initializeAll, initializeServiceBoxes, issueTokens} from "./susy/init";
 import * as wasm from 'ergo-lib-wasm-nodejs'
 import processVAA from "./susy/vaaService";
 
@@ -22,6 +22,8 @@ const main = () => {
         signService().then(() => null)
     } else if (config.service === "payment") {
         processPayments().then(() => null)
+    } else if (config.service === "init") {
+        initializeAll(config.test).then(() => null)
     } else {
         console.log(`invalid service type ${config.service}`)
     }
