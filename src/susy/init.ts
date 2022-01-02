@@ -192,16 +192,16 @@ const initializeServiceBoxes = async () => {
 }
 
 const initializeAll = async (test: boolean = false) => {
-    console.log(wasm.SecretKey.dlog_from_bytes(Buffer.from(config.initializer.secret, "hex")).get_address().to_base58(config.networkType))
+    // console.log(wasm.SecretKey.dlog_from_bytes(Buffer.from(config.initializer.secret, "hex")).get_address().to_base58(config.networkType))
     // const tokens = await issueTokens()
     // fs.writeFileSync("src/config/tokens.json", JSON.stringify(tokens))
     // setTokens(tokens);
     // const tokenId = await initializeServiceBoxes()
-    const tokenId = "803935d89d5e33acc6e24bbb835212ee3997abbc7f756ccc37a07258fb7b9fd3"
+    // const tokenId = "803935d89d5e33acc6e24bbb835212ee3997abbc7f756ccc37a07258fb7b9fd3"
     if(test) {
-        const tou8 = require('buffer-to-uint8array');
-        const vaa = generateVaa(tokenId)
-        await processVAA(tou8(Buffer.from(vaa, "hex")), true)
+        // const tou8 = require('buffer-to-uint8array');
+        // const vaa = generateVaa(tokenId)
+        // await processVAA(tou8(Buffer.from(vaa, "hex")), true)
         for (let index = 0; index < 6; index++) {
             setGuardianIndex(index)
             await signService(true)
