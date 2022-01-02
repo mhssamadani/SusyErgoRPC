@@ -4,14 +4,14 @@ import * as wasm from 'ergo-lib-wasm-nodejs';
 
 const config = {
     token: {
-        "VAAT": "36e4832b7df8d59ee0e76649a5795a535766999bc61499d91a8c7a8772fd242e",
-        "wormholeNFT": "73ab52c6a9d134944952260cc05404bb2c0c9ce507be66e49f56e9334391b76e",
-        "guardianNFT": "a146130f7c939d041e0a2ab974d9fb3fc93bc13239e43ac04a3b636ce749226b",
-        "guardianToken": "9e3a47b44ea0454c5b67e17992f7942a9d0c967ecc073ee1f1cbce599e06d2b4",
-        "bankNFT": "503600f0fb7fa7a47ed77b6174718d03d61994e397c4feda2058ac925c6a28e5",
-        "registerNFT": "822b3128d27a5a2e857172424db8af2eb2d7d76fd60aea72d82060f7f8df88a8"
+        "VAAT": "6bb7e2a6245cea46acd5ea363389c274444903210a1d51aeac3c879ba92f2a24",
+        "wormholeNFT": "466d0a2ce63bce0fafce842ef249f9cb56a574716f653206589b918240a886c4",
+        "guardianNFT": "96ea478bb2f03b20c1ffff2ebea302880c55746ec0f52d6aeb4fe1d75a780374",
+        "guardianToken": "cadeadd7f480be7725cab8bf3254e8fd3e60a878dc89094aeb5b3fc7999f6f80",
+        "bankNFT": "4662cfff004341503d24338bf8b24f90f3c660e0a1378292832e31419a2486d0",
+        "registerNFT": "466d0a2ce63bce0fafce842ef249f9cb56a574716f653206589b918240a886c4"
     },
-    addressSecret: "7ec7bc1aa5cb9e415b259de1b39f728f9f558572b4223d5a40da8e074d0c77bb",
+    addressSecret: "fe098b9a1dd5d8c4c8d8dc3ba85785f9ea7323d8718f4090092b25255a5870b2",
     address: "9hVvqWL35JUJB6ZBG4TfqR71dyYzhQuv54Sg7mkhAnZTREMW6XA",
     node: "http://10.10.9.3:9064",
     explorerApi: "http://10.10.9.3:7000",
@@ -28,8 +28,8 @@ const config = {
     },
     service: "init",
     initializer: {
-        // secret: "fe098b9a1dd5d8c4c8d8dc3ba85785f9ea7323d8718f4090092b25255a5870b2",
-        secret: "7ec7bc1aa5cb9e415b259de1b39f728f9f558572b4223d5a40da8e074d0c77bb",
+        secret: "fe098b9a1dd5d8c4c8d8dc3ba85785f9ea7323d8718f4090092b25255a5870b2",
+        // secret: "7ec7bc1aa5cb9e415b259de1b39f728f9f558572b4223d5a40da8e074d0c77bb",
         address: "9hVvqWL35JUJB6ZBG4TfqR71dyYzhQuv54Sg7mkhAnZTREMW6XA"
     },
     vaaSourceBoxAddress: "9hVvqWL35JUJB6ZBG4TfqR71dyYzhQuv54Sg7mkhAnZTREMW6XA",

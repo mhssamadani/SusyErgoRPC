@@ -1,5 +1,5 @@
 import setupRPC from "./network/rpc"
-import config from "./config/conf";
+import config, {setGuardianIndex} from "./config/conf";
 import signService, {signMsg} from "./susy/signService";
 import * as wasm from 'ergo-lib-wasm-nodejs'
 import {Boxes} from "./susy/boxes";
@@ -122,15 +122,18 @@ const test_update_vaa = async () => {
     let signatureData = signMsg(msg, config.guardian.privateKey)
     const sponsorBox = await fakeSponsor()
     const guardianBox = await fakeGuardian()
-    await updateVAABox(
-        wormholeBox,
-        vaaBox,
-        sponsorBox,
-        guardianBox,
-        config.guardian.index,
-        Uint8Array.from(Buffer.from(signatureData[0], "hex")),
-        Uint8Array.from(Buffer.from(signatureData[1], "hex")),
-    )
+    for(let i = 4; i < 6; i++) {
+        setGuardianIndex(i)
+        await updateVAABox(
+            wormholeBox,
+            vaaBox,
+            sponsorBox,
+            guardianBox,
+            config.guardian.index,
+            Uint8Array.from(Buffer.from(signatureData[0], "hex")),
+            Uint8Array.from(Buffer.from(signatureData[1], "hex")),
+        )
+    }
 }
 
 // TODO: should change to testcase
