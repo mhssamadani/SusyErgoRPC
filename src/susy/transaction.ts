@@ -40,7 +40,7 @@ const updateVAABox = async (
     signZ: Uint8Array,
     ctx?: ErgoStateContext,
     wait: boolean = false,
-): Promise<any> => {
+): Promise<wasm.Transaction> => {
     const outSponsor = await Boxes.getSponsorBox(sponsor.value().as_i64().as_num() - config.fee);
     const signatureCount = VAABox.register_value(7)!.to_i32_array()[1];
     const checksum = VAABox.register_value(7)!.to_i32_array()[0]
@@ -84,6 +84,7 @@ const updateVAABox = async (
         console.log(exp)
     }
     console.log(`transaction signed and submitted with id ${signedTx.id().to_str()}`)
+    return signedTx
 }
 
 const generateTx = (inputBoxes: any, outputs: [any, ...any[]], sponsor: any): wasm.TxBuilder => {
@@ -108,8 +109,6 @@ const createPayment = async (bank: ErgoBox, VAABox: ErgoBox, sponsor: ErgoBox, p
     const height = await ApiNetwork.getHeight();
     const amount = payload.Amount();
     const tokenId = payload.TokenAddress();
-    console.log(bank.tokens().get(1).amount().as_i64().as_num())
-    console.log(bank.tokens().get(1).id().to_str())
     const fee = payload.Fee();
     const bankTokens = bank.tokens().get(1).amount().as_i64().as_num()
     const outBank = await Boxes.getBank(
@@ -149,10 +148,8 @@ const createPayment = async (bank: ErgoBox, VAABox: ErgoBox, sponsor: ErgoBox, p
 
 const createRequest = async (bank: ErgoBox, application: ErgoBox, amount: number, fee: number): Promise<string> => {
     // hex string of "6obZ6DUGj8qLVwVB28U2tCwa13jVrAFvo3jzMuxTgSeY"
-    const receiverAddress = strToUint8Array("563a38ab1f1be9e8c57f66f6cd56ed08e2b906e7e0310067f50171245906c21d");
-    console.log(receiverAddress)
-    const receiverChainId = new Uint8Array([0, 1]);
-    console.log(receiverChainId)
+    // const receiverAddress = strToUint8Array("563a38ab1f1be9e8c57f66f6cd56ed08e2b906e7e0310067f50171245906c21d");
+    // const receiverChainId = new Uint8Array([0, 1]);
     const bankBuilder = new wasm.ErgoBoxCandidateBuilder(
         bank.value(),
         wasm.Contract.pay_to_address(wasm.Address.recreate_from_ergo_tree(bank.ergo_tree())),
@@ -193,7 +190,6 @@ const createRequest = async (bank: ErgoBox, application: ErgoBox, amount: number
         wasm.Address.recreate_from_ergo_tree(application.ergo_tree()),
         wasm.BoxValue.SAFE_USER_MIN()
     ).build();
-    console.log(tx.to_json());
     const sks = new wasm.SecretKeys();
     sks.add(wasm.SecretKey.dlog_from_bytes(strToUint8Array(config.addressSecret)));
     const wallet = wasm.Wallet.from_secrets(sks);

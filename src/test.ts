@@ -117,22 +117,28 @@ const test_update_vaa = async () => {
     const tokenId = "803935d89d5e33acc6e24bbb835212ee3997abbc7f756ccc37a07258fb7b9fd3"
     const vaaBytesHex = await generateVaa(tokenId)
     const wormholeBox = await fakeWormhole()
-    const vaaBox = await fakeVAA(vaaBytesHex)
+    let vaaBox = await fakeVAA(vaaBytesHex)
     let msg = codec.strToUint8Array(codec.getVAADataFromBox(vaaBox))
-    let signatureData = signMsg(msg, config.guardian.privateKey)
     const sponsorBox = await fakeSponsor()
     const guardianBox = await fakeGuardian()
-    for(let i = 4; i < 6; i++) {
+    for(let i = 0; i < 6; i++) {
+        console.log(`start processing guardian ${i}`)
         setGuardianIndex(i)
-        await updateVAABox(
-            wormholeBox,
-            vaaBox,
-            sponsorBox,
-            guardianBox,
-            config.guardian.index,
-            Uint8Array.from(Buffer.from(signatureData[0], "hex")),
-            Uint8Array.from(Buffer.from(signatureData[1], "hex")),
-        )
+        let signatureData = signMsg(msg, config.guardian.privateKey)
+        try {
+            const tx = await updateVAABox(
+                wormholeBox,
+                vaaBox,
+                sponsorBox,
+                guardianBox,
+                config.guardian.index,
+                Uint8Array.from(Buffer.from(signatureData[0], "hex")),
+                Uint8Array.from(Buffer.from(signatureData[1], "hex")),
+            )
+            vaaBox = tx.outputs().get(1)
+        }catch (exp: any) {
+            console.log(exp)
+        }
     }
 }
 
