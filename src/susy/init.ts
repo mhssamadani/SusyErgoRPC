@@ -153,7 +153,7 @@ const generateVaa = () => {
     const payload = [
         "00",   // id
         BigIntToHexString(BigInt(120)),     // amount
-        wasm.TokenId.from_str("803935d89d5e33acc6e24bbb835212ee3997abbc7f756ccc37a07258fb7b9fd3").to_str(),     //
+        wasm.TokenId.from_str(config.token.bankToken).to_str(),     //
         "0002",     // SOLANA
         uint8arrayToHex(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_bytes(config.networkType)),
         "0003",
