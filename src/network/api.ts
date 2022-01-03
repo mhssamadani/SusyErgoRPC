@@ -51,6 +51,10 @@ class ApiNetwork {
         return explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${token}`).then(res => res.data)
     }
 
+    static getBoxesByAddress = (address: string) => {
+        return explorerApi.get(`/api/v1/boxes/unspent/byAddress/${address}`).then(res => res.data)
+    }
+
     static getGuardianBox = async (setIndex: number): Promise<GuardianBox> => {
         const guardianAddress = await Contracts.generateGuardianContract()
         const box = await ApiNetwork.getCoveringErgoAndTokenForAddress(
@@ -101,12 +105,12 @@ class ApiNetwork {
     }
 
     static getWormholeBox = async () => {
-        const box = await explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${config.token.wormholeNFT}`)
-        return await ApiNetwork.trackMemPool(box.data.items[0], 1)
+        const box = await ApiNetwork.getBoxWithToken(config.token.wormholeNFT).then(box => box.data.items[0])
+        return await ApiNetwork.trackMemPool(box, 1)
     }
 
     static getBankBox = async (token: string, amount: number | string): Promise<ergoLib.ErgoBox> => {
-        const bankBoxes = await explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${config.token.bankNFT}`).then(res => res.data.items)
+        const bankBoxes = await ApiNetwork.getBoxWithToken(config.token.bankNFT).then(res => res.data.items)
         return bankBoxes.filter((box: any) => {
             const ergoBox = ergoLib.ErgoBox.from_json(JSON.stringify(box))
             return (ergoBox.tokens().get(1).id().to_str() === token && ergoBox.tokens().get(1).amount().as_i64().as_num() > Number(amount))
@@ -115,8 +119,8 @@ class ApiNetwork {
 
     static getSponsorBox = async () => {
         const address = ergoLib.Address.recreate_from_ergo_tree((await Contracts.generateSponsorContract()).ergo_tree()).to_base58(config.networkType)
-        const box = await explorerApi.get(`/api/v1/boxes/unspent/byAddress/${address}`)
-        return await ApiNetwork.trackMemPool(box.data.items[0], 1)
+        const box = await ApiNetwork.getBoxesByAddress(address).then(box => box.data.items[0])
+        return await ApiNetwork.trackMemPool(box, 1)
     }
 
     static getTransaction = async (txId: string) => {
