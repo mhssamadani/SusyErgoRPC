@@ -1,17 +1,17 @@
 import setupRPC from "./network/rpc"
-import config, {setGuardianIndex} from "./config/conf";
+import config, {setGuardianIndex, setSecret, setTokens} from "./config/conf";
 import signService, {signMsg} from "./susy/signService";
 import * as wasm from 'ergo-lib-wasm-nodejs'
 import {Boxes} from "./susy/boxes";
 import {getSecret} from "./susy/init/util";
 import ApiNetwork from "./network/api";
 import {generateVaa} from "./susy/init";
-import {issueVAA, updateVAABox} from "./susy/transaction";
+import {createPayment, issueVAA, updateVAABox} from "./susy/transaction";
 import {VAA, registerChainPayload, transferPayload, updateGuardianPayload} from "./models/models";
 import * as codec from "./utils/codec";
 import BigInteger from 'bigi';
 import Contracts from "./susy/contracts";
-import { GuardianBox, VAABox } from "./models/boxes";
+import {GuardianBox, VAABox} from "./models/boxes";
 
 const inputBoxes = wasm.ErgoBoxes.from_boxes_json([JSON.stringify({
     "boxId": "da7c86513d48f5081825effbec947f36c4f201abb49a1d0863f427dc4ffa750a",
@@ -116,16 +116,30 @@ const fakeVAA = async (vaa: string) => {
     return tx.outputs().get(0)
 }
 
-const test_update_vaa = async () => {
-    const tokenId = "803935d89d5e33acc6e24bbb835212ee3997abbc7f756ccc37a07258fb7b9fd3"
+const fakeBankBox = async (tokenId: string) => {
+    const guardian = await Boxes.getBank(tokenId, wasm.I64.from_str(1e15.toString()), 0)
+    return fakeBox(guardian)
+}
+const test_update_vaa_then_payment = async () => {
+    setSecret("fe098b9a1dd5d8c4c8d8dc3ba85785f9ea7323d8718f4090092b25255a5870b2", "9fpKbN9rDg5pSjrfNPZQWZpQxWfv2QeQK7wwYtPdbPsxMMFe7Eq")
+    setTokens({
+        VAAT: "6bb7e2a6245cea46acd5ea363389c274444903210a1d51aeac3c879ba92f2a24",
+        wormholeNFT: "466d0a2ce63bce0fafce842ef249f9cb56a574716f653206589b918240a886c4",
+        guardianToken: "cadeadd7f480be7725cab8bf3254e8fd3e60a878dc89094aeb5b3fc7999f6f80",
+        guardianNFT: "96ea478bb2f03b20c1ffff2ebea302880c55746ec0f52d6aeb4fe1d75a780374",
+        bankNFT: "4662cfff004341503d24338bf8b24f90f3c660e0a1378292832e31419a2486d0",
+        registerNFT: "466d0a2ce63bce0fafce842ef249f9cb56a574716f653206589b918240a886c4"
+    })
+    const tokenId = "da7c86513d48f5081825effbec947f36c4f201abb49a1d0863f427dc4ffa750a"
     const vaaBytesHex = await generateVaa(tokenId)
     const wormholeBox = await fakeWormhole()
+    const bank = await fakeBankBox(tokenId)
     let vaaBox = await fakeVAA(vaaBytesHex)
     const vaaBoxObject = new VAABox(JSON.parse(vaaBox.to_json()))
     let msg = codec.strToUint8Array(vaaBoxObject.getObservation())
     const sponsorBox = await fakeSponsor()
     const guardianBox = await fakeGuardian()
-    for(let i = 0; i < 6; i++) {
+    for (let i = 0; i < 4; i++) {
         console.log(`start processing guardian ${i}`)
         setGuardianIndex(i)
         let signatureData = signMsg(msg, config.guardian.privateKey)
@@ -140,10 +154,14 @@ const test_update_vaa = async () => {
                 Uint8Array.from(Buffer.from(signatureData[1], "hex")),
             )
             vaaBox = tx.outputs().get(1)
-        }catch (exp: any) {
+        } catch (exp: any) {
             console.log(exp)
         }
     }
+    const R4 = vaaBox.register_value(4)?.to_coll_coll_byte()!
+    const payload = new transferPayload(R4[1])
+    console.log("till here")
+    await createPayment(bank, vaaBox, sponsorBox, payload)
 }
 
 // TODO: should change to testcase
@@ -180,7 +198,7 @@ const test_vaa_box_parse = () => {
         if (payload.toHex() !== "00000000000000007800000000000000000000000000000000000000000000000096c81ac45d955198687d49202d8c1f77e42376046f42dd552801e1bee5e0c30100020102764ea2b0b9b06b5730a4257bba71fd7797eb1ec12bc3ae6025a01d7fba53830e229592eb00030000000000000005000000000000000000000000000000000000000000000000") console.log("[-] test_vaa_box_parse (payload parse) test failed")
 
         const signatures = vaa.getSignatures().map(signature => signature.toHex().slice(2)).join(",")
-        if (signatures != "733073602527991ba3aec2c11358b30a98336e86b47879b2642b6b67e1f200ab6ebaed6cfba727ce088d3254556fff492d28bd578b827dc2fc4ed315059289c71c,2578d485efefd5733cf64f800b27b146da2689b82c632e88c3ac84c1d2c6c5bc59a0fe536a610b2ab8fe05f70e88dc94dc3805537e4e91cff8ad97e267f80c171b,ba33fb8ffdf61cc59f00a099ce6ba3e38bd82621522d5459b70fed0c227e018b70b443f8beda5475d7de9f0e8e13cb1750b5dd587bcdb33efb5a176a3158ebd21b,e212e5c6b67843fd9a054b07d55a5df30050122a18ca63c99aaaa157795431f95cb9b714c713f0ff00f8b7912ac618882598843b58a586bc786c84a6730732741c,07466f2d405b9a650da04d44ebc527a5c4ebfb5ea2be2b3ef75cfae71ffd106b04dfda8f97e8a58c78f4c3a8d438ef06465975cdafeda905e2952a8114479f961b,ac609bb379a2d4234b25c63139cc2681b89eeeb96dc625bb5e8633f7f6febe59344e036d95fd60093ebf29a01e98d9214ccb459db588d44c872f6fd53962aa751c")  console.log("[-] test_vaa_box_parse (signature parse) test failed")
+        if (signatures != "733073602527991ba3aec2c11358b30a98336e86b47879b2642b6b67e1f200ab6ebaed6cfba727ce088d3254556fff492d28bd578b827dc2fc4ed315059289c71c,2578d485efefd5733cf64f800b27b146da2689b82c632e88c3ac84c1d2c6c5bc59a0fe536a610b2ab8fe05f70e88dc94dc3805537e4e91cff8ad97e267f80c171b,ba33fb8ffdf61cc59f00a099ce6ba3e38bd82621522d5459b70fed0c227e018b70b443f8beda5475d7de9f0e8e13cb1750b5dd587bcdb33efb5a176a3158ebd21b,e212e5c6b67843fd9a054b07d55a5df30050122a18ca63c99aaaa157795431f95cb9b714c713f0ff00f8b7912ac618882598843b58a586bc786c84a6730732741c,07466f2d405b9a650da04d44ebc527a5c4ebfb5ea2be2b3ef75cfae71ffd106b04dfda8f97e8a58c78f4c3a8d438ef06465975cdafeda905e2952a8114479f961b,ac609bb379a2d4234b25c63139cc2681b89eeeb96dc625bb5e8633f7f6febe59344e036d95fd60093ebf29a01e98d9214ccb459db588d44c872f6fd53962aa751c") console.log("[-] test_vaa_box_parse (signature parse) test failed")
     })
 }
 
@@ -189,13 +207,14 @@ const test_guardian_box_parse = () => {
     const boxJson = JSON.parse(boxJsonString)
 
     const guardianBox = new GuardianBox(boxJson)
-    
+
     const addresses = guardianBox.getWormholeAddresses().join(",")
-    if (addresses != "89e5673332cb6456dfdd42c1a4ce3a1350a19666,c097c943bf246bf5e7ef1ce1c76b1e344839fd76,9420e438a3236f5dbcfef199227d708586fdbb3a,80f686ecea8779f34bc3b8e412a9a609d7a3db2b,a44750f545deb1b2db1c922ae1734c0504ddab68,73b362a20df341b41722c445f5f031e687d46a74")  console.log("[-] test_guardian_box_parse (address parse) test failed")
-    
+    if (addresses != "89e5673332cb6456dfdd42c1a4ce3a1350a19666,c097c943bf246bf5e7ef1ce1c76b1e344839fd76,9420e438a3236f5dbcfef199227d708586fdbb3a,80f686ecea8779f34bc3b8e412a9a609d7a3db2b,a44750f545deb1b2db1c922ae1734c0504ddab68,73b362a20df341b41722c445f5f031e687d46a74") console.log("[-] test_guardian_box_parse (address parse) test failed")
+
 }
 
-test_update_vaa().then(() => null)
+test_update_vaa_then_payment().then(() => null)
+
 
 //test_payloads()
 

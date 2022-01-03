@@ -1,17 +1,15 @@
 import * as codec from '../utils/codec';
-import { Readable } from 'stream'
-import { ErgoBox } from 'ergo-lib-wasm-nodejs';
+import {Readable} from 'stream'
 import Contracts from '../susy/contracts';
+
 import * as wasm from 'ergo-lib-wasm-nodejs'
-import config from '../config/conf';
 import { VAABox } from './boxes';
-import base58 from 'base58-encode'
-import BigInteger from "bigi";
 
 abstract class Payload {
     protected byteToStream: (payloadBytes: Uint8Array) => Readable = (payloadBytes: Uint8Array) => {
         const stream = new Readable()
-        stream._read = () => {}
+        stream._read = () => {
+        }
         stream.push(payloadBytes)
         return stream
     }
@@ -65,7 +63,8 @@ class transferPayload extends Payload {
     }
 
     To = () => {
-        return wasm.Address.from_bytes(this.to)
+        const tree = wasm.ErgoTree.from_bytes(this.to)
+        return wasm.Address.recreate_from_ergo_tree(tree)
     }
 
     Amount = () => {
@@ -93,7 +92,8 @@ class registerChainPayload extends Payload {
         if (payloadBytes.length != registerChainPayload.payloadLength) throw Error(`Expected ${registerChainPayload.payloadLength} payload length, found: ${payloadBytes.length}`)
 
         let stream = new Readable()
-        stream._read = () => {}
+        stream._read = () => {
+        }
         stream.push(payloadBytes)
 
         this.module = stream.read(32)
@@ -115,7 +115,7 @@ class registerChainPayload extends Payload {
 }
 
 class updateGuardianPayload extends Payload {
-    static readonly payloadLength: number = 32 + 1 + 2 + 4 + 1 + 6*(32);
+    static readonly payloadLength: number = 32 + 1 + 2 + 4 + 1 + 6 * (32);
     private module: Uint8Array;
     private action: number;
     private chainId: number;
@@ -128,7 +128,8 @@ class updateGuardianPayload extends Payload {
         if (payloadBytes.length != updateGuardianPayload.payloadLength) throw Error(`Expected ${updateGuardianPayload.payloadLength} payload length, found: ${payloadBytes.length}`)
 
         let stream = new Readable()
-        stream._read = () => {}
+        stream._read = () => {
+        }
         stream.push(payloadBytes)
 
         this.module = stream.read(32)
@@ -172,7 +173,7 @@ class WormholeSignature {
 
     fromString = (signatureHexString: string) => {
         if (signatureHexString.startsWith("0x")) signatureHexString = signatureHexString.slice(2)
-        if(signatureHexString.length > 65 * 2) {
+        if (signatureHexString.length > 65 * 2) {
             this.index = parseInt(signatureHexString.slice(0, 2), 16)
             signatureHexString = signatureHexString.slice(2)
         }
@@ -183,8 +184,7 @@ class WormholeSignature {
         if (signatureBytes.length == 66) {
             this.index = signatureBytes[0]
             this.signatureData = signatureBytes.slice(1)
-        }
-        else if (signatureBytes.length == 65) {
+        } else if (signatureBytes.length == 65) {
             this.signatureData = signatureBytes
         }
         else {
@@ -210,7 +210,8 @@ class VAA {
 
     constructor(vaaBytes: Uint8Array, payloadType: string) {
         const stream = new Readable()
-        stream._read = () => {}
+        stream._read = () => {
+        }
         stream.push(vaaBytes)
 
         this.version = stream.read(1)[0]
@@ -219,7 +220,7 @@ class VAA {
         if (signaturesSize > 6 || signaturesSize < 0) throw Error(`Wrong signature size ${signaturesSize}`)
         this.Signatures = []
 
-        for (var i = 0; i < signaturesSize; i++ ) {
+        for (var i = 0; i < signaturesSize; i++) {
             let wormholeSignature = new WormholeSignature(stream.read(1)[0])
             wormholeSignature.fromBytes(stream.read(65))
             this.Signatures.push(wormholeSignature)
@@ -254,7 +255,7 @@ class VAA {
 
         const guardianSetIndex: number = box.getGuardianSetIndex()
         const version: number = 0 // we don't have version, so we set it 0
-        
+
         const signatures: Array<WormholeSignature> = box.getSignatures()
 
         const vaaMessage: Uint8Array = new Uint8Array(Buffer.from([
@@ -317,4 +318,4 @@ class VAA {
     }
 }
 
-export { VAA, WormholeSignature, transferPayload, registerChainPayload, updateGuardianPayload }
+export {VAA, WormholeSignature, transferPayload, registerChainPayload, updateGuardianPayload}
