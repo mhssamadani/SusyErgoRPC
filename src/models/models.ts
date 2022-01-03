@@ -166,6 +166,10 @@ class WormholeSignature {
         return this.index
     }
 
+    getSignatureHexData = () => {
+        return Buffer.from(this.signatureData).toString("hex")
+    }
+
     fromString = (signatureHexString: string) => {
         if (signatureHexString.startsWith("0x")) signatureHexString = signatureHexString.slice(2)
         if(signatureHexString.length > 65 * 2) {
@@ -189,7 +193,7 @@ class WormholeSignature {
     }
 
     toHex = () => {
-        return codec.UInt8ToByte(this.index) + Buffer.from(this.signatureData).toString("hex")
+        return codec.UInt8ToByte(this.index) + this.getSignatureHexData()
     }
 }
 

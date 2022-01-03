@@ -43,6 +43,14 @@ class VAABox extends Box {
         return wormholeSignatures
     }
 
+    getSignatureWithIndex = (guardianIndex: number): WormholeSignature => {
+        const signatures: Array<WormholeSignature> = this.getSignatures()
+        for (const signature of signatures) {
+            if (signature.getIndex() === guardianIndex) return signature
+        }
+        throw Error(`Guardian index ${guardianIndex} not found in VAABox signatures`)
+    }
+
     getGuardianSetIndex = (): number => {
         return this.ergoBox.register_value(7)?.to_i32_array()[3]!
     }

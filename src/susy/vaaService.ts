@@ -14,14 +14,14 @@ const verifyVAASignatures = (vaa: VAA, guardianBox: GuardianBox): boolean => {
     const vaaData: string = vaa.hexData()
     let verified: number = 0
     for (const sign of signatures) {
-        if (verify(vaaData, sign.toHex(), guardianAddresses[sign.getIndex()])) verified += 1
+        if (verify(vaaData, sign.getSignatureHexData(), guardianAddresses[sign.getIndex()])) verified += 1
     }
     return verified >= 4;
 }
 
 const processVAA = async (vaaBytes: Uint8Array, wait: boolean = false) => {
     const vaa: VAA = new VAA(vaaBytes, 'transfer')
-    const guardianBox: GuardianBox = new GuardianBox(await ApiNetwork.getGuardianBox(vaa.getGuardianSetIndex()))
+    const guardianBox: GuardianBox = await ApiNetwork.getGuardianBox(vaa.getGuardianSetIndex())
     if (!verifyVAASignatures(vaa, guardianBox)) {
         console.log("[-] verify signature failed")
         return false

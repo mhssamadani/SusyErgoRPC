@@ -2,6 +2,7 @@ import axios from "axios";
 import config from "../config/conf";
 import Contracts from "../susy/contracts";
 import ergoLib from "ergo-lib-wasm-nodejs"
+import { GuardianBox, VAABox } from "../models/boxes";
 
 const URL = config.node;
 const nodeClient = axios.create({
@@ -50,7 +51,7 @@ class ApiNetwork {
         return explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${token}`).then(res => res.data)
     }
 
-    static getGuardianBox = async (setIndex: number): Promise<JSON> => {
+    static getGuardianBox = async (setIndex: number): Promise<GuardianBox> => {
         const guardianAddress = await Contracts.generateGuardianContract()
         const box = await ApiNetwork.getCoveringErgoAndTokenForAddress(
             guardianAddress.ergo_tree().to_base16_bytes(),
@@ -76,10 +77,10 @@ class ApiNetwork {
         if (!box.covered) {
             throw Error("guardian box not found")
         }
-        return box.boxes[0]
+        return new GuardianBox(box.boxes[0])
     }
 
-    static getVAABoxes = async (): Promise<Array<JSON>> => {
+    static getVAABoxes = async (): Promise<Array<VAABox>> => {
         const vaaAddress = await Contracts.generateVAAContract()
         const boxes = await ApiNetwork.getCoveringErgoAndTokenForAddress(
             vaaAddress.ergo_tree().to_base16_bytes(),
@@ -96,7 +97,7 @@ class ApiNetwork {
                 return found
             }
         )
-        return boxes.boxes;
+        return boxes.boxes.map(box => new VAABox(box));
     }
 
     static getWormholeBox = async () => {
@@ -104,7 +105,7 @@ class ApiNetwork {
         return await ApiNetwork.trackMemPool(box.data.items[0], 1)
     }
 
-    static getBankBox = async (token: string, amount: number | string) : Promise<ergoLib.ErgoBox> => {
+    static getBankBox = async (token: string, amount: number | string): Promise<ergoLib.ErgoBox> => {
         const bankBoxes = await explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${config.token.bankNFT}`).then(res => res.data.items)
         return bankBoxes.filter((box: any) => {
             const ergoBox = ergoLib.ErgoBox.from_json(JSON.stringify(box))

@@ -39,17 +39,17 @@ const signMsg = (msg: Uint8Array, sk: string): Array<string> => {
     }
 }
 
-const verifyBoxSignatures = (box: VAABox, guardianBox: GuardianBox): boolean => {
-    const signatures: Array<WormholeSignature> = box.getSignatures()
+const verifyBoxSignature = (box: VAABox, guardianBox: GuardianBox): boolean => {
+    const signature: WormholeSignature = box.getSignatureWithIndex(config.guardian.index)
     const guardianAddresses: Array<string> = guardianBox.getWormholeAddresses()
     const vaaData: string = box.getObservation()
-    return verify(vaaData, signatures[config.guardian.index].toHex(), guardianAddresses[config.guardian.index])
+    return verify(vaaData, signature.getSignatureHexData(), guardianAddresses[config.guardian.index])
 }
 
 const signService = async (wait: boolean = false): Promise<void> => {
     // loop this procedure (e.g. once in 3 minutes)
 
-    const vaaBoxes: Array<VAABox> = (await ApiNetwork.getVAABoxes()).map(boxJson => new VAABox(boxJson))
+    const vaaBoxes: Array<VAABox> = await ApiNetwork.getVAABoxes()
     for (const box of vaaBoxes) {
         if (checkSign(box)) continue
 
@@ -57,8 +57,8 @@ const signService = async (wait: boolean = false): Promise<void> => {
 
         if (checkSign(lastBox)) continue
 
-        const guardianBox: GuardianBox = new GuardianBox(await ApiNetwork.getGuardianBox(0))
-        if (!verifyBoxSignatures(lastBox, guardianBox)) continue
+        const guardianBox: GuardianBox = await ApiNetwork.getGuardianBox(0)
+        if (!verifyBoxSignature(lastBox, guardianBox)) continue
 
         const msg: Uint8Array = codec.strToUint8Array(lastBox.getObservation())
         const signatureData: Array<string> = signMsg(msg, config.guardian.privateKey)

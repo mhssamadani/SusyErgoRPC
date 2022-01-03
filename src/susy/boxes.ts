@@ -6,7 +6,7 @@ import {Buffer} from "buffer";
 
 class Boxes {
     // TODO: should checked I64 or number is ok
-    static getSponsorBox = async (value: number, height: number = 0) => {
+    static getSponsorBox = async (value: number, height: number = 0): Promise<wasm.ErgoBoxCandidate> => {
         const sponsorValue = wasm.BoxValue.from_i64(wasm.I64.from_str(value.toString()));
         return new wasm.ErgoBoxCandidateBuilder(
             sponsorValue,
@@ -15,7 +15,7 @@ class Boxes {
         ).build();
     }
 
-    static getBank = async (token: string, amount: wasm.I64, height: number = 0) => {
+    static getBank = async (token: string, amount: wasm.I64, height: number = 0): Promise<wasm.ErgoBoxCandidate> => {
         const value = wasm.BoxValue.from_i64(wasm.I64.from_str("1000000000"));
         const bankBuilder = new wasm.ErgoBoxCandidateBuilder(
             value,
@@ -33,7 +33,7 @@ class Boxes {
         return bankBuilder.build();
     }
 
-    static getWormholeBox = async (height: number = 0) => {
+    static getWormholeBox = async (height: number = 0): Promise<wasm.ErgoBoxCandidate> => {
         const contract = await Contracts.generateWormholeContract();
         const candidateBuilder = new wasm.ErgoBoxCandidateBuilder(
             wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
@@ -44,7 +44,7 @@ class Boxes {
         return candidateBuilder.build()
     }
 
-    static getGuardianBox = async (index: number, height: number = 0) => {
+    static getGuardianBox = async (index: number, height: number = 0): Promise<wasm.ErgoBoxCandidate> => {
         const contract: wasm.Contract = await Contracts.generateGuardianContract();
         const tou8 = require('buffer-to-uint8array');
         const wormholePublic = wormhole.map(item => tou8(Buffer.from(item.address.substring(2), "hex")))
