@@ -1,9 +1,12 @@
 import * as codec from '../utils/codec';
 import { Readable } from 'stream'
-import base58 from 'base58-encode'
+import { ErgoBox } from 'ergo-lib-wasm-nodejs';
+import Contracts from '../susy/contracts';
 import * as wasm from 'ergo-lib-wasm-nodejs'
+import config from '../config/conf';
+import { VAABox } from './boxes';
+import base58 from 'base58-encode'
 import BigInteger from "bigi";
-import config from "../config/conf";
 
 abstract class Payload {
     protected byteToStream: (payloadBytes: Uint8Array) => Readable = (payloadBytes: Uint8Array) => {
@@ -163,6 +166,10 @@ class WormholeSignature {
         return this.index
     }
 
+    getSignatureHexData = () => {
+        return Buffer.from(this.signatureData).toString("hex")
+    }
+
     fromString = (signatureHexString: string) => {
         if (signatureHexString.startsWith("0x")) signatureHexString = signatureHexString.slice(2)
         if(signatureHexString.length > 65 * 2) {
@@ -181,12 +188,12 @@ class WormholeSignature {
             this.signatureData = signatureBytes
         }
         else {
-            throw Error("Wrong signature size")
+            throw Error(`Wrong length of signature bytes ${signatureBytes.length}`)
         }
     }
 
     toHex = () => {
-        return Buffer.from(this.signatureData).toString("hex")
+        return codec.UInt8ToByte(this.index) + this.getSignatureHexData()
     }
 }
 
@@ -209,6 +216,7 @@ class VAA {
         this.version = stream.read(1)[0]
         this.GuardianSetIndex = codec.arrayToInt(stream.read(4), 4)
         const signaturesSize: number = stream.read(1)[0]
+        if (signaturesSize > 6 || signaturesSize < 0) throw Error(`Wrong signature size ${signaturesSize}`)
         this.Signatures = []
 
         for (var i = 0; i < signaturesSize; i++ ) {
@@ -227,6 +235,38 @@ class VAA {
         else if (payloadType === "register_chain") this.payload = new registerChainPayload(stream.read())
         else if (payloadType === "update_guardian") this.payload = new updateGuardianPayload(stream.read())
         else throw Error(`Unknown payloadType ${payloadType}`)
+    }
+
+    static fromBox = async (box: VAABox): Promise<VAA> => {
+        const r4: Array<Uint8Array> = box.getObservationPayloadTuple()
+        const observation: Uint8Array = r4[0]
+        const payload: Uint8Array = r4[1]
+        const boxAddress: string = codec.ergoTreeToAddress(box.getErgoTree())
+
+        const transferAddress: string = codec.ergoTreeToAddress((await Contracts.generateVAAContract()).ergo_tree())
+        const registerChainAddress: string = codec.ergoTreeToAddress((await Contracts.generateRegisterVAAContract()).ergo_tree())
+        const guardianUpdateAddress: string = codec.ergoTreeToAddress((await Contracts.generateGuardianVAAContract()).ergo_tree())
+        const payloadType: string = (boxAddress === transferAddress) ? "transfer"
+            : (boxAddress === registerChainAddress) ? "register_chain"
+            : (boxAddress === guardianUpdateAddress) ? "update_guardian"
+            : ""
+        if (payloadType == "") throw Error(`Box address was not compatible to any Payload types ${boxAddress}`)
+
+        const guardianSetIndex: number = box.getGuardianSetIndex()
+        const version: number = 0 // we don't have version, so we set it 0
+        
+        const signatures: Array<WormholeSignature> = box.getSignatures()
+
+        const vaaMessage: Uint8Array = new Uint8Array(Buffer.from([
+            codec.UInt8ToByte(version),
+            codec.UInt32ToByte(guardianSetIndex),
+            codec.UInt8ToByte(signatures.length),
+            signatures.map(signature => signature.toHex()).join(""),
+            Buffer.from(observation).toString("hex"),
+            Buffer.from(payload).toString("hex")
+        ].join(""), "hex"))
+
+        return new VAA(vaaMessage, payloadType)
     }
 
     toJson = () => {
