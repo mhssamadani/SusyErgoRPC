@@ -156,6 +156,7 @@ const test_update_vaa_then_payment = async () => {
     }
     const R4 = vaaBox.register_value(4)?.to_coll_coll_byte()!
     const payload = new transferPayload(R4[1])
+    console.log("till here")
     await createPayment(bank, vaaBox, sponsorBox, payload)
 }
 

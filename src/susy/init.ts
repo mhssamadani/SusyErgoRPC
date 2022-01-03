@@ -12,6 +12,7 @@ import fs from 'fs';
 import {blake2b} from "ethereum-cryptography/blake2b";
 import processVAA from "./vaaService";
 import signService from "./signService";
+import {strToUint8Array} from "../utils/codec";
 
 const issueBankIdentifier = async (secret: wasm.SecretKey) => {
     return await fetchBoxesAndIssueToken(secret, 10000, "Bank Identifier", "Wormhole Bank Boxes Identifier", 0)
@@ -154,12 +155,15 @@ const uint8arrayToHex = (arr: Uint8Array) => {
 const generateVaa = (tokenId: string) => {
     let buff = Buffer.alloc(32, 0)
     buff.writeBigUInt64BE(BigInt(100));
+    console.log(uint8arrayToHex(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_bytes(config.networkType)).length)
+    console.log(uint8arrayToHex(strToUint8Array(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_ergo_tree().to_base16_bytes())).length)
     const payload = [
         "00",   // id
         BigIntToHexString(BigInt(120)),     // amount
         wasm.TokenId.from_str(tokenId).to_str(),     //
         "0002",     // SOLANA
-        uint8arrayToHex(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_bytes(config.networkType)),
+        // uint8arrayToHex(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_bytes(config.networkType)),
+        uint8arrayToHex(strToUint8Array(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_ergo_tree().to_base16_bytes()))+"0000",
         "0003",
         BigIntToHexString(BigInt(5)),
     ]
