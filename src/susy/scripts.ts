@@ -102,7 +102,7 @@ export const wormholeScript = `
   val bankNFT = fromBase64("BANK_NFT");
   val VAAToken = fromBase64("VAA_TOKEN");
   val guardianToken = fromBase64("GUARDIAN_TOKEN");
-  val VAADigest = blake2b256(INPUTS(1).R4[Coll[Coll[Byte]]].get(0) ++ INPUTS(1).R4[Coll[Coll[Byte]]].get(1))
+  val VAADigest = INPUTS(1).R4[Coll[Coll[Byte]]].get(0) ++ INPUTS(1).R4[Coll[Coll[Byte]]].get(1)
   val signatureIndex = OUTPUTS(1).R7[Coll[Int]].get(2)
   val Pk: GroupElement = decodePoint(CONTEXT.dataInputs(0).R5[Coll[Coll[Byte]]].get(signatureIndex))
   val selfReplication = allOf(Coll(
@@ -113,7 +113,8 @@ export const wormholeScript = `
   if(INPUTS(0).tokens(0)._1 == wormholeNFT) {
     // INPUTS: [wormhole, VAABox, sponsor] --> OUTPUTS: [wormhole, VAABox, sponsor]
     val e: Coll[Byte] = blake2b256(VAADigest) // weak Fiat-Shamir
-    val eInt = byteArrayToBigInt(e) // challenge as big integer
+    val test:Coll[Byte] = Coll(0.toByte)
+    val eInt = byteArrayToBigInt(test ++ e.slice(1, 32)) // challenge as big integer
     val g: GroupElement = groupGenerator
     val l = g.exp(OUTPUTS(1).R9[BigInt].get)
     val r = OUTPUTS(1).R8[GroupElement].get.multiply(Pk.exp(eInt))
@@ -129,7 +130,7 @@ export const wormholeScript = `
           OUTPUTS(1).tokens(0)._1 == VAAToken,
           // (OUTPUTS(1).tokens(0)._1 == VAAToken) || (OUTPUTS(1).tokens(0)._1 == guardianToken),
           // Verify Sign
-          l != r,
+          l == r,
         )
       )
     )

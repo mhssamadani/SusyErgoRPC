@@ -1,5 +1,9 @@
 import * as codec from '../utils/codec';
 import { Readable } from 'stream'
+import base58 from 'base58-encode'
+import * as wasm from 'ergo-lib-wasm-nodejs'
+import BigInteger from "bigi";
+import config from "../config/conf";
 
 abstract class Payload {
     protected byteToStream: (payloadBytes: Uint8Array) => Readable = (payloadBytes: Uint8Array) => {
@@ -22,7 +26,7 @@ class transferPayload extends Payload {
     private amount: Uint8Array;
     private tokenAddress: Uint8Array;
     private tokenChain: number;
-    private to: Uint8Array;
+    private readonly to: Uint8Array;
     private toChain: number;
     private fee: Uint8Array;
 
@@ -52,6 +56,25 @@ class transferPayload extends Payload {
             Buffer.from(this.fee).toString('hex')
         ].join("")
     }
+
+    TokenAddress = () => {
+        return Buffer.from(this.tokenAddress).toString("hex")
+    }
+
+    To = () => {
+        return wasm.Address.from_bytes(this.to)
+    }
+
+    Amount = () => {
+        const buf = Buffer.from(this.amount)
+        return Number(buf.readBigUInt64BE(0).toString())
+    }
+
+    Fee = () => {
+        const buf = Buffer.from(this.fee)
+        return Number(buf.readBigUInt64BE(0).toString())
+    }
+
 }
 
 class registerChainPayload extends Payload {
@@ -65,7 +88,7 @@ class registerChainPayload extends Payload {
     constructor(payloadBytes: Uint8Array) {
         super()
         if (payloadBytes.length != registerChainPayload.payloadLength) throw Error(`Expected ${registerChainPayload.payloadLength} payload length, found: ${payloadBytes.length}`)
-        
+
         let stream = new Readable()
         stream._read = () => {}
         stream.push(payloadBytes)
@@ -100,7 +123,7 @@ class updateGuardianPayload extends Payload {
     constructor(payloadBytes: Uint8Array) {
         super()
         if (payloadBytes.length != updateGuardianPayload.payloadLength) throw Error(`Expected ${updateGuardianPayload.payloadLength} payload length, found: ${payloadBytes.length}`)
-        
+
         let stream = new Readable()
         stream._read = () => {}
         stream.push(payloadBytes)
@@ -168,15 +191,15 @@ class WormholeSignature {
 }
 
 class VAA {
-    private version: number;
-    private GuardianSetIndex: number;
-    private Signatures: Array<WormholeSignature>;
-    private timestamp: number;
-    private nonce: number;
-    private consistencyLevel: number;
-    private EmitterChain: number;
-    private EmitterAddress: Uint8Array;
-    private payload: Payload;
+    private readonly version: number;
+    private readonly GuardianSetIndex: number;
+    private readonly Signatures: Array<WormholeSignature>;
+    private readonly timestamp: number;
+    private readonly nonce: number;
+    private readonly consistencyLevel: number;
+    private readonly EmitterChain: number;
+    private readonly EmitterAddress: Uint8Array;
+    private readonly payload: Payload;
 
     constructor(vaaBytes: Uint8Array, payloadType: string) {
         const stream = new Readable()
@@ -199,7 +222,7 @@ class VAA {
         this.consistencyLevel = stream.read(1)[0]
         this.EmitterChain = stream.read(1)[0]
         this.EmitterAddress = new Uint8Array(stream.read(32))
-        
+
         if (payloadType === "transfer") this.payload = new transferPayload(stream.read())
         else if (payloadType === "register_chain") this.payload = new registerChainPayload(stream.read())
         else if (payloadType === "update_guardian") this.payload = new updateGuardianPayload(stream.read())

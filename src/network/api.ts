@@ -34,7 +34,7 @@ class ApiNetwork {
 
     static sendTx = (tx: any) => {
         return nodeClient.post("/transactions", JSON.parse(tx)).then(response => ({"txId": response.data as string})).catch(exp => {
-            console.log(exp)
+            console.log(exp.response.data)
         });
     };
 
@@ -104,8 +104,12 @@ class ApiNetwork {
         return await ApiNetwork.trackMemPool(box.data.items[0], 1)
     }
 
-    static getBankBox = () => {
-        return explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${config.token.bankNFT}`).then(res => res.data.items[0])
+    static getBankBox = async (token: string, amount: number | string) : Promise<ergoLib.ErgoBox> => {
+        const bankBoxes = await explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${config.token.bankNFT}`).then(res => res.data.items)
+        return bankBoxes.filter((box: any) => {
+            const ergoBox = ergoLib.ErgoBox.from_json(JSON.stringify(box))
+            return (ergoBox.tokens().get(1).id().to_str() === token && ergoBox.tokens().get(1).amount().as_i64().as_num() > Number(amount))
+        })[0]
     }
 
     static getSponsorBox = async () => {
