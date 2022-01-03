@@ -16,7 +16,7 @@ class Boxes {
     }
 
     static getBank = async (token: string, amount: wasm.I64, height: number = 0) => {
-        const value = wasm.BoxValue.from_i64(wasm.I64.from_str("1000000000"));
+        const value = wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString()));
         const bankBuilder = new wasm.ErgoBoxCandidateBuilder(
             value,
             await Contracts.generateBankContract(),

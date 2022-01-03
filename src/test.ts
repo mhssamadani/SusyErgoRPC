@@ -1,12 +1,12 @@
 import setupRPC from "./network/rpc"
-import config, {setGuardianIndex} from "./config/conf";
+import config, {setGuardianIndex, setSecret, setTokens} from "./config/conf";
 import signService, {signMsg} from "./susy/signService";
 import * as wasm from 'ergo-lib-wasm-nodejs'
 import {Boxes} from "./susy/boxes";
 import {getSecret} from "./susy/init/util";
 import ApiNetwork from "./network/api";
 import {generateVaa} from "./susy/init";
-import {issueVAA, updateVAABox} from "./susy/transaction";
+import {createPayment, issueVAA, updateVAABox} from "./susy/transaction";
 import {VAA, registerChainPayload, transferPayload, updateGuardianPayload} from "./models/models";
 import * as codec from "./utils/codec";
 
@@ -113,15 +113,29 @@ const fakeVAA = async (vaa: string) => {
     return tx.outputs().get(0)
 }
 
-const test_update_vaa = async () => {
-    const tokenId = "803935d89d5e33acc6e24bbb835212ee3997abbc7f756ccc37a07258fb7b9fd3"
+const fakeBankBox = async (tokenId: string) => {
+    const guardian = await Boxes.getBank(tokenId, wasm.I64.from_str(1e15.toString()),0)
+    return fakeBox(guardian)
+}
+const test_update_vaa_then_payment = async () => {
+    setSecret("fe098b9a1dd5d8c4c8d8dc3ba85785f9ea7323d8718f4090092b25255a5870b2", "9fpKbN9rDg5pSjrfNPZQWZpQxWfv2QeQK7wwYtPdbPsxMMFe7Eq")
+    setTokens({
+        VAAT: "6bb7e2a6245cea46acd5ea363389c274444903210a1d51aeac3c879ba92f2a24",
+        wormholeNFT: "466d0a2ce63bce0fafce842ef249f9cb56a574716f653206589b918240a886c4",
+        guardianToken: "cadeadd7f480be7725cab8bf3254e8fd3e60a878dc89094aeb5b3fc7999f6f80",
+        guardianNFT: "96ea478bb2f03b20c1ffff2ebea302880c55746ec0f52d6aeb4fe1d75a780374",
+        bankNFT: "4662cfff004341503d24338bf8b24f90f3c660e0a1378292832e31419a2486d0",
+        registerNFT: "466d0a2ce63bce0fafce842ef249f9cb56a574716f653206589b918240a886c4"
+    })
+    const tokenId = "da7c86513d48f5081825effbec947f36c4f201abb49a1d0863f427dc4ffa750a"
     const vaaBytesHex = await generateVaa(tokenId)
     const wormholeBox = await fakeWormhole()
+    const bank = await fakeBankBox(tokenId)
     let vaaBox = await fakeVAA(vaaBytesHex)
     let msg = codec.strToUint8Array(codec.getVAADataFromBox(vaaBox))
     const sponsorBox = await fakeSponsor()
     const guardianBox = await fakeGuardian()
-    for(let i = 0; i < 6; i++) {
+    for(let i = 0; i < 4; i++) {
         console.log(`start processing guardian ${i}`)
         setGuardianIndex(i)
         let signatureData = signMsg(msg, config.guardian.privateKey)
@@ -140,6 +154,9 @@ const test_update_vaa = async () => {
             console.log(exp)
         }
     }
+    const R4 = vaaBox.register_value(4)?.to_coll_coll_byte()!
+    const payload = new transferPayload(R4[1])
+    await createPayment(bank, vaaBox, sponsorBox, payload)
 }
 
 // TODO: should change to testcase
@@ -163,6 +180,6 @@ const test_payloads = () => {
     if (updateGuardian.toHex() !== updateGuardianString) console.log("[-] updateGuardianPayload test failed")
 }
 
-test_update_vaa().then(() => null)
+test_update_vaa_then_payment().then(() => null)
 
 // test_payloads()

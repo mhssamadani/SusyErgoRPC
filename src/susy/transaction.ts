@@ -133,7 +133,7 @@ const createPayment = async (bank: ErgoBox, VAABox: ErgoBox, sponsor: ErgoBox, p
         bank.tokens().get(1).id(),
         wasm.TokenAmount.from_i64(wasm.I64.from_str((amount - fee).toString()))
     )
-    const outSponsor = await Boxes.getSponsorBox(sponsor.value().as_i64().as_num() - 3 * config.fee)
+    const outSponsor = await Boxes.getSponsorBox(sponsor.value().as_i64().as_num() - 2 * config.fee)
     const inputBoxes = new wasm.ErgoBoxes(bank);
     inputBoxes.add(VAABox);
     inputBoxes.add(sponsor);

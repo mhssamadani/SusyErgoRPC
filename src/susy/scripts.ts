@@ -74,11 +74,13 @@ export const VAAScript = `
     )))
   }
   else {
-    val emitterIndex = SELF.R7[Coll[Int]].get(4)
     sigmaProp(allOf(Coll(
+      true,
       // INPUTS: [Bank, VAABox, sponsor] --> OUTPUTS: [Bank, VAATokenokenRedeem, payment, sponsor]
       // DataINPUTS: register
       // Verify Payment
+      
+      
       SELF.R7[Coll[Int]].get(1) >= bftSignatureCount,
       OUTPUTS(2).tokens(0)._1 == tokenId,
       OUTPUTS(2).tokens(0)._2 == amount - fee,

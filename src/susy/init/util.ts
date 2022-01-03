@@ -15,7 +15,7 @@ const extractBoxes = async (secret: wasm.SecretKey, tx: wasm.Transaction) => {
         .filter(box => box.ergo_tree().to_base16_bytes().toString() === ergo_tree_hex)
 }
 
-const createChangeBox = (boxes: wasm.ErgoBoxes, candidates: Array<wasm.ErgoBoxCandidate>, height: number, secret: wasm.SecretKey) => {
+const createChangeBox = (boxes: wasm.ErgoBoxes, candidates: Array<wasm.ErgoBoxCandidate>, height: number, secret: wasm.SecretKey): wasm.ErgoBoxCandidate | null => {
     const processBox = (box: wasm.ErgoBox | wasm.ErgoBoxCandidate, tokens: { [id: string]: number; }, sign: number) => {
         Array(box.tokens().len()).fill("").forEach((notUsed, tokenIndex) => {
             const token = box.tokens().get(tokenIndex);
@@ -37,24 +37,33 @@ const createChangeBox = (boxes: wasm.ErgoBoxes, candidates: Array<wasm.ErgoBoxCa
         value -= candidate.value().as_i64().as_num()
         processBox(candidate, tokens, -1)
     })
-    const change = new wasm.ErgoBoxCandidateBuilder(
-        wasm.BoxValue.from_i64(wasm.I64.from_str((value - config.fee).toString())),
-        wasm.Contract.pay_to_address(secret.get_address()),
-        height
-    )
-    Object.entries(tokens).forEach(([key, value]) => {
-        if (value > 0) {
-            change.add_token(wasm.TokenId.from_str(key), wasm.TokenAmount.from_i64(wasm.I64.from_str(value.toString())))
-        }
-    })
-    return change.build()
+    const changeTokens = Object.entries(tokens).filter(([key, value]) => value > 0)
+    if(value > config.fee + Number(wasm.BoxValue.SAFE_USER_MIN())){
+        const change = new wasm.ErgoBoxCandidateBuilder(
+            wasm.BoxValue.from_i64(wasm.I64.from_str((value - config.fee).toString())),
+            wasm.Contract.pay_to_address(secret.get_address()),
+            height
+        )
+        Object.entries(tokens).forEach(([key, value]) => {
+            if (value > 0) {
+                change.add_token(wasm.TokenId.from_str(key), wasm.TokenAmount.from_i64(wasm.I64.from_str(value.toString())))
+            }
+        })
+        return change.build()
+    // }else if(changeTokens.length){
+    //     console.log(changeTokens)
+        // throw Error("Insufficient erg to create change bux but tokens found")
+    }
+    return null
 }
 
 const createAndSignTx = async (secret: wasm.SecretKey, boxes: wasm.ErgoBoxes, candidates: Array<wasm.ErgoBoxCandidate>, height: number, dataInput?: wasm.ErgoBoxes) => {
     const change = createChangeBox(boxes, candidates, height, secret)
     const candidateBoxes = new wasm.ErgoBoxCandidates(candidates[0])
     candidates.slice(1).forEach(item => candidateBoxes.add(item))
-    candidateBoxes.add(change)
+    if(change) {
+        candidateBoxes.add(change)
+    }
     const boxSelection = new wasm.BoxSelection(boxes, new wasm.ErgoBoxAssetsDataList());
     const txBuilder = wasm.TxBuilder.new(
         boxSelection,

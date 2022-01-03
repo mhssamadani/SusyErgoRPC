@@ -106,9 +106,8 @@ class ApiNetwork {
 
     static getBankBox = async (token: string, amount: number | string) : Promise<ergoLib.ErgoBox> => {
         const bankBoxes = await explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${config.token.bankNFT}`).then(res => res.data.items)
-        return bankBoxes.filter((box: any) => {
-            const ergoBox = ergoLib.ErgoBox.from_json(JSON.stringify(box))
-            return (ergoBox.tokens().get(1).id().to_str() === token && ergoBox.tokens().get(1).amount().as_i64().as_num() > Number(amount))
+        return bankBoxes.map((item: any) => ergoLib.ErgoBox.from_json(JSON.stringify(item))).filter((box: ergoLib.ErgoBox) => {
+            return (box.tokens().get(1).id().to_str() === token && box.tokens().get(1).amount().as_i64().as_num() > Number(amount))
         })[0]
     }
 
