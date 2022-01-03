@@ -75,7 +75,6 @@ const updateVAABox = async (
     const tx_data_inputs = new wasm.ErgoBoxes(guardianBox);
     const internalCtx = ctx ? ctx : await ApiNetwork.getErgoStateContext();
     const signedTx = wallet.sign_transaction(internalCtx, tx.build(), inputBoxes, tx_data_inputs)
-    // console.log(signedTx.to_json())
     try {
         if(wait){
             await sendAndWaitTx(signedTx)

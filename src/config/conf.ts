@@ -4,15 +4,15 @@ import * as wasm from 'ergo-lib-wasm-nodejs';
 
 const config = {
     token: {
-        "VAAT": "4c30864784045f31ceb0914071bedb1bd46ad3b33440365048d4c1a3fb3df1b0",
-        "wormholeNFT": "40e091e7ee51337d44f31a73640f40faca591f860111246bc1a36af05caa81a6",
-        "guardianNFT": "da46feaf1e6e0379771ec828ed5bc7f30d05ac43a5f6a3c9a2727e39932b4163",
-        "guardianToken": "8da18dfa9b6e9f8f1fb8989dcc3fac162b6191b273d7c4bac69ea33baa34d36d",
-        "bankNFT": "da7c86513d48f5081825effbec947f36c4f201abb49a1d0863f427dc4ffa750a",
-        "registerNFT": "77d1777f31cc56e8285cccb3251e376e00cf5e54bf00e482006d6a455b2f744b"
+        "VAAT": "7d0fa3e572c94138fa9d5960190f125d3d2b1d73dbba2705c22b1b31f10f11f4" ,
+        "wormholeNFT": "d2dcb5e1212ddd27a1e77659db335a053f4f008653312db907b8e984109a20f0" ,
+        "guardianNFT": "9f7fe0b1398660f3b25e50d6500ac3ac45f46ff887ea2da44f73d0d500992179" ,
+        "guardianToken": "b054e2c62f803b239aa45e579e485c099b4032b9fe619ee75e7bff6a000ece45" ,
+        "bankNFT": "63c235fad927e8dcc7f3ab04b93a9821a28ccebc3dc974a56689b9fcf135d4bb" ,
+        "registerNFT": "29219547d4119fdd907df046b26723b1c80ae60c3b60b754d2ebe6069f4e8857"
     },
-    addressSecret: "fe098b9a1dd5d8c4c8d8dc3ba85785f9ea7323d8718f4090092b25255a5870b2",
-    address: "9fpKbN9rDg5pSjrfNPZQWZpQxWfv2QeQK7wwYtPdbPsxMMFe7Eq",
+    addressSecret: "cd1774b543d4a51bc8573ac755acfe3adab59d545ae0cf4ca960e02f60d51aa7",
+    address: "9geVqctvHRFEZppmoPYzMmZ3LKGgDZj6FTsCrFPA8HsgQCbfbXB",
     node: "http://10.10.9.3:9064",
     explorerApi: "http://10.10.9.3:7000",
     networkType: wasm.NetworkPrefix.Mainnet,
@@ -28,17 +28,22 @@ const config = {
     },
     service: "payment",
     initializer: {
-        secret: "fe098b9a1dd5d8c4c8d8dc3ba85785f9ea7323d8718f4090092b25255a5870b2",
+        secret: "cd1774b543d4a51bc8573ac755acfe3adab59d545ae0cf4ca960e02f60d51aa7",
         // secret: "7ec7bc1aa5cb9e415b259de1b39f728f9f558572b4223d5a40da8e074d0c77bb",
-        address: "9fpKbN9rDg5pSjrfNPZQWZpQxWfv2QeQK7wwYtPdbPsxMMFe7Eq"
+        address: "9geVqctvHRFEZppmoPYzMmZ3LKGgDZj6FTsCrFPA8HsgQCbfbXB"
     },
-    vaaSourceBoxAddress: "9fpKbN9rDg5pSjrfNPZQWZpQxWfv2QeQK7wwYtPdbPsxMMFe7Eq",
+    vaaSourceBoxAddress: "9geVqctvHRFEZppmoPYzMmZ3LKGgDZj6FTsCrFPA8HsgQCbfbXB",
     port: 8080,
     test: true
 }
 
 const setTokens = (tokens: { VAAT: string, wormholeNFT: string, guardianNFT: string, guardianToken: string, bankNFT: string, registerNFT: string }) => {
-    config.token = tokens
+    config.token.VAAT = tokens.VAAT
+    config.token.wormholeNFT = tokens.wormholeNFT
+    config.token.guardianToken = tokens.guardianToken
+    config.token.guardianNFT = tokens.guardianNFT
+    config.token.bankNFT = tokens.bankNFT
+    config.token.registerNFT = tokens.registerNFT
 }
 
 const setSecret = (secret: string, address: string) => {

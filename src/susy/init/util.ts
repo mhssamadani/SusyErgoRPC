@@ -38,7 +38,7 @@ const createChangeBox = (boxes: wasm.ErgoBoxes, candidates: Array<wasm.ErgoBoxCa
         processBox(candidate, tokens, -1)
     })
     const changeTokens = Object.entries(tokens).filter(([key, value]) => value > 0)
-    if(value > config.fee + Number(wasm.BoxValue.SAFE_USER_MIN())){
+    if(value > config.fee + wasm.BoxValue.SAFE_USER_MIN().as_i64().as_num()){
         const change = new wasm.ErgoBoxCandidateBuilder(
             wasm.BoxValue.from_i64(wasm.I64.from_str((value - config.fee).toString())),
             wasm.Contract.pay_to_address(secret.get_address()),

@@ -137,7 +137,6 @@ const issueTokens = async () => {
         guardianToken: guardianToken,
         bankNFT: bankIdentifier,
         registerNFT: registerNFT,
-        // bankToken: bankToekn
     }
 
 }
@@ -155,8 +154,6 @@ const uint8arrayToHex = (arr: Uint8Array) => {
 const generateVaa = (tokenId: string) => {
     let buff = Buffer.alloc(32, 0)
     buff.writeBigUInt64BE(BigInt(100));
-    console.log(uint8arrayToHex(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_bytes(config.networkType)).length)
-    console.log(uint8arrayToHex(strToUint8Array(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_ergo_tree().to_base16_bytes())).length)
     const payload = [
         "00",   // id
         BigIntToHexString(BigInt(120)),     // amount
@@ -197,11 +194,11 @@ const initializeServiceBoxes = async () => {
 
 const initializeAll = async (test: boolean = false) => {
     console.log(wasm.SecretKey.dlog_from_bytes(Buffer.from(config.initializer.secret, "hex")).get_address().to_base58(config.networkType))
-    // const tokens = await issueTokens()
-    // fs.writeFileSync("src/config/tokens.json", JSON.stringify(tokens))
-    // setTokens(tokens);
-    // const tokenId = await initializeServiceBoxes()
-    const tokenId = "019ce84a423b20a39ecc627ce646d87c91d2929fff400abedd0bb7987197ee48"
+    const tokens = await issueTokens()
+    fs.writeFileSync("src/config/tokens.json", JSON.stringify(tokens))
+    setTokens(tokens);
+    const tokenId = await initializeServiceBoxes()
+    // const tokenId = "019ce84a423b20a39ecc627ce646d87c91d2929fff400abedd0bb7987197ee48"
     if(test) {
         const tou8 = require('buffer-to-uint8array');
         const vaa = generateVaa(tokenId)

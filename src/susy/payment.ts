@@ -7,8 +7,8 @@ import config from "../config/conf";
 
 const processPayments = async () => {
     const vaaBoxes = await ApiNetwork.getVAABoxes()
-    for (const boxJson of vaaBoxes) {
-        const box = wasm.ErgoBox.from_json(JSON.stringify(boxJson))
+    for (const vaaBox of vaaBoxes) {
+        const box = vaaBox.getErgoBox()
         const R4 = box.register_value(4)?.to_coll_coll_byte()!
         const payload = new transferPayload(R4[1])
         const tokenId = payload.TokenAddress()

@@ -139,7 +139,7 @@ class ApiNetwork {
     }
 
     static getCoveringForAddress = async (tree: string, amount: number, filter: (box: any) => boolean = () => true) => {
-        return ApiNetwork.getCoveringErgoAndTokenForAddress(tree, amount);
+        return ApiNetwork.getCoveringErgoAndTokenForAddress(tree, amount, {}, filter);
     }
 
     static getCoveringErgoAndTokenForAddress = async (tree: string, amount: number, covering: { [id: string]: number } = {}, filter: (box: any) => boolean = () => true) => {
