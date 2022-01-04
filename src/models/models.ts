@@ -64,7 +64,7 @@ class transferPayload extends Payload {
 
     To = () => {
         const tree = wasm.ErgoTree.from_bytes(this.to)
-        return wasm.Address.recreate_from_ergo_tree(tree)
+        return codec.ergoTreeToAddress(tree)
     }
 
     Amount = () => {
@@ -242,11 +242,11 @@ class VAA {
         const r4: Array<Uint8Array> = box.getObservationPayloadTuple()
         const observation: Uint8Array = r4[0]
         const payload: Uint8Array = r4[1]
-        const boxAddress: string = codec.ergoTreeToAddress(box.getErgoTree())
+        const boxAddress: string = codec.ergoTreeToBase58Address(box.getErgoTree())
 
-        const transferAddress: string = codec.ergoTreeToAddress((await Contracts.generateVAAContract()).ergo_tree())
-        const registerChainAddress: string = codec.ergoTreeToAddress((await Contracts.generateRegisterVAAContract()).ergo_tree())
-        const guardianUpdateAddress: string = codec.ergoTreeToAddress((await Contracts.generateGuardianVAAContract()).ergo_tree())
+        const transferAddress: string = codec.ergoTreeToBase58Address((await Contracts.generateVAAContract()).ergo_tree())
+        const registerChainAddress: string = codec.ergoTreeToBase58Address((await Contracts.generateRegisterVAAContract()).ergo_tree())
+        const guardianUpdateAddress: string = codec.ergoTreeToBase58Address((await Contracts.generateGuardianVAAContract()).ergo_tree())
         const payloadType: string = (boxAddress === transferAddress) ? "transfer"
             : (boxAddress === registerChainAddress) ? "register_chain"
             : (boxAddress === guardianUpdateAddress) ? "update_guardian"

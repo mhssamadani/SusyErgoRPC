@@ -101,7 +101,7 @@ const generateTx = (inputBoxes: any, outputs: [any, ...any[]], sponsor: any): wa
                 config.fee.toString()
             )
         ),
-        wasm.Address.recreate_from_ergo_tree(sponsor.ergo_tree()),
+        codec.ergoTreeToAddress(sponsor.ergo_tree()),
         wasm.BoxValue.SAFE_USER_MIN()
     );
 }
@@ -162,7 +162,7 @@ const createRequest = async (bank: ErgoBox, application: ErgoBox, amount: number
     // const receiverChainId = new Uint8Array([0, 1]);
     const bankBuilder = new wasm.ErgoBoxCandidateBuilder(
         bank.value(),
-        wasm.Contract.pay_to_address(wasm.Address.recreate_from_ergo_tree(bank.ergo_tree())),
+        wasm.Contract.pay_to_address(codec.ergoTreeToAddress(bank.ergo_tree())),
         0
     );
     // TODO:i64
@@ -197,7 +197,7 @@ const createRequest = async (bank: ErgoBox, application: ErgoBox, amount: number
                 config.fee.toString()
             )
         ),
-        wasm.Address.recreate_from_ergo_tree(application.ergo_tree()),
+        codec.ergoTreeToAddress(application.ergo_tree()),
         wasm.BoxValue.SAFE_USER_MIN()
     ).build();
     const sks = new wasm.SecretKeys();
