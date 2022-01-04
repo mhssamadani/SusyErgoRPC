@@ -3,7 +3,7 @@ import config from "../config/conf";
 import Contracts from "../susy/contracts";
 import * as wasm from "ergo-lib-wasm-nodejs"
 import { GuardianBox, VAABox } from "../models/boxes";
-import { ergoTreeToAddress } from "../utils/codec";
+import { ergoTreeToAddress, ergoTreeToBase58Address } from "../utils/codec";
 import { TX } from "../models/types"
 
 const URL = config.node;
@@ -119,7 +119,7 @@ class ApiNetwork {
     }
 
     static getSponsorBox = async (): Promise<wasm.ErgoBox> => {
-        const address = wasm.Address.recreate_from_ergo_tree((await Contracts.generateSponsorContract()).ergo_tree()).to_base58(config.networkType)
+        const address: string = ergoTreeToBase58Address((await Contracts.generateSponsorContract()).ergo_tree())
         const box: wasm.ErgoBox = wasm.ErgoBox.from_json(await ApiNetwork.getBoxesByAddress(address).then(box => box.data.items[0]))
         return await ApiNetwork.trackMemPool(box)
     }
@@ -129,7 +129,7 @@ class ApiNetwork {
     }
 
     static trackMemPool = async (box: wasm.ErgoBox): Promise<any> => {
-        const address: string = ergoTreeToAddress(box.ergo_tree())
+        const address: string = ergoTreeToBase58Address(box.ergo_tree())
         let mempoolBoxesMap = new Map<string, wasm.ErgoBox>();
         (await ApiNetwork.getBoxesByAddress(address).then(res => res.data.items)).forEach((tx: TX) => {
             for (var inBox of tx.inputs) {

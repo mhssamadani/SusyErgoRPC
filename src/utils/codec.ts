@@ -36,8 +36,12 @@ const UInt8ToByte = (val: number): string => {
     return buff.toString("hex")
 }
 
-const ergoTreeToAddress = (ergoTree: wasm.ErgoTree): string => {
-    return wasm.Address.recreate_from_ergo_tree(ergoTree).to_base58(config.networkType)
+const ergoTreeToAddress = (ergoTree: wasm.ErgoTree): wasm.Address => {
+    return wasm.Address.recreate_from_ergo_tree(ergoTree)
+}
+
+const ergoTreeToBase58Address = (ergoTree: wasm.ErgoTree): string => {
+    return ergoTreeToAddress(ergoTree).to_base58(config.networkType)
 }
 
 export {
@@ -47,5 +51,6 @@ export {
     UInt8ToByte,
     UInt16ToByte,
     UInt32ToByte,
-    ergoTreeToAddress
+    ergoTreeToAddress,
+    ergoTreeToBase58Address
 }
