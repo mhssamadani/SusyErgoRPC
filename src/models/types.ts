@@ -1,32 +1,15 @@
-type INPUTS = {
+type TxInput = {
     boxId: string,
     address: string
 }
 
-type ASSETS = {
-    tokenId: string,
-    index: number,
-    amount: number,
-    name: string | null,
-    decimals: number | null
-    type: string | null
-}
-
-type OUTPUTS = {
-    boxId: string,
-    transactionId: string,
-    value: number,
-    index: number,
-    creationHeight: number,
-    ergoTree: string,
+type TxOutput = {
     address: string,
-    assets: Array<ASSETS>,
-    spentTransactionId: string | null
 }
 
-type TX = {
-    inputs: Array<INPUTS>,
-    outputs: Array<OUTPUTS>
+type ErgoTx = {
+    inputs: Array<TxInput>,
+    outputs: Array<TxOutput>
 }
 
-export { INPUTS, ASSETS, OUTPUTS, TX }
+export default ErgoTx

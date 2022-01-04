@@ -4,7 +4,7 @@ import Contracts from "../susy/contracts";
 import * as wasm from "ergo-lib-wasm-nodejs"
 import { GuardianBox, VAABox } from "../models/boxes";
 import { ergoTreeToAddress, ergoTreeToBase58Address } from "../utils/codec";
-import { TX } from "../models/types"
+import ErgoTx from "../models/types"
 
 const URL = config.node;
 const nodeClient = axios.create({
@@ -131,7 +131,7 @@ class ApiNetwork {
     static trackMemPool = async (box: wasm.ErgoBox): Promise<any> => {
         const address: string = ergoTreeToBase58Address(box.ergo_tree())
         let mempoolBoxesMap = new Map<string, wasm.ErgoBox>();
-        (await ApiNetwork.getBoxesByAddress(address).then(res => res.data.items)).forEach((tx: TX) => {
+        (await ApiNetwork.getBoxesByAddress(address).then(res => res.data.items)).forEach((tx: ErgoTx) => {
             for (var inBox of tx.inputs) {
                 if (inBox.address) {
                     for (var outBox of tx.outputs) {
