@@ -12,6 +12,7 @@ import fs from 'fs';
 import {blake2b} from "ethereum-cryptography/blake2b";
 import processVAA from "./vaaService";
 import signService from "./signService";
+import {strToUint8Array} from "../utils/codec";
 
 const issueBankIdentifier = async (secret: wasm.SecretKey) => {
     return await fetchBoxesAndIssueToken(secret, 10000, "Bank Identifier", "Wormhole Bank Boxes Identifier", 0)
@@ -136,7 +137,6 @@ const issueTokens = async () => {
         guardianToken: guardianToken,
         bankNFT: bankIdentifier,
         registerNFT: registerNFT,
-        // bankToken: bankToekn
     }
 
 }
@@ -159,7 +159,8 @@ const generateVaa = (tokenId: string) => {
         BigIntToHexString(BigInt(120)),     // amount
         wasm.TokenId.from_str(tokenId).to_str(),     //
         "0002",     // SOLANA
-        uint8arrayToHex(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_bytes(config.networkType)),
+        // uint8arrayToHex(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_bytes(config.networkType)),
+        uint8arrayToHex(strToUint8Array(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_ergo_tree().to_base16_bytes()))+"0000",
         "0003",
         BigIntToHexString(BigInt(5)),
     ]
@@ -192,16 +193,16 @@ const initializeServiceBoxes = async () => {
 }
 
 const initializeAll = async (test: boolean = false) => {
-    // console.log(wasm.SecretKey.dlog_from_bytes(Buffer.from(config.initializer.secret, "hex")).get_address().to_base58(config.networkType))
-    // const tokens = await issueTokens()
-    // fs.writeFileSync("src/config/tokens.json", JSON.stringify(tokens))
-    // setTokens(tokens);
-    // const tokenId = await initializeServiceBoxes()
-    // const tokenId = "803935d89d5e33acc6e24bbb835212ee3997abbc7f756ccc37a07258fb7b9fd3"
+    console.log(wasm.SecretKey.dlog_from_bytes(Buffer.from(config.initializer.secret, "hex")).get_address().to_base58(config.networkType))
+    const tokens = await issueTokens()
+    fs.writeFileSync("src/config/tokens.json", JSON.stringify(tokens))
+    setTokens(tokens);
+    const tokenId = await initializeServiceBoxes()
+    // const tokenId = "019ce84a423b20a39ecc627ce646d87c91d2929fff400abedd0bb7987197ee48"
     if(test) {
-        // const tou8 = require('buffer-to-uint8array');
-        // const vaa = generateVaa(tokenId)
-        // await processVAA(tou8(Buffer.from(vaa, "hex")), true)
+        const tou8 = require('buffer-to-uint8array');
+        const vaa = generateVaa(tokenId)
+        await processVAA(tou8(Buffer.from(vaa, "hex")), true)
         for (let index = 0; index < 6; index++) {
             setGuardianIndex(index)
             await signService(true)

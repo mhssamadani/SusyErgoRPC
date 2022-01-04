@@ -52,7 +52,7 @@ export const VAAScript = `
   val amount = byteArrayToLong(payload.slice(1, 33))
   val tokenId = payload.slice(33, 65)
   val address = payload.slice(67, 103)
-  val fee = byteArrayToLong(payload.slice(105, 133))
+  val fee = byteArrayToLong(payload.slice(107, 139))
   //val address = SELF.R4[Coll[Coll[Byte]]].get(2)
   if(OUTPUTS(0).tokens(0)._1 == wormholeNFT){
     // INPUTS: [wormhole, VAABox, sponsor] --> OUTPUTS: [wormhole, VAABox, sponsor]
@@ -74,11 +74,13 @@ export const VAAScript = `
     )))
   }
   else {
-    val emitterIndex = SELF.R7[Coll[Int]].get(4)
     sigmaProp(allOf(Coll(
+      true,
       // INPUTS: [Bank, VAABox, sponsor] --> OUTPUTS: [Bank, VAATokenokenRedeem, payment, sponsor]
       // DataINPUTS: register
       // Verify Payment
+      
+      
       SELF.R7[Coll[Int]].get(1) >= bftSignatureCount,
       OUTPUTS(2).tokens(0)._1 == tokenId,
       OUTPUTS(2).tokens(0)._2 == amount - fee,
@@ -86,10 +88,15 @@ export const VAAScript = `
 
       // verify VAA Authority and token redeem
       OUTPUTS(1).propositionBytes == SELF.R6[Coll[Byte]].get,
+      // OUTPUTS(1).propositionBytes == SELF.propositionBytes,
+      // PK("nxhsGNxmyxAiLoG3X9hL3MuJmPeK36GxPXkcBcxuzryt").propBytes == SELF.R6[Coll[Byte]].get,
+      // SELF.R6[Coll[Byte]].get == fromBase64("AQKq4xByNeHuu1Sof7000GVu8g6HHDVoCQtjMC5nZ3INDwLQFaI=")
+      // OUTPUTS(1).propositionBytes == fromBase64("AAjNAqrjEHI14e67VKh/vTTQZW7yDoccNWgJC2MwLmdncg0P"),
       OUTPUTS(1).tokens(0)._1 == SELF.tokens(0)._1,
 
       // bank token conditions
       OUTPUTS(0).tokens(1)._2 == INPUTS(0).tokens(1)._2 - (amount - fee),
+      // fee==5,
       OUTPUTS(0).tokens(1)._1 == tokenId,
     )))
   }
