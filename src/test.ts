@@ -195,13 +195,5 @@ const test_guardian_box_parse = () => {
     
 }
 
-test_update_vaa().then(() => null)
+//test_update_vaa().then(() => null)
 
-//test_payloads()
-
-//Contracts.generateGuardianContract().then(contract => console.log(wasm.Address.recreate_from_ergo_tree(contract.ergo_tree()).to_base58(config.networkType)))
-
-//test_vaa_box_parse()
-//test_guardian_box_parse()
-
-// test_payloads()

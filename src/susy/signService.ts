@@ -53,18 +53,17 @@ const signService = async (wait: boolean = false): Promise<void> => {
     for (const box of vaaBoxes) {
         if (checkSign(box)) continue
 
-        const lastBox: VAABox = await ApiNetwork.trackMemPool(box, 1)
-
-        if (checkSign(lastBox)) continue
+        await box.trackMempool()
+        if (checkSign(box)) continue
 
         const guardianBox: GuardianBox = await ApiNetwork.getGuardianBox(0)
-        if (!verifyBoxSignature(lastBox, guardianBox)) continue
+        if (!verifyBoxSignature(box, guardianBox)) continue
 
-        const msg: Uint8Array = codec.strToUint8Array(lastBox.getObservation())
+        const msg: Uint8Array = codec.strToUint8Array(box.getObservation())
         const signatureData: Array<string> = signMsg(msg, config.guardian.privateKey)
 
-        const wormholeBox: wasm.ErgoBox = wasm.ErgoBox.from_json(JSON.stringify(await ApiNetwork.getWormholeBox()))
-        const sponsorBox: wasm.ErgoBox = wasm.ErgoBox.from_json(JSON.stringify(await ApiNetwork.getSponsorBox()))
+        const wormholeBox: wasm.ErgoBox = await ApiNetwork.getWormholeBox()
+        const sponsorBox: wasm.ErgoBox = await ApiNetwork.getSponsorBox()
         console.log("start generating transaction")
         await updateVAABox(
             wormholeBox,

@@ -3,6 +3,8 @@ import config from "../config/conf";
 import Contracts from "../susy/contracts";
 import ergoLib from "ergo-lib-wasm-nodejs"
 import { GuardianBox, VAABox } from "../models/boxes";
+import { ergoTreeToAddress } from "../utils/codec";
+import { TX } from "../models/types"
 
 const URL = config.node;
 const nodeClient = axios.create({
@@ -104,9 +106,9 @@ class ApiNetwork {
         return boxes.boxes.map(box => new VAABox(box));
     }
 
-    static getWormholeBox = async () => {
-        const box = await ApiNetwork.getBoxWithToken(config.token.wormholeNFT).then(box => box.data.items[0])
-        return await ApiNetwork.trackMemPool(box, 1)
+    static getWormholeBox = async (): Promise<ergoLib.ErgoBox> => {
+        const box: ergoLib.ErgoBox = ergoLib.ErgoBox.from_json(await ApiNetwork.getBoxWithToken(config.token.wormholeNFT).then(box => box.data.items[0]))
+        return await ApiNetwork.trackMemPool(box)
     }
 
     static getBankBox = async (token: string, amount: number | string): Promise<ergoLib.ErgoBox> => {
@@ -117,26 +119,35 @@ class ApiNetwork {
         })[0]
     }
 
-    static getSponsorBox = async () => {
+    static getSponsorBox = async (): Promise<ergoLib.ErgoBox> => {
         const address = ergoLib.Address.recreate_from_ergo_tree((await Contracts.generateSponsorContract()).ergo_tree()).to_base58(config.networkType)
-        const box = await ApiNetwork.getBoxesByAddress(address).then(box => box.data.items[0])
-        return await ApiNetwork.trackMemPool(box, 1)
+        const box: ergoLib.ErgoBox = ergoLib.ErgoBox.from_json(await ApiNetwork.getBoxesByAddress(address).then(box => box.data.items[0]))
+        return await ApiNetwork.trackMemPool(box)
     }
 
     static getTransaction = async (txId: string) => {
         return await explorerApi.get(`/api/v1/transactions/${txId}`).then(res => res.data)
     }
 
-    static trackMemPool = async (box: any, index: number): Promise<any> => {
-        // let mempoolTxs = await explorerApi.get(`/api/v1/mempool/transactions/byAddress/${box.address}`).then(res => res.data)
-        // if (mempoolTxs.total == 0) return box
-        // for (const tx of mempoolTxs.items) {
-        //     if (tx.inputs[index].boxId == box.boxId) {
-        //         let newVAABox = tx.outputs[index]
-        //         return ApiNetwork.trackMemPool(newVAABox, index)
-        //     }
-        // }
-        return box
+    static trackMemPool = async (box: ergoLib.ErgoBox): Promise<any> => {
+        const address: string = ergoTreeToAddress(box.ergo_tree())
+        let mempoolBoxesMap = new Map<string, ergoLib.ErgoBox>();
+        (await ApiNetwork.getBoxesByAddress(address).then(res => res.data.items)).forEach((tx: TX) => {
+            for (var inBox of tx.inputs) {
+                if (inBox.address) {
+                    for (var outBox of tx.outputs) {
+                        if (outBox.address) {
+                            mempoolBoxesMap.set(inBox.boxId, ergoLib.ErgoBox.from_json(JSON.stringify(outBox)))
+                            break
+                        }
+                    }
+                    break
+                }
+            }
+        })
+        var lastBox: ergoLib.ErgoBox = box
+        while (mempoolBoxesMap.has(lastBox.box_id().to_str())) lastBox = mempoolBoxesMap.get(lastBox.box_id().to_str())!
+        return lastBox
     }
 
     static getBoxesForAddress = async (tree: string, offset = 0, limit = 100) => {

@@ -2,6 +2,7 @@ import * as codec from '../utils/codec';
 import { Readable } from 'stream'
 import { ErgoBox, ErgoTree } from 'ergo-lib-wasm-nodejs';
 import { VAA, WormholeSignature } from './models';
+import ApiNetwork from '../network/api';
 
 abstract class Box {
     protected ergoBox: ErgoBox;
@@ -16,6 +17,10 @@ abstract class Box {
 
     getErgoTree = (): ErgoTree => {
         return this.ergoBox.ergo_tree()
+    }
+
+    trackMempool = async () => {
+        this.ergoBox = await ApiNetwork.trackMemPool(this.ergoBox)
     }
 }
 
