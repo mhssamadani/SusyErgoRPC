@@ -4,15 +4,15 @@ import * as wasm from 'ergo-lib-wasm-nodejs';
 const config = {
     service: getenv("SERVICE_TYPE", "payment"),
     token: {
-        VAAT: getenv("TOKEN_VAAT"),
-        wormholeNFT: getenv("TOKEN_WORMHOLE_NFT"),
-        guardianNFT: getenv("TOKEN_GUARDIAN_NFT"),
-        guardianToken: getenv("TOKEN_GUARDIAN"),
-        bankNFT: getenv("TOKEN_BANK_NFT"),
-        registerNFT: getenv("TOKEN_REGISTER_NFT")
+        VAAT: getenv("TOKEN_VAAT", ""),
+        wormholeNFT: getenv("TOKEN_WORMHOLE_NFT", ""),
+        guardianNFT: getenv("TOKEN_GUARDIAN_NFT", ""),
+        guardianToken: getenv("TOKEN_GUARDIAN", ""),
+        bankNFT: getenv("TOKEN_BANK_NFT", ""),
+        registerNFT: getenv("TOKEN_REGISTER_NFT", "")
     },
-    addressSecret: getenv("ADDRESS_SECRET"),
-    address: getenv("ADDRESS"),
+    addressSecret: getenv("ADDRESS_SECRET", ""),
+    address: getenv("ADDRESS", ""),
     node: getenv("NODE", "http://213.239.193.208:9053"),
     explorerApi: getenv("EXPLORER_API", "https://api.ergoplatform.com"),
     networkType: getenv("NETWORK_TYPE", "mainnet") == "mainnet" ? wasm.NetworkPrefix.Mainnet : wasm.NetworkPrefix.Testnet,
@@ -20,14 +20,14 @@ const config = {
     fee: parseInt(getenv("FEE", "1100000")),
     bridgeId: parseInt(getenv("BRIDGE_ID", "10")),
     guardian: {
-        index: parseInt(getenv("GUARDIAN_INDEX")),
-        privateKey: getenv("GUARDIAN_PRIVATE_KEY"),
+        index: parseInt(getenv("GUARDIAN_INDEX", "0")),
+        privateKey: getenv("GUARDIAN_PRIVATE_KEY", ""),
     },
     initializer: {
-        secret: getenv("INITIALIZER_SECRET"),
-        address: getenv("INITIALIZER_ADDRESS")
+        secret: getenv("INITIALIZER_SECRET", ""),
+        address: getenv("INITIALIZER_ADDRESS", "")
     },
-    vaaSourceBoxAddress: getenv("VAA_SOURCE_BOX_ADDRESS"),
+    vaaSourceBoxAddress: getenv("VAA_SOURCE_BOX_ADDRESS", ""),
     port: parseInt(getenv("RPC_PORT", "8080")),
     test: getenv("TEST", "true").toLowerCase() == "true"
 };
