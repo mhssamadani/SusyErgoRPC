@@ -2,7 +2,7 @@ import getenv from "getenv";
 import * as wasm from 'ergo-lib-wasm-nodejs';
 
 const config = {
-    service: getenv("SERVICE_TYPE", "payment"),
+    service: getenv("SERVICE_TYPE", "init"),
     token: {
         VAAT: getenv("TOKEN_VAAT", ""),
         wormholeNFT: getenv("TOKEN_WORMHOLE_NFT", ""),
