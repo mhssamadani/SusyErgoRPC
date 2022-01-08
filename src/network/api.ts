@@ -19,7 +19,7 @@ const explorerApi = axios.create({
 })
 
 class ApiNetwork {
-    static pay2ScriptAddress = (script: string) => {
+    static pay2ScriptAddress = (script: string): Promise<string> => {
         return nodeClient.post("/script/p2sAddress", {source: script}).then(
             res => res.data.address
         )
@@ -42,15 +42,18 @@ class ApiNetwork {
     };
 
     // TODO: should checked with new function
-    static getErgoStateContext = async () => {
+    static getErgoStateContext = async (): Promise<wasm.ErgoStateContext> => {
         const blockHeaderJson = await this.getLastBlockHeader();
         const blockHeaders = wasm.BlockHeaders.from_json(blockHeaderJson);
         const preHeader = wasm.PreHeader.from_block_header(blockHeaders.get(0));
         return new wasm.ErgoStateContext(preHeader, blockHeaders);
     }
 
-    static getBoxWithToken = (token: string) => {
-        return explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${token}`).then(res => res.data)
+    static getBoxWithToken = (token: string, offset: number = 0, limit: number=100): Promise<{total: number, boxes:Array<wasm.ErgoBox>}> => {
+        return explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${token}`).then(res => {
+            const data = res.data
+            return {boxes: data.items.map((item:JSON) => wasm.ErgoBox.from_json(JSON.stringify(item))), total: data.total}
+        })
     }
 
     static getBoxesByAddress = (address: string) => {
@@ -83,7 +86,7 @@ class ApiNetwork {
         if (!box.covered) {
             throw Error("guardian box not found")
         }
-        return new GuardianBox(box.boxes[0])
+        return new GuardianBox(JSON.parse(box.boxes[0].to_json()))
     }
 
     static getVAABoxes = async (): Promise<Array<VAABox>> => {
@@ -103,17 +106,17 @@ class ApiNetwork {
                 return found
             }
         )
-        return boxes.boxes.map(box => new VAABox(box));
+        return boxes.boxes.map(box => new VAABox(JSON.parse(box.to_json())));
     }
 
     static getWormholeBox = async (): Promise<wasm.ErgoBox> => {
-        const box: wasm.ErgoBox = wasm.ErgoBox.from_json(await ApiNetwork.getBoxWithToken(config.token.wormholeNFT).then(box => box.data.items[0]))
+        const box: wasm.ErgoBox = await ApiNetwork.getBoxWithToken(config.token.wormholeNFT).then(boxes => boxes.boxes[0])
         return await ApiNetwork.trackMemPool(box)
     }
 
     static getBankBox = async (token: string, amount: number | string): Promise<wasm.ErgoBox> => {
-        const bankBoxes = await ApiNetwork.getBoxWithToken(config.token.bankNFT).then(res => res.data.items)
-        return bankBoxes.map((item: any) => wasm.ErgoBox.from_json(JSON.stringify(item))).filter((box: wasm.ErgoBox) => {
+        const bankBoxes = await ApiNetwork.getBoxWithToken(config.token.bankNFT).then(res => res.boxes)
+        return bankBoxes.filter((box: wasm.ErgoBox) => {
             return (box.tokens().get(1).id().to_str() === token && box.tokens().get(1).amount().as_i64().as_num() > Number(amount))
         })[0]
     }
@@ -157,12 +160,16 @@ class ApiNetwork {
         return ApiNetwork.getCoveringErgoAndTokenForAddress(tree, amount, {}, filter);
     }
 
-    static getCoveringErgoAndTokenForAddress = async (tree: string, amount: number, covering: { [id: string]: number } = {}, filter: (box: any) => boolean = () => true) => {
+    static getCoveringErgoAndTokenForAddress = async (
+        tree: string,
+        amount: number,
+        covering: { [id: string]: number } = {},
+        filter: (box: any) => boolean = () => true
+    ): Promise<{covered: boolean, boxes: Array<wasm.ErgoBox>}> => {
         let res = []
         const boxesItems = await ApiNetwork.getBoxesForAddress(tree, 0, 1)
         const total = boxesItems.total;
         let offset = 0;
-        let selectedIds: Array<string> = [];
         const remaining = () => {
             const tokenRemain = Object.entries(covering).map(([key, amount]) => Math.max(amount, 0)).reduce((a, b) => a + b, 0);
             return tokenRemain + Math.max(amount, 0) > 0;
@@ -171,7 +178,6 @@ class ApiNetwork {
             const boxes = await ApiNetwork.getBoxesForAddress(tree, offset, 10)
             for (let box of boxes.items) {
                 if (filter(box)) {
-                    selectedIds.push(box.boxId)
                     res.push(box);
                     amount -= box.value;
                     box.assets.map((asset: any) => {
@@ -184,7 +190,7 @@ class ApiNetwork {
             }
             offset += 10;
         }
-        return {boxes: res, covered: !remaining(), selectedIds: selectedIds}
+        return {boxes: res.map(box => wasm.ErgoBox.from_json(JSON.stringify(box))), covered: !remaining()}
 
     }
 }

@@ -38,7 +38,7 @@ const createGuardianBox = async (index: number) => {
     const NFTBoxes = await ApiNetwork.getBoxWithToken(config.token.guardianToken)
     let boxes: Array<wasm.ErgoBox> = []
     try {
-        boxes.push(wasm.ErgoBox.from_json(JSON.stringify(NFTBoxes.items[0])));
+        boxes.push(NFTBoxes.boxes[0]);
     } catch (exp) {
         throw Error("bank identifier or nft not found")
     }

@@ -110,9 +110,23 @@ const fakeGuardian = async () => {
     return fakeBox(guardian)
 }
 
-const fakeVAA = async (vaa: string) => {
+const fakeVaaAuthority = async () => {
+    const builder = new wasm.ErgoBoxCandidateBuilder(
+        wasm.BoxValue.from_i64(wasm.I64.from_str(1e9.toString())),
+        await Contracts.generateVaaCreatorContract(),
+        0
+    )
+    builder.add_token(wasm.TokenId.from_str(config.token.VAAT), wasm.TokenAmount.from_i64(wasm.I64.from_str("10000")))
+    return fakeBox(builder.build())
+}
+
+const fakeVAA = async (vaa: string, inputBox: wasm.ErgoBox) => {
     const tou8 = require('buffer-to-uint8array');
-    const tx = await issueVAA(inputBoxes, new VAA(tou8(Buffer.from(vaa, "hex")), 'transfer'), config.initializer.address)
+    const tx = await issueVAA(
+        new wasm.ErgoBoxes(inputBox),
+        new VAA(tou8(Buffer.from(vaa, "hex")), 'transfer'),
+        config.initializer.address
+    )
     return tx.outputs().get(0)
 }
 
@@ -134,7 +148,8 @@ const test_update_vaa_then_payment = async () => {
     const vaaBytesHex = await generateVaa(tokenId)
     const wormholeBox = await fakeWormhole()
     const bank = await fakeBankBox(tokenId)
-    let vaaBox = await fakeVAA(vaaBytesHex)
+    const vaaSource = await fakeVaaAuthority()
+    let vaaBox = await fakeVAA(vaaBytesHex, vaaSource)
     const vaaBoxObject = new VAABox(JSON.parse(vaaBox.to_json()))
     let msg = codec.strToUint8Array(vaaBoxObject.getObservation())
     const sponsorBox = await fakeSponsor()
@@ -214,6 +229,6 @@ const test_guardian_box_parse = () => {
 }
 
 //test_update_vaa().then(() => null)
-//test_update_vaa_then_payment().then(() => null)
+test_update_vaa_then_payment().then(() => null)
 
 

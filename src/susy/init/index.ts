@@ -1,18 +1,17 @@
 import * as wasm from 'ergo-lib-wasm-nodejs'
-import ApiNetwork from "../network/api";
-import config, {setGuardianIndex, setTokens} from "../config/conf";
-import Contracts from "./contracts";
-import createGuardianBox from "./init/guardianBox";
-import {createAndSignTx, fetchBoxesAndIssueToken, getSecret, sendAndWaitTx} from "./init/util";
-import {wormhole} from "../config/keys";
-import {sign} from "../utils/ecdsa";
-import * as codec from '../utils/codec';
-import {Boxes} from "./boxes";
+import ApiNetwork from "../../network/api";
+import config, {setGuardianIndex, setTokens} from "../../config/conf";
+import Contracts from "../contracts";
+import createGuardianBox from "./guardianBox";
+import {createAndSignTx, fetchBoxesAndIssueToken, getSecret, sendAndWaitTx} from "./util";
+import {wormhole} from "../../config/keys";
+import {sign} from "../../utils/ecdsa";
+import * as codec from '../../utils/codec';
+import {Boxes} from "../boxes";
 import fs from 'fs';
-import {blake2b} from "ethereum-cryptography/blake2b";
-import processVAA from "./vaaService";
-import signService from "./signService";
-import {strToUint8Array} from "../utils/codec";
+import processVAA from "../vaaService";
+import signService from "../signService";
+import {strToUint8Array} from "../../utils/codec";
 
 const issueBankIdentifier = async (secret: wasm.SecretKey) => {
     return await fetchBoxesAndIssueToken(secret, 10000, "Bank Identifier", "Wormhole Bank Boxes Identifier", 0)
@@ -38,11 +37,44 @@ const issueGuardianToken = async (secret: wasm.SecretKey) => {
     return await fetchBoxesAndIssueToken(secret, 1000, "Guardian Token", "Guardian repo Token", 0)
 }
 
+const createVaaCreatorBox = async () => {
+    const height = await ApiNetwork.getHeight();
+    const secret = getSecret()
+    let res = await ApiNetwork.getBoxWithToken(config.token.VAAT, 0, 1)
+    const total = res.total
+    let offset = 0;
+    let selectedBoxes: Array<wasm.ErgoBox> = []
+    let ids: Array<string> = []
+    const processSingleBox = (box: wasm.ErgoBox) => {
+        if (ids.indexOf(box.box_id().to_str()) == -1) {
+            selectedBoxes.push(box);
+            ids.push(box.box_id().to_str())
+        }
+    }
+    while (offset < total) {
+        (await ApiNetwork.getBoxWithToken(config.token.VAAT, offset, 100)).boxes.forEach(processSingleBox)
+    }
+    const ergBoxes = await ApiNetwork.getCoveringForAddress(secret.get_address().to_ergo_tree().to_base16_bytes(), 1e9 + config.fee * 2)
+    ergBoxes.boxes.forEach(processSingleBox)
+    const boxes = new wasm.ErgoBoxes(selectedBoxes[0])
+    selectedBoxes.slice(1).forEach(box => boxes.add(box))
+    const tokenAmount = selectedBoxes.map(box => {
+        return Array(box.tokens().len()).fill("").map((item, index) => {
+            const token = box.tokens().get(index)
+            return token.id().to_str() === config.token.VAAT ? token.amount().as_i64().as_num() : 0
+        }).reduce((a, b) => a + b, 0)
+    }).reduce((a, b) => a + b, 0)
+    const builder = new wasm.ErgoBoxCandidateBuilder(wasm.BoxValue.from_i64(wasm.I64.from_str(1e9.toString())), await Contracts.generateVaaCreatorContract(), height)
+    builder.add_token(wasm.TokenId.from_str(config.token.VAAT), wasm.TokenAmount.from_i64(wasm.I64.from_str(tokenAmount.toString())))
+    const candidate = await Boxes.getWormholeBox()
+    await sendAndWaitTx(await createAndSignTx(secret, boxes, [candidate], height))
+}
+
 const createWormholeBox = async () => {
     const height = await ApiNetwork.getHeight();
-    const box = await ApiNetwork.getBoxWithToken(config.token.wormholeNFT)
+    const tokenBoxes = await ApiNetwork.getBoxWithToken(config.token.wormholeNFT)
     const secret = getSecret()
-    const boxes = new wasm.ErgoBoxes(wasm.ErgoBox.from_json(JSON.stringify(box.items[0])))
+    const boxes = new wasm.ErgoBoxes(tokenBoxes.boxes[0])
     const required = 3 * config.fee - boxes.get(0).value().as_i64().as_num()
     const ergBoxes = await ApiNetwork.getCoveringForAddress(
         secret.get_address().to_ergo_tree().to_base16_bytes().toString(),
@@ -84,8 +116,8 @@ const createBankBox = async (name: string, description: string, decimal: number,
     const NFTBoxes = await ApiNetwork.getBoxWithToken(config.token.bankNFT)
     let boxes: Array<wasm.ErgoBox> = []
     try {
-        boxes.push(wasm.ErgoBox.from_json(JSON.stringify(tokenBoxes.items[0])));
-        boxes.push(wasm.ErgoBox.from_json(JSON.stringify(NFTBoxes.items[0])));
+        boxes.push(tokenBoxes.boxes[0]);
+        boxes.push(NFTBoxes.boxes[0]);
     } catch (exp) {
         throw Error("bank identifier or nft not found")
     }
@@ -160,7 +192,7 @@ const generateVaa = (tokenId: string) => {
         wasm.TokenId.from_str(tokenId).to_str(),     //
         "0002",     // SOLANA
         // uint8arrayToHex(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_bytes(config.networkType)),
-        uint8arrayToHex(strToUint8Array(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_ergo_tree().to_base16_bytes()))+"0000",
+        uint8arrayToHex(strToUint8Array(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_ergo_tree().to_base16_bytes())) + "0000",
         "0003",
         BigIntToHexString(BigInt(5)),
     ]
@@ -185,6 +217,7 @@ const generateVaa = (tokenId: string) => {
 }
 
 const initializeServiceBoxes = async () => {
+    await createVaaCreatorBox();
     await createWormholeBox();
     await createSponsorBox();
     const tokenId = await createBankBox("voUSDT1", "this is a testing token for susy version 2 ergo gateway", 2, 1e15)
@@ -199,7 +232,7 @@ const initializeAll = async (test: boolean = false) => {
     setTokens(tokens);
     const tokenId = await initializeServiceBoxes()
     // const tokenId = "019ce84a423b20a39ecc627ce646d87c91d2929fff400abedd0bb7987197ee48"
-    if(test) {
+    if (test) {
         const tou8 = require('buffer-to-uint8array');
         const vaa = generateVaa(tokenId)
         await processVAA(tou8(Buffer.from(vaa, "hex")), true)

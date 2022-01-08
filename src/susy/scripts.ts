@@ -1,3 +1,50 @@
+export const VAACreator = `
+{
+  val fee = FEE;
+  val paymentVAA = fromBase64("PAYMENT_VAA");
+  val registerVAA = fromBase64("REGISTER_VAA");
+  val guardianVAA = fromBase64("GUARDIAN_VAA");
+  val minBoxErg = MIN_BOX_ERG;
+  val creatorAuthorityPk = fromBase64("CREATOR_AUTHORITY_PK");
+  // INPUTS: [VAACreator] --> OUTPUTS: [VAA, VAACreator(Optional)]
+  val VAAAddressHash = blake2b256(OUTPUTS(0).propositionBytes)
+  val VAAInitialization =
+    allOf(Coll(
+      // Checkpoint
+      OUTPUTS(0).R7[Coll[Int]].get(0) == 0,
+      // signatureCount
+      OUTPUTS(0).R7[Coll[Int]].get(1) == 0,
+      // Redeem Address
+      OUTPUTS(0).R6[Coll[Byte]].get == blake2b256(SELF.propositionBytes),
+      // value
+      OUTPUTS(0).value == minBoxErg,
+      // Token
+      OUTPUTS(0).tokens(0)._2 == 1
+    ))
+  val selfReplication =
+    if(SELF.tokens(0)._2 > 1){
+      allOf(Coll(
+        OUTPUTS.size == 3,
+        OUTPUTS(1).propositionBytes == SELF.propositionBytes,
+      ))
+    } else {true}
+
+  val VAACreation =
+    if(VAAAddressHash == registerVAA || VAAAddressHash == guardianVAA) {
+      sigmaProp(VAAInitialization && selfReplication)
+    } else if(VAAAddressHash == paymentVAA){
+      val emitterIndex = OUTPUTS(0).R7[Coll[Int]].get(4)
+      sigmaProp(allOf(Coll(
+        VAAInitialization,
+        selfReplication,
+        OUTPUTS(0).R4[Coll[Coll[Byte]]].get(2) == CONTEXT.dataInputs(0).R4[Coll[Coll[Byte]]].get(emitterIndex),
+        OUTPUTS(0).R4[Coll[Coll[Byte]]].get(3) == CONTEXT.dataInputs(0).R5[Coll[Coll[Byte]]].get(emitterIndex)
+      )))
+    } else {sigmaProp(false)}
+
+  creatorAuthorityPk && VAACreation
+}`
+
 // 424poBqNcfgMNuNYqk3vPeWAg73oywJUAHmjU8hs8XBhRq7nhPQtgpjDx3bsMtH1XxUkyxionf5L1DcyaxTUYGXH89Y9SMHK8gSQLXvknyasRCPshtuHJHp2KZCtCepD8YABNuAYYTtfPtg7vizGtMbENVpNKt18F9arKSvjdFXrPkdJjx54u3HrgpfrC8BExB2FMqu6d8yz6r7d48uSLe94wW9cysizCiZo5q4ijNnjboSEVkikt82v7L1YtGHtsJ7GZi9DiUJn42b5ngP79ZL5mTrYD6tur7LcVSWTK2UwFrHtg6XZ76RnwRprRxwstdJiCqRg74wGHfcQSdrYhEe1WkgvCu4ru5RZ27mvU8nHQDk
 export const bankScript = `
 {

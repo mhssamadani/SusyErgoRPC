@@ -1,6 +1,79 @@
 import getenv from "getenv";
 import * as wasm from 'ergo-lib-wasm-nodejs';
 
+interface Token {
+    VAAT: string;
+    wormholeNFT: string;
+    guardianNFT: string;
+    guardianToken: string;
+    bankNFT: string;
+    registerNFT: string;
+}
+
+interface Guardian {
+    index: number;
+    privateKey: string;
+}
+
+interface BaseConfig {
+    service: string;
+    token: Token;
+    node: string;
+    explorerApi: string;
+    networkType: wasm.NetworkPrefix;
+    bftSignatureCount: number;
+    fee: number;
+    minBox: number;
+    bridgeId: string;
+}
+
+interface RpcServiceConfig extends BaseConfig {
+    port: number;
+    secret: string;
+    address: string
+}
+
+interface SignServiceConfig extends BaseConfig {
+    guardian: Guardian
+}
+
+interface InitializeServiceConfig extends BaseConfig {
+    initializer: { secret: string };
+    test: boolean;
+    guardian: Guardian;
+}
+
+//
+// const config: RpcServiceConfig | SignServiceConfig | InitializeServiceConfig = {
+//     service: getenv("SERVICE_TYPE", "init"),
+//     token: {
+//         VAAT: getenv("TOKEN_VAAT", ""),
+//         wormholeNFT: getenv("TOKEN_WORMHOLE_NFT", ""),
+//         guardianNFT: getenv("TOKEN_GUARDIAN_NFT", ""),
+//         guardianToken: getenv("TOKEN_GUARDIAN", ""),
+//         bankNFT: getenv("TOKEN_BANK_NFT", ""),
+//         registerNFT: getenv("TOKEN_REGISTER_NFT", "")
+//     },
+//     // addressSecret: getenv("ADDRESS_SECRET", ""),
+//     // address: getenv("ADDRESS", ""),
+//     node: getenv("NODE", "http://213.239.193.208:9053"),
+//     explorerApi: getenv("EXPLORER_API", "https://api.ergoplatform.com"),
+//     networkType: getenv("NETWORK_TYPE", "mainnet") == "mainnet" ? wasm.NetworkPrefix.Mainnet : wasm.NetworkPrefix.Testnet,
+//     bftSignatureCount: parseInt(getenv("BFT_SIGNATURE_COUNT", "4")),
+//     fee: parseInt(getenv("FEE", "1100000")),
+//     bridgeId: getenv("BRIDGE_ID", "10"),
+//     guardian: {
+//         index: parseInt(getenv("GUARDIAN_INDEX", "0")),
+//         privateKey: getenv("GUARDIAN_PRIVATE_KEY", ""),
+//     },
+//     initializer: {
+//         secret: getenv("INITIALIZER_SECRET", ""),
+//     },
+//     // vaaSourceBoxAddress: getenv("VAA_SOURCE_BOX_ADDRESS", ""),
+//     port: parseInt(getenv("RPC_PORT", "8080")),
+//     test: getenv("TEST", "true").toLowerCase() == "true"
+// };
+
 const config = {
     service: getenv("SERVICE_TYPE", "init"),
     token: {
@@ -13,7 +86,7 @@ const config = {
     },
     addressSecret: getenv("ADDRESS_SECRET", ""),
     address: getenv("ADDRESS", ""),
-    node: getenv("NODE", "http://213.239.193.208:9053"),
+    node: getenv("NODEEEE", "http://213.239.193.208:9053"),
     explorerApi: getenv("EXPLORER_API", "https://api.ergoplatform.com"),
     networkType: getenv("NETWORK_TYPE", "mainnet") == "mainnet" ? wasm.NetworkPrefix.Mainnet : wasm.NetworkPrefix.Testnet,
     bftSignatureCount: parseInt(getenv("BFT_SIGNATURE_COUNT", "4")),

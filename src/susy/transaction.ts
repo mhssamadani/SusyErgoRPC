@@ -107,28 +107,22 @@ const generateTx = (inputBoxes: any, outputs: [any, ...any[]], sponsor: any): wa
 }
 
 const createPayment = async (bank: ErgoBox, VAABox: ErgoBox, sponsor: ErgoBox, payload: transferPayload): Promise<any> => {
+    const vaaSourceAuthorityContract = await Contracts.generateVaaCreatorContract()
     const height = await ApiNetwork.getHeight();
     const amount = payload.Amount();
-    console.log("amount is :", amount)
     const tokenId = payload.TokenAddress();
     const fee = payload.Fee();
-    console.log("fee is :", fee)
-
     const bankTokens = bank.tokens().get(1).amount().as_i64().as_num()
-    console.log("bank token is",bankTokens)
-    console.log((bankTokens - amount + fee).toString())
     const outBank = await Boxes.getBank(
         tokenId,
         wasm.I64.from_str((bankTokens - amount + fee).toString())
     ); // DONE
     const vaaTokenRedeemBuilder = new wasm.ErgoBoxCandidateBuilder(
         wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
-        // wasm.Contract.pay_to_address(wasm.Address.from_bytes(VAABox.register_value(6)?.to_byte_array()!)),
-        wasm.Contract.pay_to_address(wasm.Address.from_base58(config.vaaSourceBoxAddress)),
+        vaaSourceAuthorityContract,
         height
     )
     console.log(Buffer.from(VAABox.register_value(6)?.to_byte_array()!).toString('base64'))
-    // wasm.Constant.from_byte_array(VAAAuthorityAddressSigma.to_bytes(0))
     vaaTokenRedeemBuilder.add_token(
         wasm.TokenId.from_str(config.token.VAAT),
         wasm.TokenAmount.from_i64(wasm.I64.from_str("1"))
@@ -152,7 +146,6 @@ const createPayment = async (bank: ErgoBox, VAABox: ErgoBox, sponsor: ErgoBox, p
         [outBank, vaaTokenRedeemBuilder.build(), receiverBuilder.build(), outSponsor],
         height
     )
-    console.log("signed")
     await ApiNetwork.sendTx(signed.to_json())
 }
 

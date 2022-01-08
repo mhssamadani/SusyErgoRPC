@@ -3,7 +3,7 @@ import {
     guardianScript,
     guardianTokenRepo,
     guardianVAAScript, registerScript, registerVAAScript,
-    sponserScript,
+    sponserScript, VAACreator,
     VAAScript,
     wormholeScript
 } from "./scripts";
@@ -12,7 +12,27 @@ import config from "../config/conf";
 import {blake2b} from "ethereum-cryptography/blake2b";
 import * as wasm from "ergo-lib-wasm-nodejs"
 
+const getContractScriptHashBase64 = (contract: wasm.Contract) => blake2b(Buffer.from(contract.ergo_tree().to_base16_bytes(), "hex"), 32).toString("base64")
+
 class Contracts {
+    static generateVaaCreatorContract = async () => {
+        try {
+            const script: string = VAACreator
+                .replace("FEE", config.fee.toString())
+                .replace("PAYMENT_VAA", getContractScriptHashBase64(await this.generateVAAContract()))
+                .replace("REGISTER_VAA", getContractScriptHashBase64(await this.generateRegisterVAAContract()))
+                .replace("GUARDIAN_VAA", getContractScriptHashBase64(await this.generateGuardianVAAContract()))
+                .replace("CREATOR_AUTHORITY_PK", Buffer.from(config.address).toString("base64"))
+                .replace("MIN_BOX_ERG", config.fee.toString())
+            const res = await ApiNetwork.pay2ScriptAddress(script)
+            const P2SA = wasm.Address.from_base58(res);
+            return wasm.Contract.pay_to_address(P2SA);
+        }catch (e){
+            console.log(e)
+            throw e
+        }
+    }
+
     static generateBankContract = () => {
         const script: string = bankScript
             .replace("WORMHOLE_NFT", Buffer.from(config.token.wormholeNFT, "hex").toString("base64"))

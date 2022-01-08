@@ -7,6 +7,7 @@ import config from "../config/conf";
 import {issueVAA} from "./transaction";
 import {sendAndWaitTx} from "./init/util";
 import { GuardianBox } from "../models/boxes";
+import Contracts from "./contracts";
 
 const verifyVAASignatures = (vaa: VAA, guardianBox: GuardianBox): boolean => {
     const signatures: Array<WormholeSignature> = vaa.getSignatures()
@@ -20,6 +21,8 @@ const verifyVAASignatures = (vaa: VAA, guardianBox: GuardianBox): boolean => {
 }
 
 const processVAA = async (vaaBytes: Uint8Array, wait: boolean = false) => {
+    const vaaContract = await Contracts.generateVaaCreatorContract()
+    const vaaAddress = wasm.Address.recreate_from_ergo_tree(vaaContract.ergo_tree()).to_base58(config.networkType)
     const vaa: VAA = new VAA(vaaBytes, 'transfer')
     const guardianBox: GuardianBox = await ApiNetwork.getGuardianBox(vaa.getGuardianSetIndex())
     if (!verifyVAASignatures(vaa, guardianBox)) {
@@ -28,7 +31,7 @@ const processVAA = async (vaaBytes: Uint8Array, wait: boolean = false) => {
     }
     // TODO: what is type of this variable ?
     const boxes = await ApiNetwork.getCoveringErgoAndTokenForAddress(
-        wasm.Address.from_base58(config.vaaSourceBoxAddress).to_ergo_tree().to_base16_bytes(),
+        vaaContract.ergo_tree().to_base16_bytes(),
         config.fee * 3,
         {[config.token.VAAT]: 1}
     )
@@ -37,9 +40,9 @@ const processVAA = async (vaaBytes: Uint8Array, wait: boolean = false) => {
     }
     const ergoBoxes: wasm.ErgoBoxes = wasm.ErgoBoxes.from_boxes_json(boxes.boxes.map(box => JSON.stringify(box)))
     if(wait){
-        await sendAndWaitTx(await issueVAA(ergoBoxes, vaa, config.vaaSourceBoxAddress))
+        await sendAndWaitTx(await issueVAA(ergoBoxes, vaa, vaaAddress))
     }else {
-        await ApiNetwork.sendTx((await issueVAA(ergoBoxes, vaa, config.vaaSourceBoxAddress)).to_json);
+        await ApiNetwork.sendTx((await issueVAA(ergoBoxes, vaa, vaaAddress)).to_json);
     }
     return true
 }
