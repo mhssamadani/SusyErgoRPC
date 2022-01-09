@@ -89,8 +89,9 @@ const config = {
     node: getenv("NODEEEE", "http://213.239.193.208:9053"),
     explorerApi: getenv("EXPLORER_API", "https://api.ergoplatform.com"),
     networkType: getenv("NETWORK_TYPE", "mainnet") == "mainnet" ? wasm.NetworkPrefix.Mainnet : wasm.NetworkPrefix.Testnet,
-    bftSignatureCount: parseInt(getenv("BFT_SIGNATURE_COUNT", "4")),
+    bftSignatureCount: parseInt(getenv("BFT_SIGNATURE_COUNT", "1")),
     fee: parseInt(getenv("FEE", "1100000")),
+    minBoxValue: parseInt(getenv("MIN_BOX_VALUE", wasm.BoxValue.SAFE_USER_MIN().as_i64().to_str())),
     bridgeId: parseInt(getenv("BRIDGE_ID", "10")),
     guardian: {
         index: parseInt(getenv("GUARDIAN_INDEX", "0")),

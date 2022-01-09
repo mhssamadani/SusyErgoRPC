@@ -32,7 +32,7 @@ class ApiNetwork {
     }
 
     static getHeight = async (): Promise<number> => {
-        return nodeClient.get("/info").then((info: any) => info.fullHeight)
+        return nodeClient.get("/info").then((info: any) => info.data.fullHeight)
     }
 
     static sendTx = (tx: any) => {
@@ -127,6 +127,9 @@ class ApiNetwork {
         return await ApiNetwork.trackMemPool(box)
     }
 
+    static getRegisterBox = async (): Promise<wasm.ErgoBox> => {
+        return ApiNetwork.getBoxWithToken(config.token.registerNFT).then(res => res.boxes[0])
+    }
     static getTransaction = async (txId: string) => {
         return await explorerApi.get(`/api/v1/transactions/${txId}`).then(res => res.data)
     }

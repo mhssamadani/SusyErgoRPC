@@ -12,7 +12,6 @@ const processPayments = async () => {
         const R4 = box.register_value(4)?.to_coll_coll_byte()!
         const payload = new transferPayload(R4[1])
         const tokenId = payload.TokenAddress()
-        console.log(tokenId)
         const bank = await ApiNetwork.getBankBox(tokenId, payload.Amount().toString())
         const sponsor = wasm.ErgoBox.from_json(JSON.stringify(await ApiNetwork.getSponsorBox()))
         if (box.register_value(7)?.to_i32_array()[1]! >= config.bftSignatureCount && bank) {

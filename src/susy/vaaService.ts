@@ -35,14 +35,15 @@ const processVAA = async (vaaBytes: Uint8Array, wait: boolean = false) => {
         config.fee * 3,
         {[config.token.VAAT]: 1}
     )
+    const register = await ApiNetwork.getRegisterBox();
     if(!boxes.covered){
         throw new Error("[-] insufficient box found to issue new vaa")
     }
     const ergoBoxes: wasm.ErgoBoxes = wasm.ErgoBoxes.from_boxes_json(boxes.boxes.map(box => JSON.stringify(box)))
     if(wait){
-        await sendAndWaitTx(await issueVAA(ergoBoxes, vaa, vaaAddress))
+        await sendAndWaitTx(await issueVAA(ergoBoxes, vaa, vaaAddress, register))
     }else {
-        await ApiNetwork.sendTx((await issueVAA(ergoBoxes, vaa, vaaAddress)).to_json);
+        await ApiNetwork.sendTx((await issueVAA(ergoBoxes, vaa, vaaAddress, register)).to_json);
     }
     return true
 }

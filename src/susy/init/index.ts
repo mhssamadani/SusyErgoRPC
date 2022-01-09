@@ -134,7 +134,7 @@ const createBankBox = async (name: string, description: string, decimal: number,
         ergBoxes.boxes.forEach(item => boxes.push(wasm.ErgoBox.from_json(JSON.stringify(item))))
     }
     const candidateBuilder = new wasm.ErgoBoxCandidateBuilder(
-        wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
+        wasm.BoxValue.from_i64(wasm.I64.from_str(config.minBoxValue.toString())),
         contract,
         height
     )
@@ -155,7 +155,6 @@ const createBankBox = async (name: string, description: string, decimal: number,
 
 const issueTokens = async () => {
     const secret = getSecret();
-    console.log(secret.get_address().to_base58(config.networkType))
     const bankIdentifier = await issueBankIdentifier(secret);
     const vaaIdentifier = await issueVaaIdentifier(secret)
     const wormholeNFT = await issueWormHoleNFT(secret)
@@ -183,16 +182,17 @@ const uint8arrayToHex = (arr: Uint8Array) => {
     return Buffer.from(arr).toString('hex')
 }
 
-const generateVaa = (tokenId: string) => {
+const generateVaa = (tokenId: string, emiterId: number, emiterAddress: string) => {
     let buff = Buffer.alloc(32, 0)
     buff.writeBigUInt64BE(BigInt(100));
+    console.log(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_ergo_tree().to_base16_bytes())
     const payload = [
         "00",   // id
         BigIntToHexString(BigInt(120)),     // amount
         wasm.TokenId.from_str(tokenId).to_str(),     //
         "0002",     // SOLANA
         // uint8arrayToHex(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_bytes(config.networkType)),
-        uint8arrayToHex(strToUint8Array(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_ergo_tree().to_base16_bytes())) + "0000",
+        uint8arrayToHex(strToUint8Array(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_ergo_tree().to_base16_bytes())),
         "0003",
         BigIntToHexString(BigInt(5)),
     ]
@@ -200,8 +200,8 @@ const generateVaa = (tokenId: string) => {
         codec.UInt32ToByte(1231829),    // timestamp
         codec.UInt32ToByte(25327),       // nonce
         codec.UInt8ToByte(0),           // consistencyLevel,
-        codec.UInt8ToByte(1),           // emitter chain
-        "74e7b65055d170d36d4fb926102fe6e047390980f66611f541f1b8268cbd5a25",  // emitter address
+        codec.UInt8ToByte(emiterId),           // emitter chain
+        emiterAddress,  // emitter address
         ...payload,
     ]
     const observation = observationParts.join("")
@@ -231,10 +231,12 @@ const initializeAll = async (test: boolean = false) => {
     fs.writeFileSync("src/config/tokens.json", JSON.stringify(tokens))
     setTokens(tokens);
     const tokenId = await initializeServiceBoxes()
+    const emitterAddress = "74e7b65055d170d36d4fb926102fe6e047390980f66611f541f1b8268cbd5a25"
+    const emitterId = 1
     // const tokenId = "019ce84a423b20a39ecc627ce646d87c91d2929fff400abedd0bb7987197ee48"
     if (test) {
         const tou8 = require('buffer-to-uint8array');
-        const vaa = generateVaa(tokenId)
+        const vaa = generateVaa(tokenId, emitterId, emitterAddress)
         await processVAA(tou8(Buffer.from(vaa, "hex")), true)
         for (let index = 0; index < 6; index++) {
             setGuardianIndex(index)

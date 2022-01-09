@@ -4,6 +4,8 @@ import * as wasm from "ergo-lib-wasm-nodejs";
 import {ergo, wormhole} from "../config/keys";
 import {Buffer} from "buffer";
 
+const MIN_BOX_ERG = wasm.BoxValue.from_i64(wasm.I64.from_str(config.minBoxValue.toString()));
+
 class Boxes {
     // TODO: should checked I64 or number is ok
     static getSponsorBox = async (value: number, height: number = 0): Promise<wasm.ErgoBoxCandidate> => {
@@ -16,9 +18,8 @@ class Boxes {
     }
 
     static getBank = async (token: string, amount: wasm.I64, height: number = 0): Promise<wasm.ErgoBoxCandidate> => {
-        const value = wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString()));
         const bankBuilder = new wasm.ErgoBoxCandidateBuilder(
-            value,
+            MIN_BOX_ERG,
             await Contracts.generateBankContract(),
             height,
         );
@@ -36,7 +37,7 @@ class Boxes {
     static getWormholeBox = async (height: number = 0): Promise<wasm.ErgoBoxCandidate> => {
         const contract = await Contracts.generateWormholeContract();
         const candidateBuilder = new wasm.ErgoBoxCandidateBuilder(
-            wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
+            MIN_BOX_ERG,
             contract,
             height
         )
@@ -50,7 +51,7 @@ class Boxes {
         const wormholePublic = wormhole.map(item => tou8(Buffer.from(item.address.substring(2), "hex")))
         const ergoPublic = ergo.map(item => tou8(Buffer.from(item.publicKey, "hex")))
         const builder = new wasm.ErgoBoxCandidateBuilder(
-            wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
+            MIN_BOX_ERG,
             contract,
             height
         )
@@ -58,6 +59,22 @@ class Boxes {
         builder.set_register_value(5, wasm.Constant.from_coll_coll_byte(ergoPublic))
         builder.set_register_value(6, wasm.Constant.from_i32(index))
         builder.add_token(wasm.TokenId.from_str(config.token.guardianToken), wasm.TokenAmount.from_i64(wasm.I64.from_str("1")))
+        return builder.build()
+    }
+
+    static getRegisterChainBox = async (id: Buffer, address: Buffer, height: number, oldBox?: wasm.ErgoBox): Promise<wasm.ErgoBoxCandidate> => {
+        const builder = new wasm.ErgoBoxCandidateBuilder(
+            MIN_BOX_ERG,
+            await Contracts.generateRegisterContract(),
+            height
+        )
+        let r4 = oldBox ? oldBox.register_value(4)?.to_coll_coll_byte()! : [];
+        let r5 = oldBox ? oldBox.register_value(5)?.to_coll_coll_byte()! : [];
+        r4.push(Uint8Array.from(id))
+        r5.push(Uint8Array.from(address))
+        builder.add_token(wasm.TokenId.from_str(config.token.registerNFT), wasm.TokenAmount.from_i64(wasm.I64.from_str("1")))
+        builder.set_register_value(4, wasm.Constant.from_coll_coll_byte(r4))
+        builder.set_register_value(5, wasm.Constant.from_coll_coll_byte(r5))
         return builder.build()
     }
 }

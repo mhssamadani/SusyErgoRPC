@@ -29,10 +29,8 @@ const signMsg = (msg: Uint8Array, sk: string): Array<string> => {
     while (true) {
         const r = rand()
         const a = ecParams.G.multiply(r)
-        // const msgHash = blake2b(Buffer.from(msg), 32).toString('hex').slice(2, 64)
         const z: BigInteger = r.add(BigInteger.fromHex(sk).multiply(BigInteger.fromHex(msgHash))).remainder(ecParams.n)
         const zHex = z.toHex();
-        // console.log(z.toString(), z.toString(16), a.getEncoded().toString('hex'))
         if (zHex.length < 64 || (zHex.length == 64 && Number(zHex[0]) <= 7)) {
             return [a.getEncoded().toString('hex'), z.toString(16).padStart(64, '0')]
         }
