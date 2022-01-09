@@ -40,7 +40,7 @@
     "buffer-to-uint8array": "^1.1.0",
     "coinstring": "^2.0.0",
     "ecurve": "^1.0.0",
-    "ergo-lib-wasm-nodejs": "file:./pkg-nodejs",
+    "ergo-lib-wasm-nodejs": "^0.15.0-alpha-aeb0edb",
     "ethereum-cryptography": "^0.1.3",
     "ethereumjs-util": "^7.1.3",
     "ethereumjs-wallet": "^1.0.2",
