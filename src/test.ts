@@ -153,10 +153,9 @@ const fakeVaaAuthority = async () => {
 }
 
 const fakeVAA = async (vaa: string, inputBox: wasm.ErgoBox, register: wasm.ErgoBox) => {
-    const tou8 = require('buffer-to-uint8array');
     const tx = await issueVAA(
         new wasm.ErgoBoxes(inputBox),
-        new VAA(tou8(Buffer.from(vaa, "hex")), 'transfer'),
+        new VAA(codec.hexStringToByte(vaa), 'transfer'),
         wasm.Address.recreate_from_ergo_tree((await Contracts.generateVaaCreatorContract()).ergo_tree()).to_base58(config.networkType),
         register
     )
