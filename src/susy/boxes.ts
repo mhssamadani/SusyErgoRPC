@@ -3,6 +3,7 @@ import config from "../config/conf";
 import * as wasm from "ergo-lib-wasm-nodejs";
 import {ergo, wormhole} from "../config/keys";
 import {Buffer} from "buffer";
+import * as codec from '../utils/codec';
 
 const MIN_BOX_ERG = wasm.BoxValue.from_i64(wasm.I64.from_str(config.minBoxValue.toString()));
 
@@ -47,9 +48,8 @@ class Boxes {
 
     static getGuardianBox = async (index: number, height: number = 0): Promise<wasm.ErgoBoxCandidate> => {
         const contract: wasm.Contract = await Contracts.generateGuardianContract();
-        const tou8 = require('buffer-to-uint8array');
-        const wormholePublic = wormhole.map(item => tou8(Buffer.from(item.address.substring(2), "hex")))
-        const ergoPublic = ergo.map(item => tou8(Buffer.from(item.publicKey, "hex")))
+        const wormholePublic = wormhole.map(item => codec.hexStringToByte(item.address.substring(2)))
+        const ergoPublic = ergo.map(item => codec.hexStringToByte(item.publicKey))
         const builder = new wasm.ErgoBoxCandidateBuilder(
             MIN_BOX_ERG,
             contract,

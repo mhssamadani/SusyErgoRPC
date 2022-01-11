@@ -235,9 +235,8 @@ const initializeAll = async (test: boolean = false) => {
     const emitterId = 1
     // const tokenId = "019ce84a423b20a39ecc627ce646d87c91d2929fff400abedd0bb7987197ee48"
     if (test) {
-        const tou8 = require('buffer-to-uint8array');
         const vaa = generateVaa(tokenId, emitterId, emitterAddress)
-        await processVAA(tou8(Buffer.from(vaa, "hex")), true)
+        await processVAA(codec.hexStringToByte(vaa), true)
         for (let index = 0; index < 6; index++) {
             setGuardianIndex(index)
             await signService(true)

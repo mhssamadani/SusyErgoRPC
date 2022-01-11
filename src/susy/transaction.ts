@@ -136,7 +136,7 @@ const createPayment = async (bank: ErgoBox, VAABox: ErgoBox, sponsor: ErgoBox, p
         wasm.I64.from_str((bankTokens - amount + fee).toString())
     );
     const vaaTokenRedeemBuilder = new wasm.ErgoBoxCandidateBuilder(
-        wasm.BoxValue.from_i64(wasm.I64.from_str((config.fee + config.minBoxValue).toString())),
+        wasm.BoxValue.from_i64(wasm.I64.from_str((config.minBoxValue).toString())),
         vaaSourceAuthorityContract,
         height
     )
@@ -145,7 +145,7 @@ const createPayment = async (bank: ErgoBox, VAABox: ErgoBox, sponsor: ErgoBox, p
         wasm.TokenAmount.from_i64(wasm.I64.from_str("1"))
     );
     const receiverBuilder = new wasm.ErgoBoxCandidateBuilder(
-        wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
+        wasm.BoxValue.from_i64(wasm.I64.from_str(config.minBoxValue.toString())),
         wasm.Contract.pay_to_address(payload.To()),
         height
     );

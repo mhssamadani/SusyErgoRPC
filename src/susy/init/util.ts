@@ -80,7 +80,6 @@ const createAndSignTx = async (secret: wasm.SecretKey, boxes: wasm.ErgoBoxes, ca
         Array(dataInputs.len()).fill("").forEach((item, index) => txDataInputs.add(new wasm.DataInput(dataInputs.get(index).box_id())))
         txBuilder.set_data_inputs(txDataInputs)
     }
-    console.log(txBuilder.build().to_json(), height)
     return signTx(secret, txBuilder.build(), boxSelection, dataInputs ? dataInputs : wasm.ErgoBoxes.from_boxes_json([]))
 }
 

@@ -37,7 +37,6 @@
     "bip32": "^2.0.6",
     "bip39": "^3.0.4",
     "blake2": "^4.0.2",
-    "buffer-to-uint8array": "^1.1.0",
     "coinstring": "^2.0.0",
     "ecurve": "^1.0.0",
     "ergo-lib-wasm-nodejs": "^0.15.0-alpha-592596c",
