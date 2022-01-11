@@ -1,6 +1,5 @@
 
-export const VAACreator: string = `
-{
+export const VAACreator: string = `{
   // INPUTS: [VAACreator] --> OUTPUTS: [VAA, VAACreator(Optional)]
   val fee = FEE
   val paymentVAA = fromBase64("PAYMENT_VAA")
@@ -23,12 +22,19 @@ export const VAACreator: string = `
       OUTPUTS(0).tokens(0)._2 == 1
     ))
   val selfReplication =
-    if(SELF.tokens(0)._2 > 1){
+    if(OUTPUTS.size == 3){
       allOf(Coll(
-        OUTPUTS.size == 3,
+        OUTPUTS(2).value == fee,
+        OUTPUTS(2).tokens.size == 0,
         OUTPUTS(1).propositionBytes == SELF.propositionBytes,
       ))
-    } else {true}
+    } else if(OUTPUTS.size == 2) {
+      allOf(Coll(
+        OUTPUTS(1).value == fee,
+        OUTPUTS(1).tokens.size == 0
+      ))
+    }
+    else {false}
 
   val VAACreation =
     if(VAAAddressHash == registerVAA || VAAAddressHash == guardianVAA) {
@@ -46,8 +52,7 @@ export const VAACreator: string = `
   creatorAuthorityPk && VAACreation
 }`
 
-export const VAAScript: string = `
-{
+export const VAAScript: string = `{
   val wormholeNFT = fromBase64("WORMHOLE_NFT");
   val bftSignatureCount = BFT_SIGNATURE_COUNT;
   val minBoxErg = MIN_BOX_ERG;
@@ -80,20 +85,18 @@ export const VAAScript: string = `
   }
   else {
     sigmaProp(allOf(Coll(
-      true,
       // INPUTS: [Bank, VAABox, sponsor] --> OUTPUTS: [Bank, VAATokenRedeem, payment, sponsor]
       // DataINPUTS: register
       // Verify Payment
-      
       SELF.R7[Coll[Int]].get(1) >= bftSignatureCount,
       OUTPUTS(2).tokens(0)._1 == tokenId,
-      OUTPUTS(2).propositionBytes == address,
       OUTPUTS(2).tokens(0)._2 == amount - fee,
+      OUTPUTS(2).propositionBytes == address,
 
       // verify VAA Authority and token redeem
       blake2b256(OUTPUTS(1).propositionBytes) == SELF.R6[Coll[Byte]].get,
       OUTPUTS(1).tokens(0)._1 == SELF.tokens(0)._1,
-      // OUTPUTS(1).value == transactionFee + minBoxErg,
+      OUTPUTS(1).value == minBoxErg,
 
       // bank token conditions
       OUTPUTS(0).tokens(1)._2 == INPUTS(0).tokens(1)._2 - (amount - fee),
@@ -102,8 +105,7 @@ export const VAAScript: string = `
   }
 }`;
 
-export const bankScript: string = `
-{
+export const bankScript: string = `{
   // INPUTS: [Bank, applicant] --> OUTPUTS: [Bank]
   val wormholeNFT = fromBase64("WORMHOLE_NFT");
   val bankNFT = fromBase64("BANK_NFT");
@@ -146,14 +148,12 @@ export const bankScript: string = `
   sigmaProp(tokenPayment || createRequest)
 }`;
 
-export const guardianVAAScript: string = `
-{
+export const guardianVAAScript: string = `{
   val wormholeNFT = fromBase64("WORMHOLE_NFT");
   val guardianNFT = fromBase64("GUARDIAN_NFT");
   val bftSignatureCount = BFT_SIGNATURE_COUNT;
   val guardianScriptHash = fromBase64("GUARDIAN_SCRIPT_HASH");
   val minBoxErg = MIN_BOX_ERG;
-  val fee = FEE;
   if(OUTPUTS(0).tokens(0)._1 == wormholeNFT){
     // INPUTS: [wormhole, guardianVAABox, sponsor] --> OUTPUTS: [wormhole, guardianVAABox, sponsor]
     val signatureIndex = OUTPUTS(1).R7[Coll[Int]].get(2)
@@ -182,7 +182,7 @@ export const guardianVAAScript: string = `
                        payload.slice(168, 200), payload.slice(200, 232))
     sigmaProp(allOf(Coll(
       // INPUTS: [GuardianTokenRepo, VAA-Guardian, sponsor], optional[Guardian] --> OUTPUTS: [GuardianTokenRepo, VAA-refund, Guardian, sponsor]
-      // DATA_INPUT: [oldGuardianBOx]
+      // DATAINPUT: [oldGuardianBOx]
       // Verifying GuardianSetTokenRepo
       OUTPUTS(0).tokens(0)._1 == guardianNFT,
       // Verifying signature count
@@ -197,13 +197,12 @@ export const guardianVAAScript: string = `
       // verify VAA Authority and token redeem
       blake2b256(OUTPUTS(1).propositionBytes) == SELF.R6[Coll[Byte]].get,
       OUTPUTS(1).tokens(0)._1 == SELF.tokens(0)._1,
-      OUTPUTS(1).value == fee + minBoxErg,
+      OUTPUTS(1).value == minBoxErg,
     )))
   }
 }`
 
-export const guardianTokenRepo: string = `
-{
+export const guardianTokenRepo: string = `{
   // INPUTS: [GuardianSetTokenRepo, VAA-Guardian, sponsor], optional[Guardian] --> OUTPUTS: [GuardianSetTokenRepo, VAA-refund, Guardian, sponsor]
   val VAAToken = fromBase64("VAA_TOKEN");
   val guardianSetIndex = SELF.R4[Coll[Int]].get(0)
@@ -240,14 +239,12 @@ export const guardianTokenRepo: string = `
   )
 }`
 
-export const registerVAAScript: string = `
-{
+export const registerVAAScript: string = `{
   val registerNFT = fromBase64("REGISTER_NFT");
   val bftSignatureCount = BFT_SIGNATURE_COUNT;
   val registerScriptHash = fromBase64("REGISTER_SCRIPT_HASH");
   val wormholeNFT = fromBase64("WORMHOLE_NFT");
   val minBoxErg = MIN_BOX_ERG;
-  val fee = FEE;
 
   if(OUTPUTS(0).tokens(0)._1 == wormholeNFT){
     // INPUTS: [wormhole, guardianVAABox, sponsor] --> OUTPUTS: [wormhole, guardianVAABox, sponsor]
@@ -287,13 +284,12 @@ export const registerVAAScript: string = `
       // verify VAA Authority and token redeem
       blake2b256(OUTPUTS(1).propositionBytes) == SELF.R6[Coll[Byte]].get,
       OUTPUTS(1).tokens(0)._1 == SELF.tokens(0)._1,
-      OUTPUTS(1).value == fee + minBoxErg,
+      OUTPUTS(1).value == minBoxErg,
     )))
   }
 }`
 
-export const registerScript: string = `
-{
+export const registerScript: string = `{
   // INPUTS: [Register, VAA-register, sponsor] --> OUTPUTS: [Register, VAA-register, sponsor]
   val VAAToken = fromBase64("VAA_TOKEN");
   sigmaProp(
@@ -307,8 +303,7 @@ export const registerScript: string = `
   )
 }`
 
-export const guardianScript: string = `
-{
+export const guardianScript: string = `{
   // INPUTS: [GuardianSetTokenRepo, VAA-Guardian, sponsor], optional[Guardian] --> OUTPUTS: [GuardianSetTokenRepo, Guardian, sponsor]
   val guardianToken = fromBase64("GUARDIAN_TOKEN");
   sigmaProp(
@@ -319,8 +314,7 @@ export const guardianScript: string = `
   )
 }`;
 
-export const wormholeScript: string = `
-{
+export const wormholeScript: string = `{
   val wormholeNFT = fromBase64("WORMHOLE_NFT");
   val bankNFT = fromBase64("BANK_NFT");
   val VAAToken = fromBase64("VAA_TOKEN");
@@ -362,15 +356,14 @@ export const wormholeScript: string = `
   }
 }`;
 
-export const sponsorScript: string = `
-{
+export const sponsorScript: string = `{
   // INPUTS: [wormhole, VAABox, sponsor] --> OUTPUTS: [wormhole, VAABox, sponsor]
   val wormholeNFT = fromBase64("WORMHOLE_NFT")
   val bankNFT = fromBase64("BANK_NFT")
   val guardianNFT = fromBase64("GUARDIAN_NFT")
   val registerNFT = fromBase64("REGISTER_NFT")
   val fee = FEE
-  val VAACreation = {
+  val VAASign = {
     if(OUTPUTS(0).tokens(0)._1 == wormholeNFT){
       allOf(Coll(
         INPUTS.size == 3,
@@ -388,7 +381,7 @@ export const sponsorScript: string = `
       allOf(Coll(
         INPUTS.size == 3,
         OUTPUTS(3).propositionBytes == SELF.propositionBytes,
-        OUTPUTS(3).value >= SELF.value - 3 * fee,
+        OUTPUTS(3).value >= SELF.value - 2 * fee,
       ))
     }
     else false
@@ -400,7 +393,7 @@ export const sponsorScript: string = `
       allOf(Coll(
         OUTPUTS(3).propositionBytes == SELF.propositionBytes,
         // Add register replication
-        OUTPUTS(3).value >= SELF.value - 3 * fee,
+        OUTPUTS(3).value >= SELF.value - 2 * fee,
       ))
     }
     else false
@@ -412,12 +405,12 @@ export const sponsorScript: string = `
       allOf(Coll(
         OUTPUTS(2).propositionBytes == SELF.propositionBytes,
         // Add register replication
-        OUTPUTS(2).value >= SELF.value - 2 * fee
+        OUTPUTS(2).value >= SELF.value - 1 * fee
       ))
     }
     else false
   }
 
-  sigmaProp(VAACreation || paymentCreation || guardianCreation || registerUpdate)
+  sigmaProp(VAASign || paymentCreation || guardianCreation || registerUpdate)
 }`;
 

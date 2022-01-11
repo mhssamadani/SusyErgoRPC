@@ -72,7 +72,7 @@ const updateVAABox = async (
     const emitterIndex = R7[4]
     VAABuilder.set_register_value(7, wasm.Constant.from_i32_array(Int32Array.from([Math.pow(2, index) + checksum, (signatureCount + 1), index, guardianIndex, emitterIndex])));
     // TODO: should check
-    VAABuilder.set_register_value(8, wasm.Constant.from_ecpoint_bytes_group_element(signA));
+    VAABuilder.set_register_value(8, wasm.Constant.from_ecpoint_bytes(signA));
     VAABuilder.set_register_value(9, wasm.Constant.from_bigint_signed_bytes_be(signZ));
     const outVAA = VAABuilder.build();
     const wormholeBuilder = new wasm.ErgoBoxCandidateBuilder(

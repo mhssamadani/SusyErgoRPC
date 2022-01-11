@@ -9,7 +9,10 @@ const setupRPC = () => {
     const server = new JSONRPCServer();
 
     server.addMethod("vaa", (args: { bytes: Uint8Array }) => {
-      processVAA(args.bytes)
+      processVAA(args.bytes).then(() => null)
+    })
+    server.addMethod("adminVaa", (args:{bytes: Uint8Array}) => {
+
     })
 
     const app = express();
