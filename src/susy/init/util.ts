@@ -5,7 +5,7 @@ import {TextEncoder} from "util";
 import sleep from "sleep-promise";
 import ApiNetwork from "../../network/api";
 
-const getSecret = () => wasm.SecretKey.dlog_from_bytes(Buffer.from(config.initializer.secret, "hex"))
+const getSecret = () => config.getExtraInitialize().secret
 
 const extractBoxes = async (secret: wasm.SecretKey, tx: wasm.Transaction) => {
     const ergo_tree_hex = secret.get_address().to_ergo_tree().to_base16_bytes().toString()

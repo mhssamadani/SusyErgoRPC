@@ -37,7 +37,7 @@ const issueVAA = async (VAASourceBox: ErgoBoxes, VAAMessage: VAA, VAAAuthorityAd
 
     VAABuilder.set_register_value(6, wasm.Constant.from_byte_array(Uint8Array.from(addressHash)));
     VAABuilder.set_register_value(7, wasm.Constant.from_i32_array(Int32Array.from([0, 0, 0, VAAMessage.getGuardianSetIndex(), selectedChain?.index!])));
-    const secret = wasm.SecretKey.dlog_from_bytes(hexStringToByte(config.addressSecret))
+    const secret = config.secret!
     const outVAA = VAABuilder.build();
     return (await createAndSignTx(
         secret,
@@ -158,7 +158,7 @@ const createPayment = async (bank: ErgoBox, VAABox: ErgoBox, sponsor: ErgoBox, p
     inputBoxes.add(VAABox);
     inputBoxes.add(sponsor);
     const signed = await createAndSignTx(
-        wasm.SecretKey.dlog_from_bytes(strToUint8Array(config.addressSecret)),
+        config.secret!,
         inputBoxes,
         [outBank, vaaTokenRedeemBuilder.build(), receiverBuilder.build(), outSponsor],
         height
@@ -211,7 +211,7 @@ const createRequest = async (bank: ErgoBox, application: ErgoBox, amount: number
         wasm.BoxValue.SAFE_USER_MIN()
     ).build();
     const sks = new wasm.SecretKeys();
-    sks.add(wasm.SecretKey.dlog_from_bytes(strToUint8Array(config.addressSecret)));
+    sks.add(config.secret!);
     const wallet = wasm.Wallet.from_secrets(sks);
     const tx_data_inputs = wasm.ErgoBoxes.from_boxes_json([])
 

@@ -1,4 +1,4 @@
-import config, {setGuardianIndex, setSecret, setTokens} from "./config/conf";
+import config from "./config/conf";
 import {signMsg} from "./susy/signService";
 import * as wasm from 'ergo-lib-wasm-nodejs'
 import {Boxes} from "./susy/boxes";
@@ -10,7 +10,7 @@ import {VAA, registerChainPayload, transferPayload, updateGuardianPayload} from 
 import * as codec from "./utils/codec";
 import Contracts from "./susy/contracts";
 import {GuardianBox, VAABox} from "./models/boxes";
-
+import jayson from 'jayson'
 const inputBoxes = wasm.ErgoBoxes.from_boxes_json([JSON.stringify({
     "boxId": "9b9a0ed0ffa5ca72e5a10c9340dc10575e386a87eda4026903e5de400d027ba5",
     "transactionId": "cca1c7c71106b265c8c5fe8eed9ee8564e0dec9519136eda7a4839e9248eaeca",
@@ -173,96 +173,100 @@ const fakeBankBox = async (tokenId: string) => {
 }
 
 const test_update_vaa_then_payment = async () => {
-    setSecret("fe098b9a1dd5d8c4c8d8dc3ba85785f9ea7323d8718f4090092b25255a5870b2", "9fpKbN9rDg5pSjrfNPZQWZpQxWfv2QeQK7wwYtPdbPsxMMFe7Eq")
-    setTokens({
-        VAAT: "6bb7e2a6245cea46acd5ea363389c274444903210a1d51aeac3c879ba92f2a24",
-        wormholeNFT: "77d1777f31cc56e8285cccb3251e376e00cf5e54bf00e482006d6a455b2f744b",
-        guardianToken: "8da18dfa9b6e9f8f1fb8989dcc3fac162b6191b273d7c4bac69ea33baa34d36d",
-        guardianNFT: "da46feaf1e6e0379771ec828ed5bc7f30d05ac43a5f6a3c9a2727e39932b4163",
-        bankNFT: "4662cfff004341503d24338bf8b24f90f3c660e0a1378292832e31419a2486d0",
-        registerNFT: "466d0a2ce63bce0fafce842ef249f9cb56a574716f653206589b918240a886c4"
-    })
-    const tokenId = "9b9a0ed0ffa5ca72e5a10c9340dc10575e386a87eda4026903e5de400d027ba5"
-    const emitterAddress = "74e7b65055d170d36d4fb926102fe6e047390980f66611f541f1b8268cbd5a25"
-    const emitterId = 1
-    console.log("generating vaa bytes")
-    const vaaBytesHex = await generateVaa(tokenId, emitterId, emitterAddress)
-    console.log("generating wormhole box")
-    const wormholeBox = await fakeWormhole()
-    console.log("generating bank box")
-    const bank = await fakeBankBox(tokenId)
-    console.log("generating vaa source authority")
-    const vaaSource = await fakeVaaAuthority()
-    console.log("generating register box")
-    const register = await fakeRegister(Buffer.from(codec.UInt8ToByte(emitterId), "hex"), Buffer.from(emitterAddress, "hex"))
-    console.log("generating vaa box")
-    let vaaBox = await fakeVAA(vaaBytesHex, vaaSource, register)
-    console.log("processing vaa")
-    const vaaBoxObject = new VAABox(JSON.parse(vaaBox.to_json()))
-    let msg = codec.strToUint8Array(vaaBoxObject.getObservation())
-    const sponsorBox = await fakeSponsor()
-    const guardianBox = await fakeGuardian()
-    for (let i = 0; i < config.bftSignatureCount; i++) {
-        console.log(`start processing guardian ${i}`)
-        setGuardianIndex(i)
-        let signatureData = signMsg(msg, config.guardian.privateKey)
-        try {
-            const tx = await updateVAABox(
-                wormholeBox,
-                vaaBox,
-                sponsorBox,
-                guardianBox,
-                config.guardian.index,
-                Uint8Array.from(Buffer.from(signatureData[0], "hex")),
-                Uint8Array.from(Buffer.from(signatureData[1], "hex")),
-            )
-            vaaBox = tx.outputs().get(1)
-        } catch (exp: any) {
-            console.log(exp)
+    if(config.setSecret && config.setToken &&  config.setGuardianIndex) {
+        config.setSecret("fe098b9a1dd5d8c4c8d8dc3ba85785f9ea7323d8718f4090092b25255a5870b2")
+        config.setToken({
+            VAAT: "6bb7e2a6245cea46acd5ea363389c274444903210a1d51aeac3c879ba92f2a24",
+            wormholeNFT: "77d1777f31cc56e8285cccb3251e376e00cf5e54bf00e482006d6a455b2f744b",
+            guardianToken: "8da18dfa9b6e9f8f1fb8989dcc3fac162b6191b273d7c4bac69ea33baa34d36d",
+            guardianNFT: "da46feaf1e6e0379771ec828ed5bc7f30d05ac43a5f6a3c9a2727e39932b4163",
+            bankNFT: "4662cfff004341503d24338bf8b24f90f3c660e0a1378292832e31419a2486d0",
+            registerNFT: "466d0a2ce63bce0fafce842ef249f9cb56a574716f653206589b918240a886c4"
+        })
+        const tokenId = "9b9a0ed0ffa5ca72e5a10c9340dc10575e386a87eda4026903e5de400d027ba5"
+        const emitterAddress = "74e7b65055d170d36d4fb926102fe6e047390980f66611f541f1b8268cbd5a25"
+        const emitterId = 1
+        console.log("generating vaa bytes")
+        const vaaBytesHex = await generateVaa(tokenId, emitterId, emitterAddress)
+        console.log("generating wormhole box")
+        const wormholeBox = await fakeWormhole()
+        console.log("generating bank box")
+        const bank = await fakeBankBox(tokenId)
+        console.log("generating vaa source authority")
+        const vaaSource = await fakeVaaAuthority()
+        console.log("generating register box")
+        const register = await fakeRegister(Buffer.from(codec.UInt8ToByte(emitterId), "hex"), Buffer.from(emitterAddress, "hex"))
+        console.log("generating vaa box")
+        let vaaBox = await fakeVAA(vaaBytesHex, vaaSource, register)
+        console.log("processing vaa")
+        const vaaBoxObject = new VAABox(JSON.parse(vaaBox.to_json()))
+        let msg = codec.strToUint8Array(vaaBoxObject.getObservation())
+        const sponsorBox = await fakeSponsor()
+        const guardianBox = await fakeGuardian()
+        for (let i = 0; i < config.bftSignatureCount; i++) {
+            console.log(`start processing guardian ${i}`)
+            config.setGuardianIndex(i)
+            let signatureData = signMsg(msg, config.getExtraInitialize().guardian.privateKey)
+            try {
+                const tx = await updateVAABox(
+                    wormholeBox,
+                    vaaBox,
+                    sponsorBox,
+                    guardianBox,
+                    config.getExtraInitialize().guardian.index,
+                    Uint8Array.from(Buffer.from(signatureData[0], "hex")),
+                    Uint8Array.from(Buffer.from(signatureData[1], "hex")),
+                )
+                vaaBox = tx.outputs().get(1)
+            } catch (exp: any) {
+                console.log(exp)
+            }
         }
+        const R4 = vaaBox.register_value(4)?.to_coll_coll_byte()!
+        const payload = new transferPayload(R4[1])
+        console.log("till here")
+        await createPayment(bank, vaaBox, sponsorBox, payload)
     }
-    const R4 = vaaBox.register_value(4)?.to_coll_coll_byte()!
-    const payload = new transferPayload(R4[1])
-    console.log("till here")
-    await createPayment(bank, vaaBox, sponsorBox, payload)
 }
 
 const generate_all_addresses = async () => {
-    setSecret("fe098b9a1dd5d8c4c8d8dc3ba85785f9ea7323d8718f4090092b25255a5870b2", "9fpKbN9rDg5pSjrfNPZQWZpQxWfv2QeQK7wwYtPdbPsxMMFe7Eq")
-    setTokens({
-        VAAT: "6bb7e2a6245cea46acd5ea363389c274444903210a1d51aeac3c879ba92f2a24",
-        wormholeNFT: "77d1777f31cc56e8285cccb3251e376e00cf5e54bf00e482006d6a455b2f744b",
-        guardianToken: "8da18dfa9b6e9f8f1fb8989dcc3fac162b6191b273d7c4bac69ea33baa34d36d",
-        guardianNFT: "da46feaf1e6e0379771ec828ed5bc7f30d05ac43a5f6a3c9a2727e39932b4163",
-        bankNFT: "4662cfff004341503d24338bf8b24f90f3c660e0a1378292832e31419a2486d0",
-        registerNFT: "466d0a2ce63bce0fafce842ef249f9cb56a574716f653206589b918240a886c4"
-    })
-    const vaaCreatorAddress=await Contracts.generateVaaCreatorContract();
-    const bankAddress= await  Contracts.generateBankContract();
-    const vaaAddress= await  Contracts.generateVAAContract();
-    const wormholeAddress= await  Contracts.generateWormholeContract();
-    const sponsorAddress= await  Contracts.generateSponsorContract();
-    const guardianVaaAddress= await  Contracts.generateGuardianVAAContract();
-    const guardianAddress= await  Contracts.generateGuardianContract();
-    const guardianTokenRepoAddress= await  Contracts.generateGuardianTokenRepoContract();
-    const registerAddress= await  Contracts.generateRegisterContract();
-    const registerVaaAddress= await  Contracts.generateRegisterVAAContract();
-    const addresses = {
-        vaaCreatorAddress,
-        bankAddress,
-        vaaAddress,
-        wormholeAddress,
-        sponsorAddress,
-        guardianVaaAddress,
-        guardianAddress,
-        guardianTokenRepoAddress,
-        registerAddress,
-        registerVaaAddress,
+    if(config.setSecret && config.setToken &&  config.setGuardianIndex) {
+        config.setSecret("fe098b9a1dd5d8c4c8d8dc3ba85785f9ea7323d8718f4090092b25255a5870b2")
+        config.setToken({
+            VAAT: "6bb7e2a6245cea46acd5ea363389c274444903210a1d51aeac3c879ba92f2a24",
+            wormholeNFT: "77d1777f31cc56e8285cccb3251e376e00cf5e54bf00e482006d6a455b2f744b",
+            guardianToken: "8da18dfa9b6e9f8f1fb8989dcc3fac162b6191b273d7c4bac69ea33baa34d36d",
+            guardianNFT: "da46feaf1e6e0379771ec828ed5bc7f30d05ac43a5f6a3c9a2727e39932b4163",
+            bankNFT: "4662cfff004341503d24338bf8b24f90f3c660e0a1378292832e31419a2486d0",
+            registerNFT: "466d0a2ce63bce0fafce842ef249f9cb56a574716f653206589b918240a886c4"
+        })
+        const vaaCreatorAddress = await Contracts.generateVaaCreatorContract();
+        const bankAddress = await Contracts.generateBankContract();
+        const vaaAddress = await Contracts.generateVAAContract();
+        const wormholeAddress = await Contracts.generateWormholeContract();
+        const sponsorAddress = await Contracts.generateSponsorContract();
+        const guardianVaaAddress = await Contracts.generateGuardianVAAContract();
+        const guardianAddress = await Contracts.generateGuardianContract();
+        const guardianTokenRepoAddress = await Contracts.generateGuardianTokenRepoContract();
+        const registerAddress = await Contracts.generateRegisterContract();
+        const registerVaaAddress = await Contracts.generateRegisterVAAContract();
+        const addresses = {
+            vaaCreatorAddress,
+            bankAddress,
+            vaaAddress,
+            wormholeAddress,
+            sponsorAddress,
+            guardianVaaAddress,
+            guardianAddress,
+            guardianTokenRepoAddress,
+            registerAddress,
+            registerVaaAddress,
+        }
+        Object.entries(addresses).map(item => {
+            const address = wasm.Address.recreate_from_ergo_tree(item[1].ergo_tree()).to_base58(config.networkType)
+            console.log(`${item[0]}: ${address}`)
+        })
     }
-    Object.entries(addresses).map(item => {
-        const address = wasm.Address.recreate_from_ergo_tree(item[1].ergo_tree()).to_base58(config.networkType)
-        console.log(`${item[0]}: ${address}`)
-    })
 }
 // TODO: should change to testcase
 const test_payloads = () => {
@@ -311,6 +315,23 @@ const test_guardian_box_parse = () => {
     const addresses = guardianBox.getWormholeAddresses().join(",")
     if (addresses != "89e5673332cb6456dfdd42c1a4ce3a1350a19666,c097c943bf246bf5e7ef1ce1c76b1e344839fd76,9420e438a3236f5dbcfef199227d708586fdbb3a,80f686ecea8779f34bc3b8e412a9a609d7a3db2b,a44750f545deb1b2db1c922ae1734c0504ddab68,73b362a20df341b41722c445f5f031e687d46a74") console.log("[-] test_guardian_box_parse (address parse) test failed")
 
+}
+
+const test_rpc_client = () => {
+// create a client
+    const client = jayson.Client.http({
+        port: 8080
+    });
+
+// invoke "add"
+    const tokenId = "9b9a0ed0ffa5ca72e5a10c9340dc10575e386a87eda4026903e5de400d027ba5"
+    const emitterAddress = "74e7b65055d170d36d4fb926102fe6e047390980f66611f541f1b8268cbd5a25"
+    const emitterId = 1
+    const vaa = generateVaa(tokenId, emitterId, emitterAddress)
+    client.request('vaa', {hex: vaa}, function (err: any, response: any) {
+        if (err) throw err;
+        console.log(response); // 2
+    });
 }
 
 //test_update_vaa().then(() => null)

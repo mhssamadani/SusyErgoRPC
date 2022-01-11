@@ -1,6 +1,6 @@
 import * as wasm from 'ergo-lib-wasm-nodejs'
 import ApiNetwork from "../../network/api";
-import config, {setGuardianIndex, setTokens} from "../../config/conf";
+import config from "../../config/conf";
 import Contracts from "../contracts";
 import createGuardianBox from "./guardianBox";
 import {createAndSignTx, fetchBoxesAndIssueToken, getSecret, sendAndWaitTx} from "./util";
@@ -220,26 +220,28 @@ const initializeServiceBoxes = async () => {
     await createVaaCreatorBox();
     await createWormholeBox();
     await createSponsorBox();
-    const tokenId = await createBankBox("voUSDT1", "this is a testing token for susy version 2 ergo gateway", 2, 1e15)
+    const tokenId = await createBankBox("voUSDT2", "this is a testing token for susy version 2 ergo gateway", 2, 1e15)
     await createGuardianBox(1);
     return tokenId
 }
 
 const initializeAll = async (test: boolean = false) => {
-    console.log(wasm.SecretKey.dlog_from_bytes(Buffer.from(config.initializer.secret, "hex")).get_address().to_base58(config.networkType))
     const tokens = await issueTokens()
     fs.writeFileSync("src/config/tokens.json", JSON.stringify(tokens))
-    setTokens(tokens);
-    const tokenId = await initializeServiceBoxes()
-    const emitterAddress = "74e7b65055d170d36d4fb926102fe6e047390980f66611f541f1b8268cbd5a25"
-    const emitterId = 1
-    // const tokenId = "019ce84a423b20a39ecc627ce646d87c91d2929fff400abedd0bb7987197ee48"
-    if (test) {
-        const vaa = generateVaa(tokenId, emitterId, emitterAddress)
-        await processVAA(codec.hexStringToByte(vaa), true)
-        for (let index = 0; index < 6; index++) {
-            setGuardianIndex(index)
-            await signService(true)
+    if (config.setToken) {
+        config.setToken(tokens);
+        const tokenId = await initializeServiceBoxes()
+        const emitterAddress = "74e7b65055d170d36d4fb926102fe6e047390980f66611f541f1b8268cbd5a25"
+        const emitterId = 1
+        if (test) {
+            const vaa = generateVaa(tokenId, emitterId, emitterAddress)
+            await processVAA(codec.hexStringToByte(vaa), true)
+            if(config.setGuardianIndex) {
+                for (let index = 0; index < 6; index++) {
+                    config.setGuardianIndex(index)
+                    await signService(true)
+                }
+            }
         }
     }
 }

@@ -19,17 +19,17 @@ const rand = (): BigInteger => {
 
 const checkSign = (box: VAABox): boolean => {
     const checkpoint = box.getCheckpoint()
-    if ((checkpoint & Math.pow(2, config.guardian.index)) > 0) return true
+    if ((checkpoint & Math.pow(2, config.getExtraSign().guardian.index)) > 0) return true
     return false
 }
 
-const signMsg = (msg: Uint8Array, sk: string): Array<string> => {
+const signMsg = (msg: Uint8Array, sk: BigInteger): Array<string> => {
     const msgHash = "00" + blake2b(Buffer.from(msg), 32).toString('hex').slice(2)
     const ecParams = ecurve.getCurveByName('secp256k1')
     while (true) {
         const r = rand()
         const a = ecParams.G.multiply(r)
-        const z: BigInteger = r.add(BigInteger.fromHex(sk).multiply(BigInteger.fromHex(msgHash))).remainder(ecParams.n)
+        const z: BigInteger = r.add(sk.multiply(BigInteger.fromHex(msgHash))).remainder(ecParams.n)
         const zHex = z.toHex();
         if (zHex.length < 64 || (zHex.length == 64 && Number(zHex[0]) <= 7)) {
             return [a.getEncoded().toString('hex'), z.toString(16).padStart(64, '0')]
@@ -38,10 +38,10 @@ const signMsg = (msg: Uint8Array, sk: string): Array<string> => {
 }
 
 const verifyBoxSignature = (box: VAABox, guardianBox: GuardianBox): boolean => {
-    const signature: WormholeSignature = box.getSignatureWithIndex(config.guardian.index)
+    const signature: WormholeSignature = box.getSignatureWithIndex(config.getExtraSign().guardian.index)
     const guardianAddresses: Array<string> = guardianBox.getWormholeAddresses()
     const vaaData: string = box.getObservation()
-    return verify(vaaData, signature.getSignatureHexData(), guardianAddresses[config.guardian.index])
+    return verify(vaaData, signature.getSignatureHexData(), guardianAddresses[config.getExtraSign().guardian.index])
 }
 
 const signService = async (wait: boolean = false): Promise<void> => {
@@ -58,7 +58,7 @@ const signService = async (wait: boolean = false): Promise<void> => {
         if (!verifyBoxSignature(box, guardianBox)) continue
 
         const msg: Uint8Array = codec.strToUint8Array(box.getObservation())
-        const signatureData: Array<string> = signMsg(msg, config.guardian.privateKey)
+        const signatureData: Array<string> = signMsg(msg, config.getExtraSign().guardian.privateKey)
 
         const wormholeBox: wasm.ErgoBox = await ApiNetwork.getWormholeBox()
         const sponsorBox: wasm.ErgoBox = await ApiNetwork.getSponsorBox()
@@ -68,7 +68,7 @@ const signService = async (wait: boolean = false): Promise<void> => {
             box.getErgoBox(),
             sponsorBox,
             guardianBox.getErgoBox(),
-            config.guardian.index,
+            config.getExtraSign().guardian.index,
             Uint8Array.from(Buffer.from(signatureData[0], "hex")),
             Uint8Array.from(Buffer.from(signatureData[1], "hex")),
             undefined,

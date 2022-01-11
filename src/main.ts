@@ -12,7 +12,7 @@ const main = () => {
     } else if (config.service === "payment") {
         processPayments().then(() => null)
     } else if (config.service === "init") {
-        initializeAll(config.test).then(() => null)
+        initializeAll(config.getExtraInitialize().test).then(() => null)
     } else {
         console.log(`invalid service type ${config.service}`)
     }

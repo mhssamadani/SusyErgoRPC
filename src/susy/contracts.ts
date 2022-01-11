@@ -38,7 +38,7 @@ class Contracts {
         if (this.cache.vaaCreator) return this.cache.vaaCreator;
         else {
             try {
-                const pubKey = Buffer.from(wasm.Address.from_base58(config.address).to_bytes(config.networkType)).slice(1, 34)
+                const pubKey = Buffer.from(config.address.to_bytes(config.networkType)).slice(1, 34)
                 const script: string = VAACreator
                     .replace("FEE", config.fee.toString())
                     .replace("PAYMENT_VAA", getContractScriptHashBase64(await this.generateVAAContract()))
