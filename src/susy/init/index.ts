@@ -12,6 +12,8 @@ import fs from 'fs';
 import processVAA from "../vaaService";
 import signService from "../signService";
 import {strToUint8Array} from "../../utils/codec";
+import {createPayment} from "../transaction";
+import {processPayments} from "../payment";
 
 const issueBankIdentifier = async (secret: wasm.SecretKey) => {
     return await fetchBoxesAndIssueToken(secret, 10000, "Bank Identifier", "Wormhole Bank Boxes Identifier", 0)
@@ -53,6 +55,7 @@ const createVaaCreatorBox = async () => {
     }
     while (offset < total) {
         (await ApiNetwork.getBoxWithToken(config.token.VAAT, offset, 100)).boxes.forEach(processSingleBox)
+        offset += 100
     }
     const ergBoxes = await ApiNetwork.getCoveringForAddress(secret.get_address().to_ergo_tree().to_base16_bytes(), 1e9 + config.fee * 2)
     ergBoxes.boxes.forEach(processSingleBox)
@@ -66,8 +69,7 @@ const createVaaCreatorBox = async () => {
     }).reduce((a, b) => a + b, 0)
     const builder = new wasm.ErgoBoxCandidateBuilder(wasm.BoxValue.from_i64(wasm.I64.from_str(1e9.toString())), await Contracts.generateVaaCreatorContract(), height)
     builder.add_token(wasm.TokenId.from_str(config.token.VAAT), wasm.TokenAmount.from_i64(wasm.I64.from_str(tokenAmount.toString())))
-    const candidate = await Boxes.getWormholeBox()
-    await sendAndWaitTx(await createAndSignTx(secret, boxes, [candidate], height))
+    await sendAndWaitTx(await createAndSignTx(secret, boxes, [builder.build()], height))
 }
 
 const createWormholeBox = async () => {
@@ -85,7 +87,7 @@ const createWormholeBox = async () => {
         throw Error("insufficient boxes to issue bank identifier")
     }
     ergBoxes.boxes.forEach(item => boxes.add(wasm.ErgoBox.from_json(JSON.stringify(item))))
-    const candidate = await Boxes.getWormholeBox()
+    const candidate = await Boxes.getWormholeBox(height)
     await sendAndWaitTx(await createAndSignTx(secret, boxes, [candidate], height))
 }
 
@@ -95,14 +97,13 @@ const createSponsorBox = async () => {
     const ergBoxes = await ApiNetwork.getCoveringForAddress(
         secret.get_address().to_ergo_tree().to_base16_bytes().toString(),
         1e9,
-        (box) => wasm.ErgoBox.from_json(JSON.stringify(box)).tokens().len() === 0
+        // (box) => wasm.ErgoBox.from_json(JSON.stringify(box)).tokens().len() === 0
     )
     if (!ergBoxes.covered) {
-        throw Error("insufficient boxes to issue bank identifier")
+        throw Error("insufficient boxes to create sponsor box")
     }
-    const wasmBoxes = ergBoxes.boxes.map(item => wasm.ErgoBox.from_json(JSON.stringify(item)))
-    const boxes = new wasm.ErgoBoxes(wasmBoxes[0])
-    wasmBoxes.slice(1).forEach(item => boxes.add(item))
+    const boxes = new wasm.ErgoBoxes(ergBoxes.boxes[0])
+    ergBoxes.boxes.slice(1).forEach(item => boxes.add(item))
     const candidate = await Boxes.getSponsorBox(1e9)
     await sendAndWaitTx(await createAndSignTx(secret, boxes, [candidate], height))
 }
@@ -182,10 +183,9 @@ const uint8arrayToHex = (arr: Uint8Array) => {
     return Buffer.from(arr).toString('hex')
 }
 
-const generateVaa = (tokenId: string, emiterId: number, emiterAddress: string) => {
+const generateVaa = (tokenId: string, emitterId: number, emitterAddress: string) => {
     let buff = Buffer.alloc(32, 0)
     buff.writeBigUInt64BE(BigInt(100));
-    console.log(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_ergo_tree().to_base16_bytes())
     const payload = [
         "00",   // id
         BigIntToHexString(BigInt(120)),     // amount
@@ -200,8 +200,8 @@ const generateVaa = (tokenId: string, emiterId: number, emiterAddress: string) =
         codec.UInt32ToByte(1231829),    // timestamp
         codec.UInt32ToByte(25327),       // nonce
         codec.UInt8ToByte(0),           // consistencyLevel,
-        codec.UInt8ToByte(emiterId),           // emitter chain
-        emiterAddress,  // emitter address
+        codec.UInt8ToByte(emitterId),           // emitter chain
+        emitterAddress,  // emitter address
         ...payload,
     ]
     const observation = observationParts.join("")
@@ -216,33 +216,56 @@ const generateVaa = (tokenId: string, emiterId: number, emiterAddress: string) =
     return vaaParts.join("")
 }
 
-const initializeServiceBoxes = async () => {
+const createRegisterBox = async (id: number, address: string, height?: number) => {
+    height = height ? height : await ApiNetwork.getHeight();
+    const registerBox = await Boxes.getRegisterChainBox(Buffer.from(codec.UInt8ToByte(id), "hex"), Buffer.from(address, "hex"), height)
+    const boxes = await ApiNetwork.getCoveringErgoAndTokenForAddress(
+        config.getExtraInitialize().address?.to_ergo_tree().to_base16_bytes()!,
+        3 * config.fee,
+        {[config.token.registerNFT]: 1}
+    )
+    if(!boxes.covered){
+        throw Error("Insufficient ergo or token to create register box")
+    }
+    const inputBoxes = new wasm.ErgoBoxes(boxes.boxes[0])
+    boxes.boxes.slice(1).forEach(box => inputBoxes.add(box))
+    await sendAndWaitTx(await createAndSignTx(config.getExtraInitialize().secret, inputBoxes, [registerBox], height))
+}
+
+const initializeServiceBoxes = async (emitterId: number, emitterAddress: string) => {
     await createVaaCreatorBox();
     await createWormholeBox();
     await createSponsorBox();
     const tokenId = await createBankBox("voUSDT2", "this is a testing token for susy version 2 ergo gateway", 2, 1e15)
     await createGuardianBox(1);
+    await createRegisterBox(emitterId, emitterAddress);
     return tokenId
 }
 
 const initializeAll = async (test: boolean = false) => {
-    const tokens = await issueTokens()
-    fs.writeFileSync("src/config/tokens.json", JSON.stringify(tokens))
-    if (config.setToken) {
-        config.setToken(tokens);
-        const tokenId = await initializeServiceBoxes()
-        const emitterAddress = "74e7b65055d170d36d4fb926102fe6e047390980f66611f541f1b8268cbd5a25"
-        const emitterId = 1
-        if (test) {
-            const vaa = generateVaa(tokenId, emitterId, emitterAddress)
-            await processVAA(codec.hexStringToByte(vaa), true)
-            if(config.setGuardianIndex) {
-                for (let index = 0; index < 6; index++) {
-                    config.setGuardianIndex(index)
-                    await signService(true)
+    try {
+        const tokens = await issueTokens()
+        fs.writeFileSync("src/config/tokens.json", JSON.stringify(tokens))
+        if (config.setToken) {
+            const emitterAddress = "74e7b65055d170d36d4fb926102fe6e047390980f66611f541f1b8268cbd5a25"
+            const emitterId = 1
+            config.setToken(tokens);
+            const tokenId = await initializeServiceBoxes(emitterId, emitterAddress)
+            if (test) {
+                const vaa = generateVaa(tokenId, emitterId, emitterAddress)
+                await processVAA(codec.hexStringToByte(vaa), true)
+                if (config.setGuardianIndex) {
+                    for (let index = 0; index < 6; index++) {
+                        config.setGuardianIndex(index)
+                        await signService(true)
+                    }
                 }
+                await processPayments()
             }
         }
+    } catch (e: any) {
+        const address = config.getExtraInitialize().address?.to_base58(config.networkType)
+        console.log(`${e}. \ninitializer address is ${address}`)
     }
 }
 export {

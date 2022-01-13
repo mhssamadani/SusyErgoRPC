@@ -140,6 +140,7 @@ const createConfig = () => {
             test: get_env("TEST", "true").toLowerCase() == "true"
         }
         resultConfig.getExtraInitialize = () => extra
+        resultConfig.getExtraSign = () => extra as SignServiceConfig
         resultConfig.extra = extra;
         setupInitConfig(resultConfig);
     } else if (resultConfig.service === 'rpc') {

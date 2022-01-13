@@ -117,13 +117,13 @@ class ApiNetwork {
     static getBankBox = async (token: string, amount: number | string): Promise<wasm.ErgoBox> => {
         const bankBoxes = await ApiNetwork.getBoxWithToken(config.token.bankNFT).then(res => res.boxes)
         return bankBoxes.filter((box: wasm.ErgoBox) => {
-            return (box.tokens().get(1).id().to_str() === token && box.tokens().get(1).amount().as_i64().as_num() > Number(amount))
+            return (box.tokens().get(1).id().to_str() === token && box.tokens().get(1).amount().as_i64().as_num() >= Number(amount))
         })[0]
     }
 
     static getSponsorBox = async (): Promise<wasm.ErgoBox> => {
         const address: string = ergoTreeToBase58Address((await Contracts.generateSponsorContract()).ergo_tree())
-        const box: wasm.ErgoBox = wasm.ErgoBox.from_json(await ApiNetwork.getBoxesByAddress(address).then(box => box.data.items[0]))
+        const box: wasm.ErgoBox = wasm.ErgoBox.from_json(JSON.stringify(await ApiNetwork.getBoxesByAddress(address).then(box => box.items[0])))
         return await ApiNetwork.trackMemPool(box)
     }
 
@@ -135,24 +135,28 @@ class ApiNetwork {
     }
 
     static trackMemPool = async (box: wasm.ErgoBox): Promise<any> => {
-        const address: string = ergoTreeToBase58Address(box.ergo_tree())
-        let mempoolBoxesMap = new Map<string, wasm.ErgoBox>();
-        (await ApiNetwork.getBoxesByAddress(address).then(res => res.data.items)).forEach((tx: ErgoTx) => {
-            for (var inBox of tx.inputs) {
-                if (inBox.address) {
-                    for (var outBox of tx.outputs) {
-                        if (outBox.address) {
-                            mempoolBoxesMap.set(inBox.boxId, wasm.ErgoBox.from_json(JSON.stringify(outBox)))
-                            break
-                        }
-                    }
-                    break
-                }
-            }
-        })
-        var lastBox: wasm.ErgoBox = box
-        while (mempoolBoxesMap.has(lastBox.box_id().to_str())) lastBox = mempoolBoxesMap.get(lastBox.box_id().to_str())!
-        return lastBox
+        return box
+        // const address: string = ergoTreeToBase58Address(box.ergo_tree())
+        // let mempoolBoxesMap = new Map<string, wasm.ErgoBox>();
+        // (await ApiNetwork.getBoxesByAddress(address).then(res => {
+        //     return res.items
+        // })).forEach((tx: ErgoTx) => {
+        //     console.log(tx)
+        //     for (var inBox of tx.inputs) {
+        //         if (inBox.address) {
+        //             for (var outBox of tx.outputs) {
+        //                 if (outBox.address) {
+        //                     mempoolBoxesMap.set(inBox.boxId, wasm.ErgoBox.from_json(JSON.stringify(outBox)))
+        //                     break
+        //                 }
+        //             }
+        //             break
+        //         }
+        //     }
+        // })
+        // var lastBox: wasm.ErgoBox = box
+        // while (mempoolBoxesMap.has(lastBox.box_id().to_str())) lastBox = mempoolBoxesMap.get(lastBox.box_id().to_str())!
+        // return lastBox
     }
 
     static getBoxesForAddress = async (tree: string, offset = 0, limit = 100) => {

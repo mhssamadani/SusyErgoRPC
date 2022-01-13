@@ -19,33 +19,7 @@ const verifyVAASignatures = (vaa: VAA, guardianBox: GuardianBox): boolean => {
     }
     return verified >= 4;
 }
-const processVAACreation = async (vaaBytes: Uint8Array, vaaType: string, vaaContract: wasm.Contract, wait: boolean = false) => {
-    const vaaAddress = wasm.Address.recreate_from_ergo_tree(vaaContract.ergo_tree()).to_base58(config.networkType)
-    const vaa: VAA = new VAA(vaaBytes, 'transfer')
-    const guardianBox: GuardianBox = await ApiNetwork.getGuardianBox(vaa.getGuardianSetIndex())
-    if (!verifyVAASignatures(vaa, guardianBox)) {
-        console.log("[-] verify signature failed")
-        return false
-    }
-    // TODO: what is type of this variable ?
-    const boxes = await ApiNetwork.getCoveringErgoAndTokenForAddress(
-        vaaContract.ergo_tree().to_base16_bytes(),
-        config.fee * 2 + config.minBoxValue,
-        {[config.token.VAAT]: 1}
-    )
-    const register = await ApiNetwork.getRegisterBox();
-    if(!boxes.covered){
-        throw new Error("[-] insufficient box found to issue new vaa")
-    }
-    const ergoBoxes: wasm.ErgoBoxes = wasm.ErgoBoxes.from_boxes_json(boxes.boxes.map(box => JSON.stringify(box)))
-    if(wait){
-        await sendAndWaitTx(await issueVAA(ergoBoxes, vaa, vaaAddress, register))
-    }else {
-        await ApiNetwork.sendTx((await issueVAA(ergoBoxes, vaa, vaaAddress, register)).to_json);
-    }
-    return true
 
-}
 const processVAA = async (vaaBytes: Uint8Array, wait: boolean = false) => {
     const vaaContract = await Contracts.generateVaaCreatorContract()
     const vaaAddress = wasm.Address.recreate_from_ergo_tree(vaaContract.ergo_tree()).to_base58(config.networkType)
@@ -65,7 +39,8 @@ const processVAA = async (vaaBytes: Uint8Array, wait: boolean = false) => {
     if(!boxes.covered){
         throw new Error("[-] insufficient box found to issue new vaa")
     }
-    const ergoBoxes: wasm.ErgoBoxes = wasm.ErgoBoxes.from_boxes_json(boxes.boxes.map(box => JSON.stringify(box)))
+    const ergoBoxes: wasm.ErgoBoxes = new wasm.ErgoBoxes(boxes.boxes[0])
+    boxes.boxes.slice(1).map(box => ergoBoxes.add(box))
     if(wait){
         await sendAndWaitTx(await issueVAA(ergoBoxes, vaa, vaaAddress, register))
     }else {

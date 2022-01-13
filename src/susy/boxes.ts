@@ -4,12 +4,14 @@ import * as wasm from "ergo-lib-wasm-nodejs";
 import {ergo, wormhole} from "../config/keys";
 import {Buffer} from "buffer";
 import * as codec from '../utils/codec';
+import ApiNetwork from "../network/api";
 
 const MIN_BOX_ERG = wasm.BoxValue.from_i64(wasm.I64.from_str(config.minBoxValue.toString()));
 
 class Boxes {
     // TODO: should checked I64 or number is ok
     static getSponsorBox = async (value: number, height: number = 0): Promise<wasm.ErgoBoxCandidate> => {
+        if(!height) height = await ApiNetwork.getHeight()
         const sponsorValue = wasm.BoxValue.from_i64(wasm.I64.from_str(value.toString()));
         return new wasm.ErgoBoxCandidateBuilder(
             sponsorValue,
@@ -19,6 +21,7 @@ class Boxes {
     }
 
     static getBank = async (token: string, amount: wasm.I64, height: number = 0): Promise<wasm.ErgoBoxCandidate> => {
+        if(!height) height = await ApiNetwork.getHeight()
         const bankBuilder = new wasm.ErgoBoxCandidateBuilder(
             MIN_BOX_ERG,
             await Contracts.generateBankContract(),
@@ -36,6 +39,7 @@ class Boxes {
     }
 
     static getWormholeBox = async (height: number = 0): Promise<wasm.ErgoBoxCandidate> => {
+        if(!height) height = await ApiNetwork.getHeight()
         const contract = await Contracts.generateWormholeContract();
         const candidateBuilder = new wasm.ErgoBoxCandidateBuilder(
             MIN_BOX_ERG,
@@ -47,6 +51,7 @@ class Boxes {
     }
 
     static getGuardianBox = async (index: number, height: number = 0): Promise<wasm.ErgoBoxCandidate> => {
+        if(!height) height = await ApiNetwork.getHeight()
         const contract: wasm.Contract = await Contracts.generateGuardianContract();
         const wormholePublic = wormhole.map(item => codec.hexStringToByte(item.address.substring(2)))
         const ergoPublic = ergo.map(item => codec.hexStringToByte(item.publicKey))
@@ -63,6 +68,7 @@ class Boxes {
     }
 
     static getRegisterChainBox = async (id: Buffer, address: Buffer, height: number, oldBox?: wasm.ErgoBox): Promise<wasm.ErgoBoxCandidate> => {
+        if(!height) height = await ApiNetwork.getHeight()
         const builder = new wasm.ErgoBoxCandidateBuilder(
             MIN_BOX_ERG,
             await Contracts.generateRegisterContract(),

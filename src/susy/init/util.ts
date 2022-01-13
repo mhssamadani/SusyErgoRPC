@@ -38,7 +38,7 @@ const createChangeBox = (boxes: wasm.ErgoBoxes, candidates: Array<wasm.ErgoBoxCa
         processBox(candidate, tokens, -1)
     })
     const changeTokens = Object.entries(tokens).filter(([key, value]) => value > 0)
-    if(value > config.fee + wasm.BoxValue.SAFE_USER_MIN().as_i64().as_num()){
+    if (value > config.fee + wasm.BoxValue.SAFE_USER_MIN().as_i64().as_num()) {
         const change = new wasm.ErgoBoxCandidateBuilder(
             wasm.BoxValue.from_i64(wasm.I64.from_str((value - config.fee).toString())),
             contract ? contract : wasm.Contract.pay_to_address(secret.get_address()),
@@ -50,20 +50,19 @@ const createChangeBox = (boxes: wasm.ErgoBoxes, candidates: Array<wasm.ErgoBoxCa
             }
         })
         return change.build()
-    // }else if(changeTokens.length){
-    //     console.log(changeTokens)
+        // }else if(changeTokens.length){
+        //     console.log(changeTokens)
         // throw Error("Insufficient erg to create change bux but tokens found")
     }
     return null
 }
 
 const createAndSignTx = async (secret: wasm.SecretKey, boxes: wasm.ErgoBoxes, candidates: Array<wasm.ErgoBoxCandidate>, height: number, dataInputs?: wasm.ErgoBoxes, changeContract?: wasm.Contract) => {
-    if(!height)
-        height = await ApiNetwork.getHeight();
+    if (!height) height = await ApiNetwork.getHeight();
     const change = createChangeBox(boxes, candidates, height, secret, changeContract)
     const candidateBoxes = new wasm.ErgoBoxCandidates(candidates[0])
     candidates.slice(1).forEach(item => candidateBoxes.add(item))
-    if(change) {
+    if (change) {
         candidateBoxes.add(change)
     }
     const boxSelection = new wasm.BoxSelection(boxes, new wasm.ErgoBoxAssetsDataList());
@@ -75,7 +74,7 @@ const createAndSignTx = async (secret: wasm.SecretKey, boxes: wasm.ErgoBoxes, ca
         secret.get_address(),
         wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString()))
     )
-    if(dataInputs){
+    if (dataInputs) {
         const txDataInputs = new wasm.DataInputs()
         Array(dataInputs.len()).fill("").forEach((item, index) => txDataInputs.add(new wasm.DataInput(dataInputs.get(index).box_id())))
         txBuilder.set_data_inputs(txDataInputs)
@@ -115,15 +114,13 @@ const fetchBoxesAndIssueToken = async (
     description: string,
     decimal: number,
 ) => {
-    const outputBoxes: Array<wasm.ErgoBox> = [];
     const ergAmount = 3 * config.fee;
     const boxes = await ApiNetwork.getCoveringForAddress(secret.get_address().to_ergo_tree().to_base16_bytes(), ergAmount)
     if (!boxes.covered) {
         throw Error("insufficient boxes to issue bank identifier")
     }
-    boxes.boxes.forEach((box) => outputBoxes.push(wasm.ErgoBox.from_json(JSON.stringify(box))))
-    const inputBoxes = new wasm.ErgoBoxes(outputBoxes[0]);
-    outputBoxes.slice(1,).forEach(box => inputBoxes.add(box))
+    const inputBoxes = new wasm.ErgoBoxes(boxes.boxes[0]);
+    boxes.boxes.slice(1,).forEach((box: wasm.ErgoBox) => inputBoxes.add(box))
     const {tx, id} = await issueToken(secret, inputBoxes, amount, name, description, decimal)
     console.log(`token issues with is: ${id}. waiting transaction to be mined`)
     await sendAndWaitTx(tx)

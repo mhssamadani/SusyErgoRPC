@@ -197,7 +197,13 @@ const test_update_vaa_then_payment = async () => {
         console.log("generating register box")
         const register = await fakeRegister(Buffer.from(codec.UInt8ToByte(emitterId), "hex"), Buffer.from(emitterAddress, "hex"))
         console.log("generating vaa box")
-        let vaaBox = await fakeVAA(vaaBytesHex, vaaSource, register)
+        const vaaTx = await issueVAA(
+            new wasm.ErgoBoxes(vaaSource),
+            new VAA(codec.hexStringToByte(vaaBytesHex), "transfer"),
+            wasm.Address.recreate_from_ergo_tree(vaaSource.ergo_tree()).to_base58(config.networkType),
+            register
+        )
+        let vaaBox = vaaTx.outputs().get(0)
         console.log("processing vaa")
         const vaaBoxObject = new VAABox(JSON.parse(vaaBox.to_json()))
         let msg = codec.strToUint8Array(vaaBoxObject.getObservation())
