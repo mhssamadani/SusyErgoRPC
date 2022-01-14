@@ -5,7 +5,7 @@ import {TextEncoder} from "util";
 import sleep from "sleep-promise";
 import ApiNetwork from "../../network/api";
 
-const getSecret = () => wasm.SecretKey.dlog_from_bytes(Buffer.from(config.initializer.secret, "hex"))
+const getSecret = () => config.getExtraInitialize().secret
 
 const extractBoxes = async (secret: wasm.SecretKey, tx: wasm.Transaction) => {
     const ergo_tree_hex = secret.get_address().to_ergo_tree().to_base16_bytes().toString()
@@ -15,7 +15,7 @@ const extractBoxes = async (secret: wasm.SecretKey, tx: wasm.Transaction) => {
         .filter(box => box.ergo_tree().to_base16_bytes().toString() === ergo_tree_hex)
 }
 
-const createChangeBox = (boxes: wasm.ErgoBoxes, candidates: Array<wasm.ErgoBoxCandidate>, height: number, secret: wasm.SecretKey): wasm.ErgoBoxCandidate | null => {
+const createChangeBox = (boxes: wasm.ErgoBoxes, candidates: Array<wasm.ErgoBoxCandidate>, height: number, secret: wasm.SecretKey, contract?: wasm.Contract): wasm.ErgoBoxCandidate | null => {
     const processBox = (box: wasm.ErgoBox | wasm.ErgoBoxCandidate, tokens: { [id: string]: number; }, sign: number) => {
         Array(box.tokens().len()).fill("").forEach((notUsed, tokenIndex) => {
             const token = box.tokens().get(tokenIndex);
@@ -38,10 +38,10 @@ const createChangeBox = (boxes: wasm.ErgoBoxes, candidates: Array<wasm.ErgoBoxCa
         processBox(candidate, tokens, -1)
     })
     const changeTokens = Object.entries(tokens).filter(([key, value]) => value > 0)
-    if(value > config.fee + wasm.BoxValue.SAFE_USER_MIN().as_i64().as_num()){
+    if (value > config.fee + wasm.BoxValue.SAFE_USER_MIN().as_i64().as_num()) {
         const change = new wasm.ErgoBoxCandidateBuilder(
             wasm.BoxValue.from_i64(wasm.I64.from_str((value - config.fee).toString())),
-            wasm.Contract.pay_to_address(secret.get_address()),
+            contract ? contract : wasm.Contract.pay_to_address(secret.get_address()),
             height
         )
         Object.entries(tokens).forEach(([key, value]) => {
@@ -50,18 +50,19 @@ const createChangeBox = (boxes: wasm.ErgoBoxes, candidates: Array<wasm.ErgoBoxCa
             }
         })
         return change.build()
-    // }else if(changeTokens.length){
-    //     console.log(changeTokens)
+        // }else if(changeTokens.length){
+        //     console.log(changeTokens)
         // throw Error("Insufficient erg to create change bux but tokens found")
     }
     return null
 }
 
-const createAndSignTx = async (secret: wasm.SecretKey, boxes: wasm.ErgoBoxes, candidates: Array<wasm.ErgoBoxCandidate>, height: number, dataInput?: wasm.ErgoBoxes) => {
-    const change = createChangeBox(boxes, candidates, height, secret)
+const createAndSignTx = async (secret: wasm.SecretKey, boxes: wasm.ErgoBoxes, candidates: Array<wasm.ErgoBoxCandidate>, height: number, dataInputs?: wasm.ErgoBoxes, changeContract?: wasm.Contract) => {
+    if (!height) height = await ApiNetwork.getHeight();
+    const change = createChangeBox(boxes, candidates, height, secret, changeContract)
     const candidateBoxes = new wasm.ErgoBoxCandidates(candidates[0])
     candidates.slice(1).forEach(item => candidateBoxes.add(item))
-    if(change) {
+    if (change) {
         candidateBoxes.add(change)
     }
     const boxSelection = new wasm.BoxSelection(boxes, new wasm.ErgoBoxAssetsDataList());
@@ -73,21 +74,26 @@ const createAndSignTx = async (secret: wasm.SecretKey, boxes: wasm.ErgoBoxes, ca
         secret.get_address(),
         wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString()))
     )
-    return signTx(secret, txBuilder.build(), boxSelection, dataInput ? dataInput : wasm.ErgoBoxes.from_boxes_json([]))
+    if (dataInputs) {
+        const txDataInputs = new wasm.DataInputs()
+        Array(dataInputs.len()).fill("").forEach((item, index) => txDataInputs.add(new wasm.DataInput(dataInputs.get(index).box_id())))
+        txBuilder.set_data_inputs(txDataInputs)
+    }
+    return signTx(secret, txBuilder.build(), boxSelection, dataInputs ? dataInputs : wasm.ErgoBoxes.from_boxes_json([]))
 }
 
-const signTx = async (secret: wasm.SecretKey, tx: wasm.UnsignedTransaction, boxSelection: wasm.BoxSelection, dataInput: wasm.ErgoBoxes) => {
+const signTx = async (secret: wasm.SecretKey, tx: wasm.UnsignedTransaction, boxSelection: wasm.BoxSelection, dataInputs: wasm.ErgoBoxes) => {
     const secrets = new wasm.SecretKeys()
     secrets.add(secret)
     const wallet = wasm.Wallet.from_secrets(secrets);
     const ctx = await ApiNetwork.getErgoStateContext();
-    return wallet.sign_transaction(ctx, tx, boxSelection.boxes(), dataInput)
+    return wallet.sign_transaction(ctx, tx, boxSelection.boxes(), dataInputs)
 }
 
 const issueToken = async (secret: wasm.SecretKey, boxes: wasm.ErgoBoxes, amount: number, name: string, description: string, decimal: number = 0) => {
     const height = await ApiNetwork.getHeight();
     const candidateBuilder = new wasm.ErgoBoxCandidateBuilder(
-        wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
+        wasm.BoxValue.from_i64(wasm.I64.from_str(config.minBoxValue.toString())),
         wasm.Contract.pay_to_address(secret.get_address()),
         height
     )
@@ -108,15 +114,13 @@ const fetchBoxesAndIssueToken = async (
     description: string,
     decimal: number,
 ) => {
-    const outputBoxes: Array<wasm.ErgoBox> = [];
     const ergAmount = 3 * config.fee;
     const boxes = await ApiNetwork.getCoveringForAddress(secret.get_address().to_ergo_tree().to_base16_bytes(), ergAmount)
     if (!boxes.covered) {
         throw Error("insufficient boxes to issue bank identifier")
     }
-    boxes.boxes.forEach((box) => outputBoxes.push(wasm.ErgoBox.from_json(JSON.stringify(box))))
-    const inputBoxes = new wasm.ErgoBoxes(outputBoxes[0]);
-    outputBoxes.slice(1,).forEach(box => inputBoxes.add(box))
+    const inputBoxes = new wasm.ErgoBoxes(boxes.boxes[0]);
+    boxes.boxes.slice(1,).forEach((box: wasm.ErgoBox) => inputBoxes.add(box))
     const {tx, id} = await issueToken(secret, inputBoxes, amount, name, description, decimal)
     console.log(`token issues with is: ${id}. waiting transaction to be mined`)
     await sendAndWaitTx(tx)

@@ -22,7 +22,7 @@ abstract class Payload {
 }
 
 class transferPayload extends Payload {
-    static readonly payloadLength: number = 1 + 32 + 32 + 2 + 38 + 2 + 32;
+    static readonly payloadLength: number = 1 + 32 + 32 + 2 + 36 + 2 + 32;
     private payloadId: number;
     private amount: Uint8Array;
     private tokenAddress: Uint8Array;
@@ -41,7 +41,7 @@ class transferPayload extends Payload {
         this.amount = stream.read(32)
         this.tokenAddress = stream.read(32)
         this.tokenChain = codec.arrayToInt(stream.read(2), 2)
-        this.to = stream.read(38)
+        this.to = stream.read(36)
         this.toChain = codec.arrayToInt(stream.read(2), 2)
         this.fee = stream.read(32)
     }
@@ -294,6 +294,10 @@ class VAA {
 
     getEmitterChain = () => {
         return this.EmitterChain
+    }
+
+    getEmitterAddress = () => {
+        return this.EmitterAddress
     }
 
     getSignatures = () => {

@@ -1,17 +1,12 @@
-import * as util from "ethereumjs-util";
-import {Buffer} from "buffer";
-import {verify} from "../../utils/ecdsa";
 import * as bip39 from "bip39";
 import {hdkey} from "ethereumjs-wallet";
 import * as wasm from 'ergo-lib-wasm-nodejs'
 import { fromSeed } from 'bip32';
 import config from "../../config/conf";
-import {createAndSignTx, fetchBoxesAndIssueToken, getSecret, sendAndWaitTx} from "./util";
+import {createAndSignTx, getSecret, sendAndWaitTx} from "./util";
 import ApiNetwork from "../../network/api";
-import Contracts from "../contracts";
-import {wormhole} from "../../config/keys";
-import {ergo} from "../../config/keys";
 import {Boxes} from "../boxes";
+import * as codec from '../../utils/codec'
 
 const wormholeAddress = () => {
     const mnemonic = bip39.generateMnemonic(160)
@@ -21,11 +16,10 @@ const wormholeAddress = () => {
 }
 
 const ergoAddress = () => {
-    const tou8 = require('buffer-to-uint8array');
     const mnemonic = bip39.generateMnemonic(160)
     const seed = fromSeed(bip39.mnemonicToSeedSync(mnemonic)).derivePath("m/44'/429'/0'/0/0");
     const secretHex = seed.privateKey?.toString("hex")
-    const secret = wasm.SecretKey.dlog_from_bytes(tou8(seed.privateKey));
+    const secret = wasm.SecretKey.dlog_from_bytes(Uint8Array.from(seed.privateKey!));
     let hexed = ""
     secret.get_address().to_bytes(config.networkType).forEach((chr, index) => hexed = hexed + chr.toString(16).padStart(2, "0"))
     const publicKey = hexed.substring(2, hexed.length - 8);
@@ -38,7 +32,7 @@ const createGuardianBox = async (index: number) => {
     const NFTBoxes = await ApiNetwork.getBoxWithToken(config.token.guardianToken)
     let boxes: Array<wasm.ErgoBox> = []
     try {
-        boxes.push(wasm.ErgoBox.from_json(JSON.stringify(NFTBoxes.items[0])));
+        boxes.push(NFTBoxes.boxes[0]);
     } catch (exp) {
         throw Error("bank identifier or nft not found")
     }
