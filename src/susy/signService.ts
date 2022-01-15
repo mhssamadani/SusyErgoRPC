@@ -3,7 +3,7 @@ import ApiNetwork from "../network/api";
 import * as wasm from 'ergo-lib-wasm-nodejs'
 import * as codec from '../utils/codec'
 import {verify} from "../utils/ecdsa";
-import {updateVAABox} from "./transaction";
+import {UpdateVAABox} from "./transaction";
 import BigInteger from 'bigi';
 import ecurve from 'ecurve'
 import {blake2b} from "ethereum-cryptography/blake2b"
@@ -63,7 +63,7 @@ const signService = async (wait: boolean = false): Promise<void> => {
         const wormholeBox: wasm.ErgoBox = await ApiNetwork.getWormholeBox()
         const sponsorBox: wasm.ErgoBox = await ApiNetwork.getSponsorBox()
         console.log("start generating transaction")
-        await updateVAABox(
+        await UpdateVAABox(
             wormholeBox,
             box.getErgoBox(),
             sponsorBox,

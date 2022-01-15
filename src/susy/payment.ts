@@ -2,7 +2,7 @@
 import ApiNetwork from "../network/api";
 import * as wasm from 'ergo-lib-wasm-nodejs'
 import {transferPayload} from "../models/models";
-import {createPayment} from "./transaction";
+import {CreatePayment} from "./transaction";
 import config from "../config/conf";
 
 const processPayments = async () => {
@@ -15,7 +15,7 @@ const processPayments = async () => {
         const bank = await ApiNetwork.getBankBox(tokenId, payload.Amount().toString())
         const sponsor = await ApiNetwork.getSponsorBox()
         if (box.register_value(7)?.to_i32_array()[1]! >= config.bftSignatureCount && bank) {
-            await createPayment(bank, box, sponsor, payload)
+            await CreatePayment(bank, box, sponsor, payload)
         }
     }
 }

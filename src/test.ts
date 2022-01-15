@@ -4,8 +4,8 @@ import * as wasm from 'ergo-lib-wasm-nodejs'
 import {Boxes} from "./susy/boxes";
 import {getSecret} from "./susy/init/util";
 import ApiNetwork from "./network/api";
-import {generateVaa} from "./susy/init";
-import {createPayment, issueVAA, updateVAABox} from "./susy/transaction";
+import {generateRegisterVaa, generateVaa} from "./susy/init";
+import {CreatePayment, IssueVAA, UpdateRegister, UpdateVAABox} from "./susy/transaction";
 import {VAA, registerChainPayload, transferPayload, updateGuardianPayload} from "./models/models";
 import * as codec from "./utils/codec";
 import Contracts from "./susy/contracts";
@@ -153,16 +153,17 @@ const fakeVaaAuthority = async () => {
 }
 
 const fakeVAA = async (vaa: string, inputBox: wasm.ErgoBox, register: wasm.ErgoBox) => {
-    const tx = await issueVAA(
+    const tx = await IssueVAA(
         new wasm.ErgoBoxes(inputBox),
         new VAA(codec.hexStringToByte(vaa), 'transfer'),
         wasm.Address.recreate_from_ergo_tree((await Contracts.generateVaaCreatorContract()).ergo_tree()).to_base58(config.networkType),
-        register
+        register,
+        await Contracts.generateVAAContract(),
     )
     return tx.outputs().get(0)
 }
 
-const fakeRegister = async (id: Buffer, address: Buffer) => {
+const fakeRegister = async (id?: number, address?: Buffer) => {
     const register = await Boxes.getRegisterChainBox(id, address, 0);
     return fakeBox(register)
 }
@@ -172,6 +173,36 @@ const fakeBankBox = async (tokenId: string) => {
     return fakeBox(guardian)
 }
 
+const processSignature = async (
+    msg: Uint8Array,
+    vaaBox: wasm.ErgoBox,
+    wormholeBox: wasm.ErgoBox,
+    guardianBox: wasm.ErgoBox,
+    sponsorBox: wasm.ErgoBox,
+) => {
+    if (config.setGuardianIndex) {
+        for (let i = 0; i < config.bftSignatureCount; i++) {
+            console.log(`start processing guardian ${i} for register`)
+            config.setGuardianIndex(i);
+            let signatureData = signMsg(msg, config.getExtraInitialize().guardian.privateKey)
+            try {
+                const tx = await UpdateVAABox(
+                    wormholeBox,
+                    vaaBox,
+                    sponsorBox,
+                    guardianBox,
+                    config.getExtraInitialize().guardian.index,
+                    Uint8Array.from(Buffer.from(signatureData[0], "hex")),
+                    Uint8Array.from(Buffer.from(signatureData[1], "hex")),
+                )
+                vaaBox = tx.outputs().get(1)
+            } catch (exp: any) {
+                console.log(exp)
+            }
+        }
+    }
+    return vaaBox
+}
 const test_update_vaa_then_payment = async () => {
     if(config.setSecret && config.setToken &&  config.setGuardianIndex) {
         config.setSecret("fe098b9a1dd5d8c4c8d8dc3ba85785f9ea7323d8718f4090092b25255a5870b2")
@@ -193,48 +224,53 @@ const test_update_vaa_then_payment = async () => {
         console.log("generating bank box")
         const bank = await fakeBankBox(tokenId)
         console.log("generating vaa source authority")
-        const vaaSource = await fakeVaaAuthority()
+        let vaaSource = await fakeVaaAuthority()
+        console.log("generating sponsor")
+        const sponsorBox = await fakeSponsor()
+        console.log("generating vaa guardian")
+        const guardianBox = await fakeGuardian()
         console.log("generating register box")
-        const register = await fakeRegister(Buffer.from(codec.UInt8ToByte(emitterId), "hex"), Buffer.from(emitterAddress, "hex"))
+        let register = await fakeRegister();
+        const registerVaaTx = await IssueVAA(
+            new wasm.ErgoBoxes(vaaSource),
+            new VAA(codec.hexStringToByte(generateRegisterVaa(emitterId, emitterAddress)), "register_chain"),
+            wasm.Address.recreate_from_ergo_tree(vaaSource.ergo_tree()).to_base58(config.networkType),
+            register,
+            await Contracts.generateRegisterVAAContract()
+        )
+        let registerVaa = registerVaaTx.outputs().get(0)
+        const registerVaaBoxObject = new VAABox(JSON.parse(registerVaa.to_json()))
+        let msg = codec.strToUint8Array(registerVaaBoxObject.getObservation())
+        vaaSource = registerVaaTx.outputs().get(1)
+        registerVaa = await processSignature(msg, registerVaa, wormholeBox,guardianBox, sponsorBox)
+        console.log("update register box")
+        const updateTx = await UpdateRegister(register, new VAABox(JSON.parse(registerVaa.to_json())), sponsorBox)
+        register = updateTx.outputs().get(0)
+
         console.log("generating vaa box")
-        const vaaTx = await issueVAA(
+
+        const vaaTx = await IssueVAA(
             new wasm.ErgoBoxes(vaaSource),
             new VAA(codec.hexStringToByte(vaaBytesHex), "transfer"),
             wasm.Address.recreate_from_ergo_tree(vaaSource.ergo_tree()).to_base58(config.networkType),
-            register
+            register,
+            await Contracts.generateVAAContract()
         )
         let vaaBox = vaaTx.outputs().get(0)
         console.log("processing vaa")
         const vaaBoxObject = new VAABox(JSON.parse(vaaBox.to_json()))
-        let msg = codec.strToUint8Array(vaaBoxObject.getObservation())
-        const sponsorBox = await fakeSponsor()
-        const guardianBox = await fakeGuardian()
-        for (let i = 0; i < config.bftSignatureCount; i++) {
-            console.log(`start processing guardian ${i}`)
-            config.setGuardianIndex(i)
-            let signatureData = signMsg(msg, config.getExtraInitialize().guardian.privateKey)
-            try {
-                const tx = await updateVAABox(
-                    wormholeBox,
-                    vaaBox,
-                    sponsorBox,
-                    guardianBox,
-                    config.getExtraInitialize().guardian.index,
-                    Uint8Array.from(Buffer.from(signatureData[0], "hex")),
-                    Uint8Array.from(Buffer.from(signatureData[1], "hex")),
-                )
-                vaaBox = tx.outputs().get(1)
-            } catch (exp: any) {
-                console.log(exp)
-            }
-        }
+        msg = codec.strToUint8Array(vaaBoxObject.getObservation())
+        vaaBox = await processSignature(msg, vaaBox, wormholeBox, guardianBox, sponsorBox)
         const R4 = vaaBox.register_value(4)?.to_coll_coll_byte()!
         const payload = new transferPayload(R4[1])
-        console.log("till here")
-        await createPayment(bank, vaaBox, sponsorBox, payload)
+        console.log("start payment process")
+        await CreatePayment(bank, vaaBox, sponsorBox, payload)
     }
 }
 
+const test_register_chain = async () => {
+
+}
 const generate_all_addresses = async () => {
     if(config.setSecret && config.setToken &&  config.setGuardianIndex) {
         config.setSecret("fe098b9a1dd5d8c4c8d8dc3ba85785f9ea7323d8718f4090092b25255a5870b2")

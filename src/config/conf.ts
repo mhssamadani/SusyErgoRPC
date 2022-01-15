@@ -42,7 +42,7 @@ type BaseConfig = {
     adminBftSignatureCount: number;
     fee: number;
     minBoxValue: number;
-    bridgeId: string;
+    bridgeId: number;
     secret?: wasm.SecretKey;
     address: wasm.Address;
     extra?: InitializeServiceConfig | SignServiceConfig | RpcServiceConfig;
@@ -120,7 +120,7 @@ const createConfig = () => {
         adminBftSignatureCount: parseInt(get_env("ADMIN_BFT_SIGNATURE_COUNT", "5")),
         fee: parseInt(get_env("FEE", "1100000")),
         minBoxValue: parseInt(get_env("MIN_BOX_VALUE", wasm.BoxValue.SAFE_USER_MIN().as_i64().to_str())),
-        bridgeId: get_env("BRIDGE_ID", "10"),
+        bridgeId: parseInt(get_env("BRIDGE_ID", "10")),
         address: address,
         secret: secret,
         getExtraRpc: notAvailable,

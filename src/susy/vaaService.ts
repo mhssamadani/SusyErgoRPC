@@ -4,7 +4,7 @@ import * as wasm from 'ergo-lib-wasm-nodejs'
 import * as Utils from '../utils/codec'
 import {verify} from "../utils/ecdsa";
 import config from "../config/conf";
-import {issueVAA} from "./transaction";
+import {IssueVAA} from "./transaction";
 import {sendAndWaitTx} from "./init/util";
 import { GuardianBox } from "../models/boxes";
 import Contracts from "./contracts";
@@ -42,9 +42,9 @@ const processVAA = async (vaaBytes: Uint8Array, wait: boolean = false) => {
     const ergoBoxes: wasm.ErgoBoxes = new wasm.ErgoBoxes(boxes.boxes[0])
     boxes.boxes.slice(1).map(box => ergoBoxes.add(box))
     if(wait){
-        await sendAndWaitTx(await issueVAA(ergoBoxes, vaa, vaaAddress, register))
+        await sendAndWaitTx(await IssueVAA(ergoBoxes, vaa, vaaAddress, register, await Contracts.generateVAAContract()))
     }else {
-        await ApiNetwork.sendTx((await issueVAA(ergoBoxes, vaa, vaaAddress, register)).to_json);
+        await ApiNetwork.sendTx((await IssueVAA(ergoBoxes, vaa, vaaAddress, register, await Contracts.generateVAAContract())).to_json);
     }
     return true
 }

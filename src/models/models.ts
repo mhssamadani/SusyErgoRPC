@@ -103,6 +103,14 @@ class registerChainPayload extends Payload {
         this.emitterAddress = stream.read(32)
     }
 
+    EmitterChainId = () : number => {
+        return this.emitterChainId
+    }
+
+    EmitterChainAddress = () : Buffer => {
+        return Buffer.from(this.emitterAddress)
+    }
+
     toHex = () => {
         return [
             Buffer.from(this.module).toString('hex'),

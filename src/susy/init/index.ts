@@ -12,7 +12,7 @@ import fs from 'fs';
 import processVAA from "../vaaService";
 import signService from "../signService";
 import {strToUint8Array} from "../../utils/codec";
-import {createPayment} from "../transaction";
+import {CreatePayment} from "../transaction";
 import {processPayments} from "../payment";
 
 const issueBankIdentifier = async (secret: wasm.SecretKey) => {
@@ -182,20 +182,7 @@ const BigIntToHexString = (num: bigint) => {
 const uint8arrayToHex = (arr: Uint8Array) => {
     return Buffer.from(arr).toString('hex')
 }
-
-const generateVaa = (tokenId: string, emitterId: number, emitterAddress: string) => {
-    let buff = Buffer.alloc(32, 0)
-    buff.writeBigUInt64BE(BigInt(100));
-    const payload = [
-        "00",   // id
-        BigIntToHexString(BigInt(120)),     // amount
-        wasm.TokenId.from_str(tokenId).to_str(),     //
-        "0002",     // SOLANA
-        // uint8arrayToHex(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_bytes(config.networkType)),
-        uint8arrayToHex(strToUint8Array(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_ergo_tree().to_base16_bytes())),
-        "0003",
-        BigIntToHexString(BigInt(5)),
-    ]
+const generateVaaParts = (emitterId: number, emitterAddress: string, payload: Array<string>) => {
     const observationParts = [
         codec.UInt32ToByte(1231829),    // timestamp
         codec.UInt32ToByte(25327),       // nonce
@@ -207,18 +194,42 @@ const generateVaa = (tokenId: string, emitterId: number, emitterAddress: string)
     const observation = observationParts.join("")
     let signatures = "06";
     signatures += wormhole.map((item, index) => `0${index}` + sign(Buffer.from(observation, "hex"), Buffer.from(item.privateKey, "hex"))).join("")
-    const vaaParts = [
+    return [
         codec.UInt8ToByte(2),       // version
         codec.UInt32ToByte(0),      // guardian set index
         signatures,
         ...observationParts
     ]
-    return vaaParts.join("")
+}
+const generateRegisterVaa = (emitterId: number, emitterAddress: string) => {
+    const payload = [
+        "000000000000000000000000000000000000000000546f6b656e427269646765", // core module
+        codec.UInt8ToByte(1),
+        codec.UInt16ToByte(config.bridgeId),
+        codec.UInt16ToByte(emitterId),
+        emitterAddress
+    ]
+    return generateVaaParts(emitterId, emitterAddress, payload).join("")
+}
+
+const generateVaa = (tokenId: string, emitterId: number, emitterAddress: string) => {
+    let buff = Buffer.alloc(32, 0)
+    buff.writeBigUInt64BE(BigInt(100));
+    const payload = [
+        "00",   // id
+        BigIntToHexString(BigInt(120)),     // amount
+        wasm.TokenId.from_str(tokenId).to_str(),     //
+        "0002",     // SOLANA
+        uint8arrayToHex(strToUint8Array(wasm.Address.from_base58("9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA").to_ergo_tree().to_base16_bytes())),
+        "0003",
+        BigIntToHexString(BigInt(5)),
+    ]
+    return generateVaaParts(emitterId, emitterAddress, payload).join("")
 }
 
 const createRegisterBox = async (id: number, address: string, height?: number) => {
     height = height ? height : await ApiNetwork.getHeight();
-    const registerBox = await Boxes.getRegisterChainBox(Buffer.from(codec.UInt8ToByte(id), "hex"), Buffer.from(address, "hex"), height)
+    const registerBox = await Boxes.getRegisterChainBox(id, Buffer.from(address, "hex"), height)
     const boxes = await ApiNetwork.getCoveringErgoAndTokenForAddress(
         config.getExtraInitialize().address?.to_ergo_tree().to_base16_bytes()!,
         3 * config.fee,
@@ -274,6 +285,7 @@ export {
     createBankBox,
     issueTokens,
     initializeServiceBoxes,
+    generateRegisterVaa,
     generateVaa,
     initializeAll
 }

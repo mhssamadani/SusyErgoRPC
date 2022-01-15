@@ -67,7 +67,7 @@ class Boxes {
         return builder.build()
     }
 
-    static getRegisterChainBox = async (id: Buffer, address: Buffer, height: number, oldBox?: wasm.ErgoBox): Promise<wasm.ErgoBoxCandidate> => {
+    static getRegisterChainBox = async (id?: number, address?: Buffer, height?: number, oldBox?: wasm.ErgoBox): Promise<wasm.ErgoBoxCandidate> => {
         if(!height) height = await ApiNetwork.getHeight()
         const builder = new wasm.ErgoBoxCandidateBuilder(
             MIN_BOX_ERG,
@@ -76,12 +76,30 @@ class Boxes {
         )
         let r4 = oldBox ? oldBox.register_value(4)?.to_coll_coll_byte()! : [];
         let r5 = oldBox ? oldBox.register_value(5)?.to_coll_coll_byte()! : [];
-        r4.push(Uint8Array.from(id))
-        r5.push(Uint8Array.from(address))
+        if(id && address) {
+            r4.push(Uint8Array.from(Buffer.from(codec.UInt16ToByte(id), "hex")))
+            r5.push(Uint8Array.from(address))
+        }
         builder.add_token(wasm.TokenId.from_str(config.token.registerNFT), wasm.TokenAmount.from_i64(wasm.I64.from_str("1")))
         builder.set_register_value(4, wasm.Constant.from_coll_coll_byte(r4))
         builder.set_register_value(5, wasm.Constant.from_coll_coll_byte(r5))
         return builder.build()
+    }
+
+    static getTokenRedeemBox = async (height?: number, tokenCount?: number, value?: number) => {
+        if(!height) height = await ApiNetwork.getHeight();
+        tokenCount = tokenCount ? tokenCount: 1
+        const vaaSourceAuthorityContract = await Contracts.generateVaaCreatorContract()
+        const vaaTokenRedeemBuilder = new wasm.ErgoBoxCandidateBuilder(
+            wasm.BoxValue.from_i64(wasm.I64.from_str((value ? value : config.minBoxValue).toString())),
+            vaaSourceAuthorityContract,
+            height
+        )
+        vaaTokenRedeemBuilder.add_token(
+            wasm.TokenId.from_str(config.token.VAAT),
+            wasm.TokenAmount.from_i64(wasm.I64.from_str(tokenCount.toString()))
+        );
+        return vaaTokenRedeemBuilder.build()
     }
 }
 
