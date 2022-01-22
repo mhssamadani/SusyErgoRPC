@@ -43,7 +43,7 @@ const processGuardian = async (vaaBox: VAABox) => {
         )
     }
 }
-const processPayments = async () => {
+const processFinalize = async () => {
     const vaaBoxes = await ApiNetwork.getVAABoxes()
     for (const vaaBox of vaaBoxes) {
         switch (vaaBox.getErgoBox().ergo_tree().to_base16_bytes()) {
@@ -62,5 +62,5 @@ const processPayments = async () => {
 
 
 export {
-    processPayments
+    processFinalize
 }

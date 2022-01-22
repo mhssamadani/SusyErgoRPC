@@ -13,7 +13,7 @@ import {processVAA} from "../vaaService";
 import signService from "../signService";
 import {strToUint8Array} from "../../utils/codec";
 import {CreatePayment} from "../transaction";
-import {processPayments} from "../finalize";
+import {processFinalize} from "../finalize";
 
 const issueBankIdentifier = async (secret: wasm.SecretKey) => {
     return await fetchBoxesAndIssueToken(secret, 10000, "Bank Identifier", "Wormhole Bank Boxes Identifier", 0)
@@ -271,7 +271,7 @@ const initializeAll = async (test: boolean = false) => {
                         await signService(true)
                     }
                 }
-                await processPayments()
+                await processFinalize()
             }
         }
     } catch (e: any) {
