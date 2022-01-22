@@ -4,12 +4,13 @@ import {Boxes} from "./boxes";
 import Contracts from "./contracts";
 import ApiNetwork from "../network/api";
 import {hexStringToByte, strToUint8Array} from "../utils/codec";
-import {registerChainPayload, transferPayload, VAA} from "../models/models";
+import {registerChainPayload, transferPayload, updateGuardianPayload, VAA} from "../models/models";
 import * as codec from '../utils/codec';
 import {createAndSignTx, sendAndWaitTx, signTx} from "./init/util";
 import * as wasm from 'ergo-lib-wasm-nodejs'
 import {blake2b} from "ethereum-cryptography/blake2b";
 import {VAABox} from "../models/boxes";
+import {guardianTokenRepo} from "./scripts";
 
 const IssueVAA = async (VAASourceBox: ErgoBoxes, VAAMessage: VAA, VAAAuthorityAddress: string, register: wasm.ErgoBox, contract: wasm.Contract): Promise<wasm.Transaction> => {
     const height = await ApiNetwork.getHeight();
@@ -169,11 +170,9 @@ const CreatePayment = async (bank: ErgoBox, VAABox: ErgoBox, sponsor: ErgoBox, p
 
 const UpdateRegister = async (register: wasm.ErgoBox, vaaBox: VAABox, sponsor: wasm.ErgoBox, height?: number) => {
     if(!height) height = await ApiNetwork.getHeight();
-
     const boxes = new wasm.ErgoBoxes(register)
     boxes.add(vaaBox.getErgoBox())
     boxes.add(sponsor)
-
     const registerPayload = new registerChainPayload((await vaaBox.getVAA()).getPayload().toBytes())
     const outRegister = await Boxes.getRegisterChainBox(registerPayload.EmitterChainId(), registerPayload.EmitterChainAddress(), height, register)
     const tokenRedeem = await Boxes.getTokenRedeemBox(height)
@@ -192,6 +191,45 @@ const UpdateRegister = async (register: wasm.ErgoBox, vaaBox: VAABox, sponsor: w
     )
     return await signTx(config.secret!, builder.build(), selection, wasm.ErgoBoxes.from_boxes_json([]))
 }
+
+
+const updateGuardian = async (
+    guardianTokenRepoBox: wasm.ErgoBox,
+    vaaBox: VAABox,
+    sponsor: wasm.ErgoBox,
+    removingGuardianBox?: wasm.ErgoBox,
+    height?: number
+) => {
+    if(!height) height = await ApiNetwork.getHeight();
+    const R4 = guardianTokenRepoBox.register_value(4)?.to_i32_array()!;
+    if(R4[0] > R4[1] && removingGuardianBox === undefined){
+        throw Error("max guardian box generated. you must specify an old guardian box to be removed")
+    }
+    const vaa = await vaaBox.getVAA()
+    const payload = (vaa.getPayload() as updateGuardianPayload)
+
+    const boxes = new wasm.ErgoBoxes(guardianTokenRepoBox)
+    boxes.add(vaaBox.getErgoBox())
+    boxes.add(sponsor)
+    if(removingGuardianBox) boxes.add(removingGuardianBox)
+    const guardianTokenRepoOut = await Boxes.getGuardianTokenRepo(guardianTokenRepoBox.tokens().get(1).amount().as_i64().as_num(),guardianTokenRepoBox, undefined, height)
+    const tokenRedeem = await Boxes.getTokenRedeemBox(height)
+    const guardian = await Boxes.getGuardianBox(payload.getNewIndex(), payload.getWormholePublic(), payload.getErgoPublic(), height)
+    const sponsorOut = await Boxes.getSponsorBox(sponsor.value().as_i64().as_num() - config.fee - (removingGuardianBox ? 0 : config.minBoxValue))
+    const outputs = new wasm.ErgoBoxCandidates(guardianTokenRepoOut);
+    outputs.add(tokenRedeem)
+    outputs.add(guardian)
+    outputs.add(sponsor)
+    const builder = wasm.TxBuilder.new(
+        new wasm.BoxSelection(boxes, new wasm.ErgoBoxAssetsDataList()),
+        outputs,
+        height,
+        wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
+        config.secret?.get_address()!,
+        wasm.BoxValue.SAFE_USER_MIN()
+    )
+}
+
 const CreateRequest = async (bank: ErgoBox, application: ErgoBox, amount: number, fee: number): Promise<string> => {
     // hex string of "6obZ6DUGj8qLVwVB28U2tCwa13jVrAFvo3jzMuxTgSeY"
     // const receiverAddress = strToUint8Array("563a38ab1f1be9e8c57f66f6cd56ed08e2b906e7e0310067f50171245906c21d");
@@ -247,4 +285,4 @@ const CreateRequest = async (bank: ErgoBox, application: ErgoBox, amount: number
 
 }
 
-export {CreateRequest, IssueVAA, UpdateVAABox, CreatePayment, UpdateRegister};
+export {CreateRequest, IssueVAA, UpdateVAABox, CreatePayment, UpdateRegister, updateGuardian};

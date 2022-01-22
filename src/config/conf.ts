@@ -52,6 +52,7 @@ type BaseConfig = {
     getExtraRpc: () => RpcServiceConfig;
     getExtraSign: () => SignServiceConfig;
     getExtraInitialize: () => InitializeServiceConfig;
+    guardianLimit: number;
 
 }
 
@@ -123,6 +124,7 @@ const createConfig = () => {
         bridgeId: parseInt(get_env("BRIDGE_ID", "10")),
         address: address,
         secret: secret,
+        guardianLimit: parseInt(get_env("GUARDIAN_LIMIT", "2")),
         getExtraRpc: notAvailable,
         getExtraInitialize: notAvailable,
         getExtraSign: notAvailable,

@@ -9,11 +9,11 @@ import {sign} from "../../utils/ecdsa";
 import * as codec from '../../utils/codec';
 import {Boxes} from "../boxes";
 import fs from 'fs';
-import processVAA from "../vaaService";
+import {processVAA} from "../vaaService";
 import signService from "../signService";
 import {strToUint8Array} from "../../utils/codec";
 import {CreatePayment} from "../transaction";
-import {processPayments} from "../payment";
+import {processPayments} from "../finalize";
 
 const issueBankIdentifier = async (secret: wasm.SecretKey) => {
     return await fetchBoxesAndIssueToken(secret, 10000, "Bank Identifier", "Wormhole Bank Boxes Identifier", 0)
@@ -235,7 +235,7 @@ const createRegisterBox = async (id: number, address: string, height?: number) =
         3 * config.fee,
         {[config.token.registerNFT]: 1}
     )
-    if(!boxes.covered){
+    if (!boxes.covered) {
         throw Error("Insufficient ergo or token to create register box")
     }
     const inputBoxes = new wasm.ErgoBoxes(boxes.boxes[0])

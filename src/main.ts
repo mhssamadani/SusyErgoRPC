@@ -1,7 +1,7 @@
 import setupRPC from "./network/rpc"
 import config from "./config/conf";
 import signService from "./susy/signService";
-import {processPayments} from "./susy/payment";
+import {processPayments} from "./susy/finalize";
 import {initializeAll} from "./susy/init";
 
 const main = () => {

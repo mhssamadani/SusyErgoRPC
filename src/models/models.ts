@@ -3,7 +3,7 @@ import {Readable} from 'stream'
 import Contracts from '../susy/contracts';
 
 import * as wasm from 'ergo-lib-wasm-nodejs'
-import { VAABox } from './boxes';
+import {VAABox} from './boxes';
 
 abstract class Payload {
     protected byteToStream: (payloadBytes: Uint8Array) => Readable = (payloadBytes: Uint8Array) => {
@@ -103,11 +103,11 @@ class registerChainPayload extends Payload {
         this.emitterAddress = stream.read(32)
     }
 
-    EmitterChainId = () : number => {
+    EmitterChainId = (): number => {
         return this.emitterChainId
     }
 
-    EmitterChainAddress = () : Buffer => {
+    EmitterChainAddress = (): Buffer => {
         return Buffer.from(this.emitterAddress)
     }
 
@@ -129,7 +129,7 @@ class updateGuardianPayload extends Payload {
     private chainId: number;
     private newIndex: number;
     private keyLength: number;
-    private guardianPubkeys: Array<Uint8Array>;
+    private guardianPublicKeys: Array<{ wormhole: Uint8Array, ergo: Uint8Array }>;
 
     constructor(payloadBytes: Uint8Array) {
         super()
@@ -146,8 +146,8 @@ class updateGuardianPayload extends Payload {
         this.newIndex = codec.arrayToInt(stream.read(4), 4)
         this.keyLength = stream.read(1)[0]
 
-        this.guardianPubkeys = []
-        for (var i = 0; i < 6; i++) this.guardianPubkeys.push(stream.read(32))
+        this.guardianPublicKeys = []
+        for (let i = 0; i < 6; i++) this.guardianPublicKeys.push({wormhole: stream.read(32), ergo: stream.read(33)});
     }
 
     toHex = () => {
@@ -157,8 +157,18 @@ class updateGuardianPayload extends Payload {
             codec.UInt16ToByte(this.chainId),
             codec.UInt32ToByte(this.newIndex),
             codec.UInt8ToByte(this.keyLength),
-            this.guardianPubkeys.map(pubkey => Buffer.from(pubkey).toString('hex')).join("")
+            this.guardianPublicKeys.map(publicKey => Buffer.from(publicKey.wormhole).toString('hex') + Buffer.from(publicKey.ergo).toString('hex')).join("")
         ].join("")
+    }
+
+    getNewIndex = () => this.newIndex;
+
+    getWormholePublic = (): Array<Uint8Array> => {
+        return this.guardianPublicKeys.map(item => item.wormhole)
+    }
+
+    getErgoPublic = (): Array<Uint8Array> => {
+        return this.guardianPublicKeys.map(item => item.ergo)
     }
 }
 
@@ -194,8 +204,7 @@ class WormholeSignature {
             this.signatureData = signatureBytes.slice(1)
         } else if (signatureBytes.length == 65) {
             this.signatureData = signatureBytes
-        }
-        else {
+        } else {
             throw Error(`Wrong length of signature bytes ${signatureBytes.length}`)
         }
     }
@@ -257,8 +266,8 @@ class VAA {
         const guardianUpdateAddress: string = codec.ergoTreeToBase58Address((await Contracts.generateGuardianVAAContract()).ergo_tree())
         const payloadType: string = (boxAddress === transferAddress) ? "transfer"
             : (boxAddress === registerChainAddress) ? "register_chain"
-            : (boxAddress === guardianUpdateAddress) ? "update_guardian"
-            : ""
+                : (boxAddress === guardianUpdateAddress) ? "update_guardian"
+                    : ""
         if (payloadType == "") throw Error(`Box address was not compatible to any Payload types ${boxAddress}`)
 
         const guardianSetIndex: number = box.getGuardianSetIndex()
