@@ -133,7 +133,7 @@ const CreatePayment = async (bank: ErgoBox, VAABox: ErgoBox, sponsor: ErgoBox, p
     const bankTokens = bank.tokens().get(1).amount().as_i64().as_num()
     const outBank = await Boxes.getBank(
         tokenId,
-        wasm.I64.from_str((bankTokens - amount + fee).toString())
+        wasm.I64.from_str((bankTokens - amount).toString())
     );
     const tokenRedeem = await Boxes.getTokenRedeemBox(height)
     const receiverBuilder = new wasm.ErgoBoxCandidateBuilder(
@@ -145,14 +145,23 @@ const CreatePayment = async (bank: ErgoBox, VAABox: ErgoBox, sponsor: ErgoBox, p
         bank.tokens().get(1).id(),
         wasm.TokenAmount.from_i64(wasm.I64.from_str((amount - fee).toString()))
     )
-    const outSponsor = await Boxes.getSponsorBox(sponsor.value().as_i64().as_num() - config.fee - config.minBoxValue)
+    const feeBuilder = new wasm.ErgoBoxCandidateBuilder(
+        wasm.BoxValue.from_i64(wasm.I64.from_str(config.minBoxValue.toString())),
+        await Contracts.generateFeePayment(),
+        height
+    )
+    feeBuilder.add_token(
+        bank.tokens().get(1).id(),
+        wasm.TokenAmount.from_i64(wasm.I64.from_str(fee.toString()))
+    )
+    const outSponsor = await Boxes.getSponsorBox(sponsor.value().as_i64().as_num() - config.fee - 2 * config.minBoxValue)
     const inputBoxes = new wasm.ErgoBoxes(bank);
     inputBoxes.add(VAABox);
     inputBoxes.add(sponsor);
     const signed = await createAndSignTx(
         config.secret!,
         inputBoxes,
-        [outBank, tokenRedeem, receiverBuilder.build(), outSponsor],
+        [outBank, tokenRedeem, receiverBuilder.build(), outSponsor, feeBuilder.build()],
         height
     )
     await ApiNetwork.sendTx(signed.to_json())
