@@ -47,6 +47,7 @@
     "ethereumjs-wallet": "^1.0.2",
     "express": "^4.17.2",
     "getenv": "^1.0.0",
+    "jayson": "^3.6.6",
     "secure-random": "^1.1.2",
     "sleep-promise": "^9.1.0"
   }
