@@ -410,10 +410,16 @@ export const sponsorScript: string = `{
   // INPUTS: [GuardianTokenRepo, VAA-Guardian, sponsor], optional[Guardian] --> OUTPUTS: [GuardianTokenRepo, Guardian, VAA-refund, sponsor]
   val guardianCreation = {
     if(OUTPUTS(0).tokens(0)._1 == guardianNFT){
+      val sponsorValue = {
+        if(INPUTS.size == 3)
+          SELF.value - fee - minBoxErg
+        else
+          SELF.value - fee
+      }
       allOf(Coll(
         OUTPUTS(3).propositionBytes == SELF.propositionBytes,
         // Add register replication
-        OUTPUTS(3).value >= SELF.value - 2 * fee,
+        OUTPUTS(3).value >= sponsorValue,
       ))
     }
     else false
