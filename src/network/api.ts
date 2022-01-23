@@ -89,6 +89,11 @@ class ApiNetwork {
         return new GuardianBox(JSON.parse(box.boxes[0].to_json()))
     }
 
+    static getGuardianTokenRepo = async (): Promise<wasm.ErgoBox> => {
+        const box: wasm.ErgoBox = await ApiNetwork.getBoxWithToken(config.token.guardianNFT).then(boxes => boxes.boxes[0])
+        return await ApiNetwork.trackMemPool(box)
+    }
+
     static getVAABoxes = async (): Promise<Array<VAABox>> => {
         const vaaAddress = await Contracts.generateVAAContract()
         const boxes = await ApiNetwork.getCoveringErgoAndTokenForAddress(

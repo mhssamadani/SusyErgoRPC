@@ -4,10 +4,11 @@ import * as wasm from 'ergo-lib-wasm-nodejs'
 import * as Utils from '../utils/codec'
 import {verify} from "../utils/ecdsa";
 import config from "../config/conf";
-import {issueVAA} from "./transaction";
+import {IssueVAA} from "./transaction";
 import {sendAndWaitTx} from "./init/util";
-import { GuardianBox } from "../models/boxes";
+import {GuardianBox, VAABox} from "../models/boxes";
 import Contracts from "./contracts";
+import {Contract} from "ergo-lib-wasm-nodejs";
 
 const verifyVAASignatures = (vaa: VAA, guardianBox: GuardianBox): boolean => {
     const signatures: Array<WormholeSignature> = vaa.getSignatures()
@@ -20,16 +21,13 @@ const verifyVAASignatures = (vaa: VAA, guardianBox: GuardianBox): boolean => {
     return verified >= 4;
 }
 
-const processVAA = async (vaaBytes: Uint8Array, wait: boolean = false) => {
-    const vaaContract = await Contracts.generateVaaCreatorContract()
+const processVaaMessage = async (vaa: VAA, vaaContract: wasm.Contract, wait: boolean) => {
     const vaaAddress = wasm.Address.recreate_from_ergo_tree(vaaContract.ergo_tree()).to_base58(config.networkType)
-    const vaa: VAA = new VAA(vaaBytes, 'transfer')
     const guardianBox: GuardianBox = await ApiNetwork.getGuardianBox(vaa.getGuardianSetIndex())
     if (!verifyVAASignatures(vaa, guardianBox)) {
         console.log("[-] verify signature failed")
         return false
     }
-    // TODO: what is type of this variable ?
     const boxes = await ApiNetwork.getCoveringErgoAndTokenForAddress(
         vaaContract.ergo_tree().to_base16_bytes(),
         config.fee * 3,
@@ -37,22 +35,39 @@ const processVAA = async (vaaBytes: Uint8Array, wait: boolean = false) => {
     )
     const register = await ApiNetwork.getRegisterBox();
     if(!boxes.covered){
-        throw new Error("[-] insufficient box found to issue new vaa")
+        console.log("[-] insufficient box found to issue new vaa")
+        return false
     }
     const ergoBoxes: wasm.ErgoBoxes = new wasm.ErgoBoxes(boxes.boxes[0])
     boxes.boxes.slice(1).map(box => ergoBoxes.add(box))
-    if(wait){
-        await sendAndWaitTx(await issueVAA(ergoBoxes, vaa, vaaAddress, register))
-    }else {
-        await ApiNetwork.sendTx((await issueVAA(ergoBoxes, vaa, vaaAddress, register)).to_json);
+    if (wait) {
+        await sendAndWaitTx(await IssueVAA(ergoBoxes, vaa, vaaAddress, register, vaaContract))
+    } else {
+        await ApiNetwork.sendTx((await IssueVAA(ergoBoxes, vaa, vaaAddress, register, vaaContract)).to_json);
     }
-    return true
 }
 
-const processRegisterChain = async (vaaBytes: Uint8Array, wait: boolean = false) => {
-    const vaaContract = Contracts.generateRegisterVAAContract()
-    const vaa: VAA = new VAA(vaaBytes, 'register_chain')
+const processVAA = async (vaaBytes: Uint8Array, wait: boolean = false) => {
+    const vaaContract = await Contracts.generateVAAContract()
+    const vaa: VAA = new VAA(vaaBytes, 'transfer')
+    return processVaaMessage(vaa, vaaContract, wait)
 }
 
-export default processVAA;
-export { verifyVAASignatures }
+const processRegisterVaa = async (vaaBytes: Uint8Array, wait: boolean = false) => {
+    const vaaContract = await Contracts.generateRegisterVAAContract();
+    const vaa: VAA = new VAA(vaaBytes, 'register_chain');
+    return processVaaMessage(vaa, vaaContract, wait);
+}
+
+const processGuardianVaa = async (vaaBytes: Uint8Array, wait: boolean = false) => {
+    const vaaContract = await Contracts.generateGuardianVAAContract();
+    const vaa: VAA = new VAA(vaaBytes, 'update_guardian');
+    return processVaaMessage(vaa, vaaContract, wait);
+}
+
+export {
+    verifyVAASignatures,
+    processRegisterVaa,
+    processGuardianVaa,
+    processVAA,
+}
