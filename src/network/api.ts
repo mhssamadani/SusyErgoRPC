@@ -3,8 +3,7 @@ import config from "../config/conf";
 import Contracts from "../susy/contracts";
 import * as wasm from "ergo-lib-wasm-nodejs"
 import { GuardianBox, VAABox } from "../models/boxes";
-import { ergoTreeToAddress, ergoTreeToBase58Address } from "../utils/codec";
-import ErgoTx from "../models/types"
+import { ergoTreeToBase58Address } from "../utils/codec";
 
 const URL = config.node;
 const nodeClient = axios.create({
@@ -49,10 +48,13 @@ class ApiNetwork {
         return new wasm.ErgoStateContext(preHeader, blockHeaders);
     }
 
-    static getBoxWithToken = (token: string, offset: number = 0, limit: number=100): Promise<{total: number, boxes:Array<wasm.ErgoBox>}> => {
+    static getBoxWithToken = (token: string, offset: number = 0, limit: number = 100): Promise<{ total: number, boxes: Array<wasm.ErgoBox> }> => {
         return explorerApi.get(`/api/v1/boxes/unspent/byTokenId/${token}`).then(res => {
             const data = res.data
-            return {boxes: data.items.map((item:JSON) => wasm.ErgoBox.from_json(JSON.stringify(item))), total: data.total}
+            return {
+                boxes: data.items.map((item: JSON) => wasm.ErgoBox.from_json(JSON.stringify(item))),
+                total: data.total
+            }
         })
     }
 
@@ -177,7 +179,7 @@ class ApiNetwork {
         amount: number,
         covering: { [id: string]: number } = {},
         filter: (box: any) => boolean = () => true
-    ): Promise<{covered: boolean, boxes: Array<wasm.ErgoBox>}> => {
+    ): Promise<{ covered: boolean, boxes: Array<wasm.ErgoBox> }> => {
         let res = []
         const boxesItems = await ApiNetwork.getBoxesForAddress(tree, 0, 1)
         const total = boxesItems.total;

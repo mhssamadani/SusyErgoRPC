@@ -1,9 +1,9 @@
 import * as codec from '../utils/codec';
-import {Readable} from 'stream'
+import { Readable } from 'stream'
 import Contracts from '../susy/contracts';
 
 import * as wasm from 'ergo-lib-wasm-nodejs'
-import {VAABox} from './boxes';
+import { VAABox } from './boxes';
 
 abstract class Payload {
     protected byteToStream: (payloadBytes: Uint8Array) => Readable = (payloadBytes: Uint8Array) => {
@@ -339,4 +339,4 @@ class VAA {
     }
 }
 
-export {VAA, WormholeSignature, transferPayload, registerChainPayload, updateGuardianPayload}
+export { VAA, WormholeSignature, transferPayload, registerChainPayload, updateGuardianPayload }

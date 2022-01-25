@@ -1,12 +1,11 @@
 import * as bip39 from "bip39";
-import {hdkey} from "ethereumjs-wallet";
+import { hdkey } from "ethereumjs-wallet";
 import * as wasm from 'ergo-lib-wasm-nodejs'
-import {fromSeed} from 'bip32';
+import { fromSeed } from 'bip32';
 import config from "../../config/conf";
-import {createAndSignTx, getSecret, sendAndWaitTx} from "./util";
+import { createAndSignTx, getSecret, sendAndWaitTx } from "./util";
 import ApiNetwork from "../../network/api";
-import {Boxes} from "../boxes";
-import * as codec from '../../utils/codec'
+import { Boxes } from "../boxes";
 
 const wormholeAddress = () => {
     const mnemonic = bip39.generateMnemonic(160)
@@ -36,7 +35,7 @@ const createGuardianTokenRepo = async (tokenCount: number) => {
             [config.token.guardianToken]: tokenCount
         }
     )
-    if(!inputBoxes.covered){
+    if (!inputBoxes.covered) {
         throw Error("insufficient boxes to issue guardian box")
     }
     const txBoxes = new wasm.ErgoBoxes(inputBoxes.boxes[0]);

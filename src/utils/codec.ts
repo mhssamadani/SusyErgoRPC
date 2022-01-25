@@ -1,4 +1,3 @@
-import {WormholeSignature} from "../models/models"
 import * as wasm from 'ergo-lib-wasm-nodejs'
 import config from "../config/conf";
 

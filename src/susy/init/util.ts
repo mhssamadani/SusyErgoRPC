@@ -1,7 +1,6 @@
 import * as wasm from 'ergo-lib-wasm-nodejs'
-import {Buffer} from "buffer";
 import config from "../../config/conf";
-import {TextEncoder} from "util";
+import { TextEncoder } from "util";
 import sleep from "sleep-promise";
 import ApiNetwork from "../../network/api";
 

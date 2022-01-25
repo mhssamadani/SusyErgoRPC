@@ -1,5 +1,3 @@
-import * as codec from '../utils/codec';
-import { Readable } from 'stream'
 import { ErgoBox, ErgoTree } from 'ergo-lib-wasm-nodejs';
 import { VAA, WormholeSignature } from './models';
 import ApiNetwork from '../network/api';

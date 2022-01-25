@@ -1,16 +1,14 @@
-import {ErgoBoxes, ErgoBox, ErgoStateContext} from "ergo-lib-wasm-nodejs";
+import { ErgoBoxes, ErgoBox, ErgoStateContext } from "ergo-lib-wasm-nodejs";
 import config from "../config/conf";
-import {Boxes} from "./boxes";
+import { Boxes } from "./boxes";
 import Contracts from "./contracts";
 import ApiNetwork from "../network/api";
-import {hexStringToByte, strToUint8Array} from "../utils/codec";
-import {registerChainPayload, transferPayload, updateGuardianPayload, VAA} from "../models/models";
+import { registerChainPayload, transferPayload, updateGuardianPayload, VAA } from "../models/models";
 import * as codec from '../utils/codec';
-import {createAndSignTx, sendAndWaitTx, signTx} from "./init/util";
+import { createAndSignTx, sendAndWaitTx, signTx } from "./init/util";
 import * as wasm from 'ergo-lib-wasm-nodejs'
-import {blake2b} from "ethereum-cryptography/blake2b";
-import {VAABox} from "../models/boxes";
-import {guardianTokenRepo} from "./scripts";
+import { blake2b } from "ethereum-cryptography/blake2b";
+import { VAABox } from "../models/boxes";
 
 const IssueVAA = async (VAASourceBox: ErgoBoxes, VAAMessage: VAA, VAAAuthorityAddress: string, register: wasm.ErgoBox, contract: wasm.Contract): Promise<wasm.Transaction> => {
     const height = await ApiNetwork.getHeight();
@@ -96,9 +94,9 @@ const UpdateVAABox = async (
     const internalCtx = ctx ? ctx : await ApiNetwork.getErgoStateContext();
     const signedTx = wallet.sign_transaction(internalCtx, tx.build(), inputBoxes, tx_data_inputs)
     try {
-        if(wait){
+        if (wait) {
             await sendAndWaitTx(signedTx)
-        }else {
+        } else {
             await ApiNetwork.sendTx(signedTx.to_json())
         }
     } catch (exp: any) {
@@ -169,7 +167,7 @@ const CreatePayment = async (bank: ErgoBox, VAABox: ErgoBox, sponsor: ErgoBox, p
 }
 
 const UpdateRegister = async (register: wasm.ErgoBox, vaaBox: VAABox, sponsor: wasm.ErgoBox, height?: number) => {
-    if(!height) height = await ApiNetwork.getHeight();
+    if (!height) height = await ApiNetwork.getHeight();
     const boxes = new wasm.ErgoBoxes(register)
     boxes.add(vaaBox.getErgoBox())
     boxes.add(sponsor)
@@ -200,9 +198,9 @@ const updateGuardian = async (
     removingGuardianBox?: wasm.ErgoBox,
     height?: number
 ) => {
-    if(!height) height = await ApiNetwork.getHeight();
+    if (!height) height = await ApiNetwork.getHeight();
     const R4 = guardianTokenRepoBox.register_value(4)?.to_i32_array()!;
-    if(R4[0] > R4[1] && removingGuardianBox === undefined){
+    if (R4[0] > R4[1] && removingGuardianBox === undefined) {
         throw Error("max guardian box generated. you must specify an old guardian box to be removed")
     }
     const vaa = await vaaBox.getVAA()
@@ -211,8 +209,8 @@ const updateGuardian = async (
     const boxes = new wasm.ErgoBoxes(guardianTokenRepoBox)
     boxes.add(vaaBox.getErgoBox())
     boxes.add(sponsor)
-    if(removingGuardianBox) boxes.add(removingGuardianBox)
-    const guardianTokenRepoOut = await Boxes.getGuardianTokenRepo(guardianTokenRepoBox.tokens().get(1).amount().as_i64().as_num(),guardianTokenRepoBox, undefined, height)
+    if (removingGuardianBox) boxes.add(removingGuardianBox)
+    const guardianTokenRepoOut = await Boxes.getGuardianTokenRepo(guardianTokenRepoBox.tokens().get(1).amount().as_i64().as_num(), guardianTokenRepoBox, undefined, height)
     const tokenRedeem = await Boxes.getTokenRedeemBox(height)
     const guardian = await Boxes.getGuardianBox(payload.getNewIndex(), payload.getWormholePublic(), payload.getErgoPublic(), height)
     const sponsorOut = await Boxes.getSponsorBox(sponsor.value().as_i64().as_num() - config.fee - (removingGuardianBox ? 0 : config.minBoxValue))
@@ -285,4 +283,4 @@ const CreateRequest = async (bank: ErgoBox, application: ErgoBox, amount: number
 
 }
 
-export {CreateRequest, IssueVAA, UpdateVAABox, CreatePayment, UpdateRegister, updateGuardian};
+export { CreateRequest, IssueVAA, UpdateVAABox, CreatePayment, UpdateRegister, updateGuardian };

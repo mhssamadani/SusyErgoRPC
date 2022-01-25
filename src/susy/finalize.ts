@@ -1,14 +1,14 @@
 import ApiNetwork from "../network/api";
-import {transferPayload, VAA} from "../models/models";
-import {CreatePayment, updateGuardian, UpdateRegister} from "./transaction";
+import { transferPayload, VAA } from "../models/models";
+import { CreatePayment, updateGuardian, UpdateRegister } from "./transaction";
 import config from "../config/conf";
-import {VAABox} from "../models/boxes";
+import { VAABox } from "../models/boxes";
 import Contracts from "./contracts";
 
 
 const processPayment = async (vaaBox: VAABox) => {
     const box = vaaBox.getErgoBox();
-    if(box.ergo_tree() == (await Contracts.generateVAAContract()).ergo_tree()) {
+    if (box.ergo_tree() == (await Contracts.generateVAAContract()).ergo_tree()) {
         const R4 = box.register_value(4)?.to_coll_coll_byte()!;
         const payload = new transferPayload(R4[1]);
         const tokenId = payload.TokenAddress();
@@ -22,7 +22,7 @@ const processPayment = async (vaaBox: VAABox) => {
 
 const processRegister = async (vaaBox: VAABox) => {
     const box = vaaBox.getErgoBox();
-    if(box.ergo_tree() === (await Contracts.generateRegisterVAAContract()).ergo_tree()){
+    if (box.ergo_tree() === (await Contracts.generateRegisterVAAContract()).ergo_tree()) {
         const register = await ApiNetwork.getRegisterBox();
         const sponsor = await ApiNetwork.getSponsorBox();
         await UpdateRegister(register, vaaBox, sponsor)
@@ -31,7 +31,7 @@ const processRegister = async (vaaBox: VAABox) => {
 
 const processGuardian = async (vaaBox: VAABox) => {
     const box = vaaBox.getErgoBox();
-    if(box.ergo_tree() === (await Contracts.generateGuardianVAAContract()).ergo_tree()){
+    if (box.ergo_tree() === (await Contracts.generateGuardianVAAContract()).ergo_tree()) {
         const tokenRepo = await ApiNetwork.getGuardianTokenRepo();
         const R4 = tokenRepo.register_value(4)?.to_i32_array()!;
         const oldGuardian = (R4[0] < R4[1] ? undefined : (await ApiNetwork.getGuardianBox(R4[0] - R4[1])))?.getErgoBox()
@@ -60,7 +60,14 @@ const processFinalize = async () => {
     }
 }
 
+const finalizeServiceContinues = () => {
+    processFinalize().then(() => {
+        setTimeout(() => finalizeServiceContinues(), config.timeout)
+    })
+}
+
 
 export {
-    processFinalize
+    processFinalize,
+    finalizeServiceContinues
 }
