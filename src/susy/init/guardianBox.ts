@@ -33,7 +33,7 @@ const createGuardianTokenRepo = async (tokenCount: number) => {
         config.minBoxValue,
         {
             [config.token.guardianNFT]: 1,
-            [config.token.guardianToken]: 10000
+            [config.token.guardianToken]: tokenCount
         }
     )
     if(!inputBoxes.covered){
