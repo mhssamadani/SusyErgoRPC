@@ -1,4 +1,3 @@
-
 export const feePayment: string = `{
   val guardianToken = fromBase64("GUARDIAN_TOKEN");
   val Pk1 = proveDlog(decodePoint(CONTEXT.dataInputs(0).R5[Coll[Coll[Byte]]].get(0)))

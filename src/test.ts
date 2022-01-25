@@ -1,16 +1,17 @@
 import config from "./config/conf";
-import {signMsg} from "./susy/signService";
+import { signMsg } from "./susy/signService";
 import * as wasm from 'ergo-lib-wasm-nodejs'
-import {Boxes} from "./susy/boxes";
-import {getSecret} from "./susy/init/util";
+import { Boxes } from "./susy/boxes";
+import { getSecret } from "./susy/init/util";
 import ApiNetwork from "./network/api";
-import {generateRegisterVaa, generateVaa} from "./susy/init";
-import {CreatePayment, IssueVAA, UpdateRegister, UpdateVAABox} from "./susy/transaction";
-import {VAA, registerChainPayload, transferPayload, updateGuardianPayload} from "./models/models";
+import { generateRegisterVaa, generateVaa } from "./susy/init";
+import { CreatePayment, IssueVAA, UpdateRegister, UpdateVAABox } from "./susy/transaction";
+import { VAA, registerChainPayload, transferPayload, updateGuardianPayload } from "./models/models";
 import * as codec from "./utils/codec";
 import Contracts from "./susy/contracts";
-import {GuardianBox, VAABox} from "./models/boxes";
+import { GuardianBox, VAABox } from "./models/boxes";
 import jayson from 'jayson'
+
 const inputBoxes = wasm.ErgoBoxes.from_boxes_json([JSON.stringify({
     "boxId": "9b9a0ed0ffa5ca72e5a10c9340dc10575e386a87eda4026903e5de400d027ba5",
     "transactionId": "cca1c7c71106b265c8c5fe8eed9ee8564e0dec9519136eda7a4839e9248eaeca",
@@ -204,7 +205,7 @@ const processSignature = async (
     return vaaBox
 }
 const test_update_vaa_then_payment = async () => {
-    if(config.setSecret && config.setToken &&  config.setGuardianIndex) {
+    if (config.setSecret && config.setToken && config.setGuardianIndex) {
         config.setSecret("fe098b9a1dd5d8c4c8d8dc3ba85785f9ea7323d8718f4090092b25255a5870b2")
         config.setToken({
             VAAT: "6bb7e2a6245cea46acd5ea363389c274444903210a1d51aeac3c879ba92f2a24",
@@ -242,7 +243,7 @@ const test_update_vaa_then_payment = async () => {
         const registerVaaBoxObject = new VAABox(JSON.parse(registerVaa.to_json()))
         let msg = codec.strToUint8Array(registerVaaBoxObject.getObservation())
         vaaSource = registerVaaTx.outputs().get(1)
-        registerVaa = await processSignature(msg, registerVaa, wormholeBox,guardianBox, sponsorBox)
+        registerVaa = await processSignature(msg, registerVaa, wormholeBox, guardianBox, sponsorBox)
         console.log("update register box")
         const updateTx = await UpdateRegister(register, new VAABox(JSON.parse(registerVaa.to_json())), sponsorBox)
         register = updateTx.outputs().get(0)
@@ -272,7 +273,7 @@ const test_register_chain = async () => {
 
 }
 const generate_all_addresses = async () => {
-    if(config.setSecret && config.setToken &&  config.setGuardianIndex) {
+    if (config.setSecret && config.setToken && config.setGuardianIndex) {
         config.setSecret("fe098b9a1dd5d8c4c8d8dc3ba85785f9ea7323d8718f4090092b25255a5870b2")
         config.setToken({
             VAAT: "6bb7e2a6245cea46acd5ea363389c274444903210a1d51aeac3c879ba92f2a24",

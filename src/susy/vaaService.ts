@@ -1,14 +1,12 @@
 import { VAA, WormholeSignature } from "../models/models"
 import ApiNetwork from "../network/api";
 import * as wasm from 'ergo-lib-wasm-nodejs'
-import * as Utils from '../utils/codec'
-import {verify} from "../utils/ecdsa";
+import { verify } from "../utils/ecdsa";
 import config from "../config/conf";
-import {IssueVAA} from "./transaction";
-import {sendAndWaitTx} from "./init/util";
-import {GuardianBox, VAABox} from "../models/boxes";
+import { IssueVAA } from "./transaction";
+import { sendAndWaitTx } from "./init/util";
+import { GuardianBox, VAABox } from "../models/boxes";
 import Contracts from "./contracts";
-import {Contract} from "ergo-lib-wasm-nodejs";
 
 const verifyVAASignatures = (vaa: VAA, guardianBox: GuardianBox): boolean => {
     const signatures: Array<WormholeSignature> = vaa.getSignatures()
@@ -34,7 +32,7 @@ const processVaaMessage = async (vaa: VAA, vaaContract: wasm.Contract, wait: boo
         {[config.token.VAAT]: 1}
     )
     const register = await ApiNetwork.getRegisterBox();
-    if(!boxes.covered){
+    if (!boxes.covered) {
         console.log("[-] insufficient box found to issue new vaa")
         return false
     }

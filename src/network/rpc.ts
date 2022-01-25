@@ -1,4 +1,4 @@
-import {processVAA, processRegisterVaa, processGuardianVaa} from "../susy/vaaService";
+import { processVAA, processRegisterVaa, processGuardianVaa } from "../susy/vaaService";
 import config from "../config/conf";
 import jayson from 'jayson';
 

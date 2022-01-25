@@ -53,6 +53,7 @@ type BaseConfig = {
     getExtraSign: () => SignServiceConfig;
     getExtraInitialize: () => InitializeServiceConfig;
     guardianLimit: number;
+    timeout: number;
 
 }
 
@@ -125,6 +126,7 @@ const createConfig = () => {
         address: address,
         secret: secret,
         guardianLimit: parseInt(get_env("GUARDIAN_LIMIT", "2")),
+        timeout: parseInt(get_env("TIMEOUT", "180000")),
         getExtraRpc: notAvailable,
         getExtraInitialize: notAvailable,
         getExtraSign: notAvailable,

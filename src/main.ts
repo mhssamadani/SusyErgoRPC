@@ -1,16 +1,16 @@
 import setupRPC from "./network/rpc"
 import config from "./config/conf";
-import signService from "./susy/signService";
-import {processFinalize} from "./susy/finalize";
-import {initializeAll} from "./susy/init";
+import { finalizeServiceContinues } from "./susy/finalize";
+import { initializeAll } from "./susy/init";
+import { signServiceContinues } from "./susy/signService";
 
 const main = () => {
     if (config.service === "rpc") {
         setupRPC();
     } else if (config.service === "sign") {
-        signService().then(() => null)
+        signServiceContinues();
     } else if (config.service === "payment") {
-        processFinalize().then(() => null)
+        finalizeServiceContinues();
     } else if (config.service === "init") {
         initializeAll(config.getExtraInitialize().test).then(() => null)
     } else {

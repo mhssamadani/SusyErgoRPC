@@ -2,18 +2,17 @@ import * as wasm from 'ergo-lib-wasm-nodejs'
 import ApiNetwork from "../../network/api";
 import config from "../../config/conf";
 import Contracts from "../contracts";
-import createGuardianBox, {createGuardianTokenRepo} from "./guardianBox";
-import {createAndSignTx, fetchBoxesAndIssueToken, getSecret, sendAndWaitTx} from "./util";
-import {wormhole} from "../../config/keys";
-import {sign} from "../../utils/ecdsa";
+import createGuardianBox, { createGuardianTokenRepo } from "./guardianBox";
+import { createAndSignTx, fetchBoxesAndIssueToken, getSecret, sendAndWaitTx } from "./util";
+import { wormhole } from "../../config/keys";
+import { sign } from "../../utils/ecdsa";
 import * as codec from '../../utils/codec';
-import {Boxes} from "../boxes";
+import { Boxes } from "../boxes";
 import fs from 'fs';
-import {processVAA} from "../vaaService";
-import signService from "../signService";
-import {strToUint8Array} from "../../utils/codec";
-import {CreatePayment} from "../transaction";
-import {processFinalize} from "../finalize";
+import { processVAA } from "../vaaService";
+import { signService } from "../signService";
+import { strToUint8Array } from "../../utils/codec";
+import { processFinalize } from "../finalize";
 
 const issueBankIdentifier = async (secret: wasm.SecretKey) => {
     return await fetchBoxesAndIssueToken(secret, 10000, "Bank Identifier", "Wormhole Bank Boxes Identifier", 0)

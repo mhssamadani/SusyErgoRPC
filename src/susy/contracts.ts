@@ -9,9 +9,9 @@ import {
 } from "./scripts";
 import ApiNetwork from "../network/api";
 import config from "../config/conf";
-import {blake2b} from "ethereum-cryptography/blake2b";
+import { blake2b } from "ethereum-cryptography/blake2b";
 import * as wasm from "ergo-lib-wasm-nodejs"
-import {Contract} from "ergo-lib-wasm-nodejs";
+import { Contract } from "ergo-lib-wasm-nodejs";
 
 const getContractScriptHashBase64 = (contract: wasm.Contract) => blake2b(Buffer.from(contract.ergo_tree().to_base16_bytes(), "hex"), 32).toString("base64")
 

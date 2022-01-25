@@ -2,13 +2,12 @@ import config from "../config/conf";
 import ApiNetwork from "../network/api";
 import * as wasm from 'ergo-lib-wasm-nodejs'
 import * as codec from '../utils/codec'
-import {verify} from "../utils/ecdsa";
-import {UpdateVAABox} from "./transaction";
+import { verify } from "../utils/ecdsa";
+import { UpdateVAABox } from "./transaction";
 import BigInteger from 'bigi';
 import ecurve from 'ecurve'
-import {blake2b} from "ethereum-cryptography/blake2b"
+import { blake2b } from "ethereum-cryptography/blake2b"
 import secureRandom from 'secure-random'
-import {sendAndWaitTx} from "./init/util";
 import { GuardianBox, VAABox } from "../models/boxes";
 import { WormholeSignature } from "../models/models";
 
@@ -77,5 +76,14 @@ const signService = async (wait: boolean = false): Promise<void> => {
     }
 }
 
-export default signService;
-export {signMsg}
+const signServiceContinues = () => {
+    signService().then(() => {
+        setTimeout(() => signServiceContinues(), config.timeout);
+    });
+}
+
+export {
+    signMsg,
+    signServiceContinues,
+    signService
+}

@@ -1,8 +1,8 @@
 import Contracts from "./contracts";
 import config from "../config/conf";
 import * as wasm from "ergo-lib-wasm-nodejs";
-import {ergo, wormhole} from "../config/keys";
-import {Buffer} from "buffer";
+import { ergo, wormhole } from "../config/keys";
+import { Buffer } from "buffer";
 import * as codec from '../utils/codec';
 import ApiNetwork from "../network/api";
 
@@ -117,4 +117,4 @@ class Boxes {
     }
 }
 
-export {Boxes};
+export { Boxes };
