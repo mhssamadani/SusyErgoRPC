@@ -57,7 +57,7 @@ const createChangeBox = (boxes: wasm.ErgoBoxes, candidates: Array<wasm.ErgoBoxCa
     return null
 }
 
-const createAndSignTx = async (secret: wasm.SecretKey, boxes: wasm.ErgoBoxes, candidates: Array<wasm.ErgoBoxCandidate>, height: number, dataInputs?: wasm.ErgoBoxes, changeContract?: wasm.Contract) => {
+const createAndSignTx = async (secret: wasm.SecretKey, boxes: wasm.ErgoBoxes, candidates: Array<wasm.ErgoBoxCandidate>, height?: number, dataInputs?: wasm.ErgoBoxes, changeContract?: wasm.Contract) => {
     if (!height) height = await ApiNetwork.getHeight();
     const change = createChangeBox(boxes, candidates, height, secret, changeContract)
     const candidateBoxes = new wasm.ErgoBoxCandidates(candidates[0])
