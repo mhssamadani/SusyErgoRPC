@@ -2,7 +2,7 @@ import * as wasm from 'ergo-lib-wasm-nodejs'
 import ApiNetwork from "../../network/api";
 import config from "../../config/conf";
 import Contracts from "../contracts";
-import createGuardianBox from "./guardianBox";
+import createGuardianBox, {createGuardianTokenRepo} from "./guardianBox";
 import {createAndSignTx, fetchBoxesAndIssueToken, getSecret, sendAndWaitTx} from "./util";
 import {wormhole} from "../../config/keys";
 import {sign} from "../../utils/ecdsa";
@@ -250,6 +250,7 @@ const initializeServiceBoxes = async (emitterId: number, emitterAddress: string)
     const tokenId = await createBankBox("voUSDT2", "this is a testing token for susy version 2 ergo gateway", 2, 1e15)
     await createGuardianBox(1);
     await createRegisterBox(emitterId, emitterAddress);
+    await createGuardianTokenRepo(9999);
     return tokenId
 }
 

@@ -1,7 +1,7 @@
 import * as bip39 from "bip39";
 import {hdkey} from "ethereumjs-wallet";
 import * as wasm from 'ergo-lib-wasm-nodejs'
-import { fromSeed } from 'bip32';
+import {fromSeed} from 'bip32';
 import config from "../../config/conf";
 import {createAndSignTx, getSecret, sendAndWaitTx} from "./util";
 import ApiNetwork from "../../network/api";
@@ -26,6 +26,23 @@ const ergoAddress = () => {
     return {publicKey: publicKey, mnemonic: mnemonic, seed: secretHex}
 }
 
+const createGuardianTokenRepo = async (tokenCount: number) => {
+    const tokenRepoBox = await Boxes.getGuardianTokenRepo(tokenCount)
+    const inputBoxes = await ApiNetwork.getCoveringErgoAndTokenForAddress(
+        config.address.to_ergo_tree().to_base16_bytes(),
+        config.minBoxValue,
+        {
+            [config.token.guardianNFT]: 1,
+            [config.token.guardianToken]: 10000
+        }
+    )
+    if(!inputBoxes.covered){
+        throw Error("insufficient boxes to issue guardian box")
+    }
+    const txBoxes = new wasm.ErgoBoxes(inputBoxes.boxes[0]);
+    inputBoxes.boxes.slice(1).forEach(box => txBoxes.add(box))
+    await sendAndWaitTx(await createAndSignTx(config.secret!, txBoxes, [tokenRepoBox]));
+}
 const createGuardianBox = async (index: number) => {
     const secret = getSecret();
     const height = await ApiNetwork.getHeight();
@@ -37,13 +54,13 @@ const createGuardianBox = async (index: number) => {
         throw Error("bank identifier or nft not found")
     }
     const required = 3 * config.fee - boxes.map(box => box.value().as_i64().as_num()).reduce((a, b) => a + b, 0)
-    if(required > 0){
+    if (required > 0) {
         const ergBoxes = await ApiNetwork.getCoveringForAddress(
             secret.get_address().to_ergo_tree().to_base16_bytes().toString(),
             required,
             (box) => wasm.ErgoBox.from_json(JSON.stringify(box)).tokens().len() === 0
         )
-        if(!ergBoxes.covered) {
+        if (!ergBoxes.covered) {
             throw Error("insufficient boxes to issue guardian box")
         }
         ergBoxes.boxes.forEach(item => boxes.push(wasm.ErgoBox.from_json(JSON.stringify(item))))
@@ -56,3 +73,7 @@ const createGuardianBox = async (index: number) => {
 
 
 export default createGuardianBox;
+
+export {
+    createGuardianTokenRepo
+}
