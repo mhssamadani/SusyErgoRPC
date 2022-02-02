@@ -50,7 +50,7 @@ class Boxes {
         return candidateBuilder.build()
     }
 
-    static getGuardianBox = async (index: number, wormholePublic?: Array<Uint8Array>, ergoPublic?: Array<Uint8Array>, height: number = 0): Promise<wasm.ErgoBoxCandidate> => {
+    static getGuardianBox = async (guardianSetIndex: number, index: number, wormholePublic?: Array<Uint8Array>, ergoPublic?: Array<Uint8Array>, height: number = 0): Promise<wasm.ErgoBoxCandidate> => {
         if (!height) height = await ApiNetwork.getHeight()
         const contract: wasm.Contract = await Contracts.generateGuardianContract();
         wormholePublic = wormholePublic ? wormholePublic : wormhole.map(item => codec.hexStringToByte(item.address.substring(2)))
@@ -62,7 +62,8 @@ class Boxes {
         )
         builder.set_register_value(4, wasm.Constant.from_coll_coll_byte(wormholePublic))
         builder.set_register_value(5, wasm.Constant.from_coll_coll_byte(ergoPublic))
-        builder.set_register_value(6, wasm.Constant.from_i32(index))
+        builder.set_register_value(6, wasm.Constant.from_i32(guardianSetIndex))
+        builder.set_register_value(7, wasm.Constant.from_i32(index))
         builder.add_token(wasm.TokenId.from_str(config.token.guardianToken), wasm.TokenAmount.from_i64(wasm.I64.from_str("1")))
         return builder.build()
     }
@@ -116,5 +117,4 @@ class Boxes {
         return builder.build()
     }
 }
-
 export { Boxes };

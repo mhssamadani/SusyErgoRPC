@@ -1,12 +1,4 @@
-import {
-    bankScript, feePayment,
-    guardianScript,
-    guardianTokenRepo,
-    guardianVAAScript, registerScript, registerVAAScript,
-    sponsorScript, VAACreator,
-    VAAScript,
-    wormholeScript
-} from "./scripts";
+import * as scripts from './scripts';
 import ApiNetwork from "../network/api";
 import config from "../config/conf";
 import { blake2b } from "ethereum-cryptography/blake2b";
@@ -39,7 +31,7 @@ class Contracts {
         if (this.cache.feePayment) return this.cache.feePayment;
         else {
             try {
-                const script: string = feePayment.replace(
+                const script: string = scripts.feePayment.replace(
                     "GUARDIAN_TOKEN",
                     Buffer.from(config.token.guardianToken, "hex").toString("base64")
                 );
@@ -59,7 +51,7 @@ class Contracts {
         else {
             try {
                 const pubKey = Buffer.from(config.address.to_bytes(config.networkType)).slice(1, 34)
-                const script: string = VAACreator
+                const script: string = scripts.VAACreator
                     .replace("FEE", config.fee.toString())
                     .replace("PAYMENT_VAA", getContractScriptHashBase64(await this.generateVAAContract()))
                     .replace("REGISTER_VAA", getContractScriptHashBase64(await this.generateRegisterVAAContract()))
@@ -80,7 +72,7 @@ class Contracts {
     static generateBankContract = async () => {
         if (this.cache.bank) return this.cache.bank;
         else {
-            const script: string = bankScript
+            const script: string = scripts.bankScript
                 .replace("WORMHOLE_NFT", Buffer.from(config.token.wormholeNFT, "hex").toString("base64"))
                 .replace("BANK_NFT", Buffer.from(config.token.bankNFT, "hex").toString("base64"))
                 .replace("VAA_TOKEN", Buffer.from(config.token.VAAT, "hex").toString("base64"))
@@ -96,7 +88,7 @@ class Contracts {
         else {
             const feePaymentContract = await Contracts.generateFeePayment();
             const feePaymentHash = blake2b(Buffer.from(feePaymentContract.ergo_tree().to_base16_bytes(), "hex"), 32)
-            const script: string = VAAScript
+            const script: string = scripts.VAAScript
                 .replace("WORMHOLE_NFT", Buffer.from(config.token.wormholeNFT, "hex").toString("base64"))
                 .replace("BFT_SIGNATURE_COUNT", config.bftSignatureCount.toString())
                 .replace("TRANSACTION_FEE", config.fee.toString())
@@ -112,7 +104,7 @@ class Contracts {
     static generateWormholeContract = async () => {
         if (this.cache.wormhole) return this.cache.wormhole;
         else {
-            const script: string = wormholeScript
+            const script: string = scripts.wormholeScript
                 .replace("WORMHOLE_NFT", Buffer.from(config.token.wormholeNFT, "hex").toString("base64"))
                 .replace("BANK_NFT", Buffer.from(config.token.bankNFT, "hex").toString("base64"))
                 .replace("VAA_TOKEN", Buffer.from(config.token.VAAT, "hex").toString("base64"))
@@ -128,7 +120,7 @@ class Contracts {
     static generateSponsorContract = async () => {
         if (this.cache.sponsor) return this.cache.sponsor;
         else {
-            const script = sponsorScript
+            const script = scripts.sponsorScript
                 .replace("WORMHOLE_NFT", Buffer.from(config.token.wormholeNFT, "hex").toString("base64"))
                 .replace("BANK_NFT", Buffer.from(config.token.bankNFT, "hex").toString("base64"))
                 .replace("GUARDIAN_NFT", Buffer.from(config.token.guardianNFT, "hex").toString("base64"))
@@ -147,10 +139,10 @@ class Contracts {
         else {
             const guardianContract = await Contracts.generateGuardianContract()
             const guardianScriptHash = blake2b(Buffer.from(guardianContract.ergo_tree().to_base16_bytes(), "hex"), 32)
-            const script: string = guardianVAAScript
+            const script: string = scripts.guardianVAAScript
                 .replace("WORMHOLE_NFT", Buffer.from(config.token.wormholeNFT, "hex").toString("base64"))
                 .replace("GUARDIAN_NFT", Buffer.from(config.token.guardianNFT, "hex").toString("base64"))
-                .replace("BFT_SIGNATURE_COUNT", config.bftSignatureCount.toString())
+                .replace("BFT_SIGNATURE_COUNT", config.adminBftSignatureCount.toString())
                 .replace("MIN_BOX_ERG", MIN_BOX_ERG)
                 .replace("FEE", config.fee.toString())
                 .replace("GUARDIAN_SCRIPT_HASH", guardianScriptHash.toString("base64"))
@@ -164,7 +156,7 @@ class Contracts {
     static generateGuardianContract = async () => {
         if (this.cache.guardian) return this.cache.guardian;
         else {
-            const script: string = guardianScript
+            const script: string = scripts.guardianScript
                 .replace("GUARDIAN_NFT", Buffer.from(config.token.guardianNFT, "hex").toString("base64"));
             const address = await ApiNetwork.pay2ScriptAddress(script)
             const P2SA = wasm.Address.from_base58(address);
@@ -176,7 +168,7 @@ class Contracts {
     static generateGuardianTokenRepoContract = async () => {
         if (this.cache.guardianTokenRepo) return this.cache.guardianTokenRepo;
         else {
-            const script: string = guardianTokenRepo
+            const script: string = scripts.guardianTokenRepo
                 .replace("VAA_TOKEN", Buffer.from(config.token.VAAT, "hex").toString("base64"))
             const address = await ApiNetwork.pay2ScriptAddress(script)
             const P2SA = wasm.Address.from_base58(address);
@@ -188,7 +180,7 @@ class Contracts {
     static generateRegisterContract = async () => {
         if (this.cache.register) return this.cache.register;
         else {
-            const script: string = registerScript
+            const script: string = scripts.registerScript
                 .replace("VAA_TOKEN", Buffer.from(config.token.VAAT, "hex").toString("base64"))
             const address = await ApiNetwork.pay2ScriptAddress(script)
             const P2SA = wasm.Address.from_base58(address);
@@ -202,9 +194,9 @@ class Contracts {
         else {
             const registerContract = await Contracts.generateRegisterContract()
             const registerScriptHash = blake2b(Buffer.from(registerContract.ergo_tree().to_base16_bytes(), "hex"), 32)
-            const script: string = registerVAAScript
+            const script: string = scripts.registerVAAScript
                 .replace("REGISTER_NFT", Buffer.from(config.token.registerNFT, "hex").toString("base64"))
-                .replace("BFT_SIGNATURE_COUNT", config.bftSignatureCount.toString())
+                .replace("BFT_SIGNATURE_COUNT", config.adminBftSignatureCount.toString())
                 .replace("REGISTER_SCRIPT_HASH", registerScriptHash.toString("base64"))
                 .replace("MIN_BOX_ERG", MIN_BOX_ERG)
                 .replace("FEE", config.fee.toString())

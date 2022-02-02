@@ -64,7 +64,7 @@ const createGuardianBox = async (index: number) => {
         }
         ergBoxes.boxes.forEach(item => boxes.push(wasm.ErgoBox.from_json(JSON.stringify(item))))
     }
-    const candidate = await Boxes.getGuardianBox(0)
+    const candidate = await Boxes.getGuardianBox(1, 1)
     const inputBoxes = new wasm.ErgoBoxes(boxes[0])
     boxes.slice(1).forEach(item => inputBoxes.add(item))
     await sendAndWaitTx(await createAndSignTx(secret, inputBoxes, [candidate], height));

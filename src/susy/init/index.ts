@@ -4,7 +4,7 @@ import config from "../../config/conf";
 import Contracts from "../contracts";
 import createGuardianBox, { createGuardianTokenRepo } from "./guardianBox";
 import { createAndSignTx, fetchBoxesAndIssueToken, getSecret, sendAndWaitTx } from "./util";
-import { wormhole } from "../../config/keys";
+import { ergo, wormhole } from "../../config/keys";
 import { sign } from "../../utils/ecdsa";
 import * as codec from '../../utils/codec';
 import { Boxes } from "../boxes";
@@ -152,8 +152,16 @@ const createBankBox = async (name: string, description: string, decimal: number,
     await sendAndWaitTx(await createAndSignTx(secret, inputBoxes, [candidate], height));
     return tokenId
 }
+interface IssuedTokens {
+    VAAT: string;
+    wormholeNFT: string;
+    guardianNFT: string;
+    guardianToken: string;
+    bankNFT: string;
+    registerNFT: string;
+}
 
-const issueTokens = async () => {
+const issueTokens = async (): Promise<IssuedTokens> => {
     const secret = getSecret();
     const bankIdentifier = await issueBankIdentifier(secret);
     const vaaIdentifier = await issueVaaIdentifier(secret)
@@ -195,7 +203,7 @@ const generateVaaParts = (emitterId: number, emitterAddress: string, payload: Ar
     signatures += wormhole.map((item, index) => `0${index}` + sign(Buffer.from(observation, "hex"), Buffer.from(item.privateKey, "hex"))).join("")
     return [
         codec.UInt8ToByte(2),       // version
-        codec.UInt32ToByte(0),      // guardian set index
+        codec.UInt32ToByte(1),      // guardian set index
         signatures,
         ...observationParts
     ]
@@ -226,6 +234,21 @@ const generateVaa = (tokenId: string, emitterId: number, emitterAddress: string)
     return generateVaaParts(emitterId, emitterAddress, payload).join("")
 }
 
+const generateGuardianVaa = (index: number,emitterId: number, emitterAddress: string) => {
+    const payload = [
+        "000000000000000000000000000000000000000000546f6b656e427269646765", // core module
+        codec.UInt8ToByte(2),
+        codec.UInt16ToByte(config.bridgeId),
+        codec.UInt32ToByte(index),
+        codec.UInt8ToByte(6),
+        ...Array(6).fill("").map((item, index) => {
+            const guardianIndex = index >= 4 ? 6 - index : index
+            return wormhole[index].privateKey + ergo[index].publicKey
+        })
+    ]
+    return generateVaaParts(emitterId, emitterAddress, payload).join("")
+}
+
 const createRegisterBox = async (id: number, address: string, height?: number) => {
     height = height ? height : await ApiNetwork.getHeight();
     const registerBox = await Boxes.getRegisterChainBox(id, Buffer.from(address, "hex"), height)
@@ -246,33 +269,48 @@ const initializeServiceBoxes = async (emitterId: number, emitterAddress: string)
     await createVaaCreatorBox();
     await createWormholeBox();
     await createSponsorBox();
-    const tokenId = await createBankBox("voUSDT2", "this is a testing token for susy version 2 ergo gateway", 2, 1e15)
+    await createBankBox("voUSDT2", "this is a testing token for susy version 2 ergo gateway", 2, 1e15)
     await createGuardianBox(1);
     await createRegisterBox(emitterId, emitterAddress);
-    await createGuardianTokenRepo(9999);
-    return tokenId
+    await createGuardianTokenRepo(999);
 }
 
-const initializeAll = async (test: boolean = false) => {
+const writeTokens = (tokens: IssuedTokens) => {
+    const envConf = `
+TOKEN_VAAT=${tokens.VAAT}
+TOKEN_WORMHOLE_NFT=${tokens.wormholeNFT}
+TOKEN_GUARDIAN_NFT=${tokens.guardianNFT}
+TOKEN_GUARDIAN=${tokens.guardianToken}
+TOKEN_BANK_NFT=${tokens.bankNFT}
+TOKEN_REGISTER_NFT=${tokens.registerNFT}
+`
+    const ecosystemConf = `
+const tokens = {
+    "TOKEN_VAAT":"${tokens.VAAT}",
+    "TOKEN_WORMHOLE_NFT":"${tokens.wormholeNFT}",
+    "TOKEN_GUARDIAN_NFT":"${tokens.guardianNFT}",
+    "TOKEN_GUARDIAN":"${tokens.guardianToken}",
+    "TOKEN_BANK_NFT":"${tokens.bankNFT}",
+    "TOKEN_REGISTER_NFT":"${tokens.registerNFT}"
+}
+    `
+    const conf = `${envConf}\n\n\n${ecosystemConf}`
+    fs.writeFileSync("src/config/tokens.conf", conf)
+}
+
+const initializeAll = async () => {
     try {
-        const tokens = await issueTokens()
-        fs.writeFileSync("src/config/tokens.json", JSON.stringify(tokens))
-        if (config.setToken) {
+        if(config.getExtraInitialize().issueToken) {
+            const tokens = await issueTokens()
+            writeTokens(tokens)
+            if (config.setToken) {
+                config.setToken(tokens);
+            }
+        }
+        if(config.getExtraInitialize().issueBox){
             const emitterAddress = "74e7b65055d170d36d4fb926102fe6e047390980f66611f541f1b8268cbd5a25"
             const emitterId = 1
-            config.setToken(tokens);
-            const tokenId = await initializeServiceBoxes(emitterId, emitterAddress)
-            if (test) {
-                const vaa = generateVaa(tokenId, emitterId, emitterAddress)
-                await processVAA(codec.hexStringToByte(vaa), true)
-                if (config.setGuardianIndex) {
-                    for (let index = 0; index < 6; index++) {
-                        config.setGuardianIndex(index)
-                        await signService(true)
-                    }
-                }
-                await processFinalize()
-            }
+            await initializeServiceBoxes(emitterId, emitterAddress)
         }
     } catch (e: any) {
         const address = config.getExtraInitialize().address?.to_base58(config.networkType)
@@ -287,5 +325,6 @@ export {
     initializeServiceBoxes,
     generateRegisterVaa,
     generateVaa,
+    generateGuardianVaa,
     initializeAll
 }

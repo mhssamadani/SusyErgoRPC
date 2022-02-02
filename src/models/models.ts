@@ -123,7 +123,7 @@ class registerChainPayload extends Payload {
 }
 
 class updateGuardianPayload extends Payload {
-    static readonly payloadLength: number = 32 + 1 + 2 + 4 + 1 + 6 * (32);
+    static readonly payloadLength: number = 32 + 1 + 2 + 4 + 1 + 6 * (32 + 33);
     private module: Uint8Array;
     private action: number;
     private chainId: number;

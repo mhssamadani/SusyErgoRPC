@@ -48,37 +48,43 @@ const signService = async (wait: boolean = false): Promise<void> => {
 
     const vaaBoxes: Array<VAABox> = await ApiNetwork.getVAABoxes()
     for (const box of vaaBoxes) {
-        if (checkSign(box)) continue
+        try {
+            if (checkSign(box)) continue
 
-        await box.trackMempool()
-        if (checkSign(box)) continue
+            await box.trackMempool()
+            if (checkSign(box)) continue
+            const guardianBox: GuardianBox = await ApiNetwork.getGuardianBox(box.getGuardianSetIndex())
+            if (!verifyBoxSignature(box, guardianBox)) continue
 
-        const guardianBox: GuardianBox = await ApiNetwork.getGuardianBox(0)
-        if (!verifyBoxSignature(box, guardianBox)) continue
+            const msg: Uint8Array = codec.strToUint8Array(box.getObservation())
+            const signatureData: Array<string> = signMsg(msg, config.getExtraSign().guardian.privateKey)
 
-        const msg: Uint8Array = codec.strToUint8Array(box.getObservation())
-        const signatureData: Array<string> = signMsg(msg, config.getExtraSign().guardian.privateKey)
-
-        const wormholeBox: wasm.ErgoBox = await ApiNetwork.getWormholeBox()
-        const sponsorBox: wasm.ErgoBox = await ApiNetwork.getSponsorBox()
-        console.log("start generating transaction")
-        await UpdateVAABox(
-            wormholeBox,
-            box.getErgoBox(),
-            sponsorBox,
-            guardianBox.getErgoBox(),
-            config.getExtraSign().guardian.index,
-            Uint8Array.from(Buffer.from(signatureData[0], "hex")),
-            Uint8Array.from(Buffer.from(signatureData[1], "hex")),
-            undefined,
-            wait
-        )
+            const wormholeBox: wasm.ErgoBox = await ApiNetwork.getWormholeBox()
+            const sponsorBox: wasm.ErgoBox = await ApiNetwork.getSponsorBox()
+            console.log("start generating transaction")
+            await UpdateVAABox(
+                wormholeBox,
+                box.getErgoBox(),
+                sponsorBox,
+                guardianBox.getErgoBox(),
+                config.getExtraSign().guardian.index,
+                Uint8Array.from(Buffer.from(signatureData[0], "hex")),
+                Uint8Array.from(Buffer.from(signatureData[1], "hex")),
+                undefined,
+                wait
+            )
+        }catch (e){
+            console.log(e)
+        }
     }
 }
 
 const signServiceContinues = () => {
+    console.log("new signing tick")
     signService().then(() => {
-        setTimeout(() => signServiceContinues(), config.timeout);
+        let timeout = config.timeout - config.sendTxTimeout;
+        timeout += Math.floor(Math.random() * 2 * config.sendTxTimeout);
+        setTimeout(() => signServiceContinues(), timeout);
     });
 }
 

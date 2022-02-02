@@ -121,7 +121,7 @@ const fetchBoxesAndIssueToken = async (
     const inputBoxes = new wasm.ErgoBoxes(boxes.boxes[0]);
     boxes.boxes.slice(1,).forEach((box: wasm.ErgoBox) => inputBoxes.add(box))
     const {tx, id} = await issueToken(secret, inputBoxes, amount, name, description, decimal)
-    console.log(`token issues with is: ${id}. waiting transaction to be mined`)
+    console.log(`token issues with is: ${id} . waiting transaction to be mined`)
     await sendAndWaitTx(tx)
     return id
 }
