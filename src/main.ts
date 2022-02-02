@@ -11,8 +11,6 @@ const main = () => {
         signServiceContinues();
     } else if (config.service === "payment") {
         finalizeServiceContinues();
-    } else if (config.service === "init") {
-        initializeAll(config.getExtraInitialize().test).then(() => null)
     } else {
         console.log(`invalid service type ${config.service}`)
     }

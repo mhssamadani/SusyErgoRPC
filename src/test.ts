@@ -4,7 +4,7 @@ import * as wasm from 'ergo-lib-wasm-nodejs'
 import { Boxes } from "./susy/boxes";
 import { getSecret } from "./susy/init/util";
 import ApiNetwork from "./network/api";
-import { generateRegisterVaa, generateVaa } from "./susy/init";
+import { generateGuardianVaa, generateRegisterVaa, generateVaa } from "./susy/init";
 import { CreatePayment, IssueVAA, UpdateRegister, UpdateVAABox } from "./susy/transaction";
 import { VAA, registerChainPayload, transferPayload, updateGuardianPayload } from "./models/models";
 import * as codec from "./utils/codec";
@@ -139,7 +139,7 @@ const fakeSponsor = async () => {
 }
 
 const fakeGuardian = async () => {
-    const guardian = await Boxes.getGuardianBox(0)
+    const guardian = await Boxes.getGuardianBox(0, 1)
     return fakeBox(guardian)
 }
 
@@ -157,7 +157,6 @@ const fakeVAA = async (vaa: string, inputBox: wasm.ErgoBox, register: wasm.ErgoB
     const tx = await IssueVAA(
         new wasm.ErgoBoxes(inputBox),
         new VAA(codec.hexStringToByte(vaa), 'transfer'),
-        wasm.Address.recreate_from_ergo_tree((await Contracts.generateVaaCreatorContract()).ergo_tree()).to_base58(config.networkType),
         register,
         await Contracts.generateVAAContract(),
     )
@@ -235,7 +234,6 @@ const test_update_vaa_then_payment = async () => {
         const registerVaaTx = await IssueVAA(
             new wasm.ErgoBoxes(vaaSource),
             new VAA(codec.hexStringToByte(generateRegisterVaa(emitterId, emitterAddress)), "register_chain"),
-            wasm.Address.recreate_from_ergo_tree(vaaSource.ergo_tree()).to_base58(config.networkType),
             register,
             await Contracts.generateRegisterVAAContract()
         )
@@ -245,7 +243,7 @@ const test_update_vaa_then_payment = async () => {
         vaaSource = registerVaaTx.outputs().get(1)
         registerVaa = await processSignature(msg, registerVaa, wormholeBox, guardianBox, sponsorBox)
         console.log("update register box")
-        const updateTx = await UpdateRegister(register, new VAABox(JSON.parse(registerVaa.to_json())), sponsorBox)
+        const updateTx = await UpdateRegister(register, new VAABox(JSON.parse(registerVaa.to_json())), sponsorBox, undefined, false)
         register = updateTx.outputs().get(0)
 
         console.log("generating vaa box")
@@ -253,7 +251,6 @@ const test_update_vaa_then_payment = async () => {
         const vaaTx = await IssueVAA(
             new wasm.ErgoBoxes(vaaSource),
             new VAA(codec.hexStringToByte(vaaBytesHex), "transfer"),
-            wasm.Address.recreate_from_ergo_tree(vaaSource.ergo_tree()).to_base58(config.networkType),
             register,
             await Contracts.generateVAAContract()
         )
@@ -272,44 +269,49 @@ const test_update_vaa_then_payment = async () => {
 const test_register_chain = async () => {
 
 }
-const generate_all_addresses = async () => {
-    if (config.setSecret && config.setToken && config.setGuardianIndex) {
-        config.setSecret("fe098b9a1dd5d8c4c8d8dc3ba85785f9ea7323d8718f4090092b25255a5870b2")
-        config.setToken({
-            VAAT: "6bb7e2a6245cea46acd5ea363389c274444903210a1d51aeac3c879ba92f2a24",
-            wormholeNFT: "77d1777f31cc56e8285cccb3251e376e00cf5e54bf00e482006d6a455b2f744b",
-            guardianToken: "8da18dfa9b6e9f8f1fb8989dcc3fac162b6191b273d7c4bac69ea33baa34d36d",
-            guardianNFT: "da46feaf1e6e0379771ec828ed5bc7f30d05ac43a5f6a3c9a2727e39932b4163",
-            bankNFT: "4662cfff004341503d24338bf8b24f90f3c660e0a1378292832e31419a2486d0",
-            registerNFT: "466d0a2ce63bce0fafce842ef249f9cb56a574716f653206589b918240a886c4"
-        })
-        const vaaCreatorAddress = await Contracts.generateVaaCreatorContract();
-        const bankAddress = await Contracts.generateBankContract();
-        const vaaAddress = await Contracts.generateVAAContract();
-        const wormholeAddress = await Contracts.generateWormholeContract();
-        const sponsorAddress = await Contracts.generateSponsorContract();
-        const guardianVaaAddress = await Contracts.generateGuardianVAAContract();
-        const guardianAddress = await Contracts.generateGuardianContract();
-        const guardianTokenRepoAddress = await Contracts.generateGuardianTokenRepoContract();
-        const registerAddress = await Contracts.generateRegisterContract();
-        const registerVaaAddress = await Contracts.generateRegisterVAAContract();
-        const addresses = {
-            vaaCreatorAddress,
-            bankAddress,
-            vaaAddress,
-            wormholeAddress,
-            sponsorAddress,
-            guardianVaaAddress,
-            guardianAddress,
-            guardianTokenRepoAddress,
-            registerAddress,
-            registerVaaAddress,
+const generate_all_addresses = async (setAddress: boolean=true) => {
+    if (setAddress) {
+        if (config.setSecret && config.setToken && config.setGuardianIndex) {
+            config.setSecret("fe098b9a1dd5d8c4c8d8dc3ba85785f9ea7323d8718f4090092b25255a5870b2")
+            config.setToken({
+                VAAT: "6bb7e2a6245cea46acd5ea363389c274444903210a1d51aeac3c879ba92f2a24",
+                wormholeNFT: "77d1777f31cc56e8285cccb3251e376e00cf5e54bf00e482006d6a455b2f744b",
+                guardianToken: "8da18dfa9b6e9f8f1fb8989dcc3fac162b6191b273d7c4bac69ea33baa34d36d",
+                guardianNFT: "da46feaf1e6e0379771ec828ed5bc7f30d05ac43a5f6a3c9a2727e39932b4163",
+                bankNFT: "4662cfff004341503d24338bf8b24f90f3c660e0a1378292832e31419a2486d0",
+                registerNFT: "466d0a2ce63bce0fafce842ef249f9cb56a574716f653206589b918240a886c4"
+            })
+        } else {
+            return
         }
-        Object.entries(addresses).map(item => {
-            const address = wasm.Address.recreate_from_ergo_tree(item[1].ergo_tree()).to_base58(config.networkType)
-            console.log(`${item[0]}: ${address}`)
-        })
     }
+    const vaaCreatorAddress = await Contracts.generateVaaCreatorContract();
+    const bankAddress = await Contracts.generateBankContract();
+    const vaaAddress = await Contracts.generateVAAContract();
+    const wormholeAddress = await Contracts.generateWormholeContract();
+    const sponsorAddress = await Contracts.generateSponsorContract();
+    const guardianVaaAddress = await Contracts.generateGuardianVAAContract();
+    const guardianAddress = await Contracts.generateGuardianContract();
+    const guardianTokenRepoAddress = await Contracts.generateGuardianTokenRepoContract();
+    const registerAddress = await Contracts.generateRegisterContract();
+    const registerVaaAddress = await Contracts.generateRegisterVAAContract();
+    const addresses = {
+        vaaCreatorAddress,
+        bankAddress,
+        vaaAddress,
+        wormholeAddress,
+        sponsorAddress,
+        guardianVaaAddress,
+        guardianAddress,
+        guardianTokenRepoAddress,
+        registerAddress,
+        registerVaaAddress,
+    }
+    Object.entries(addresses).map(item => {
+        const address = wasm.Address.recreate_from_ergo_tree(item[1].ergo_tree()).to_base58(config.networkType)
+        console.log(`${item[0]}: ${address}`)
+    })
+
 }
 // TODO: should change to testcase
 const test_payloads = () => {
@@ -377,7 +379,9 @@ const test_rpc_client = () => {
     });
 }
 
-//test_update_vaa().then(() => null)
-test_update_vaa_then_payment().then(() => null)
-// generate_all_addresses().then(() => null)
+// test_update_vaa_then_payment().then(() => null)
+// generate_all_addresses(false).then(() => null)
 
+console.log(generateVaa("70c9060f1144c9c9ba32ded1a97412bebcd48f84e67831610149a624223577fc", 1, "74e7b65055d170d36d4fb926102fe6e047390980f66611f541f1b8268cbd5a25"))
+// console.log(generateGuardianVaa(2, 1, "74e7b65055d170d36d4fb926102fe6e047390980f66611f541f1b8268cbd5a25"))
+// console.log(generateRegisterVaa(1, "74e7b65055d170d36d4fb926102fe6e047390980f66611f541f1b8268cbd5a25"))

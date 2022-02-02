@@ -6,15 +6,15 @@ const setupRPC = () => {
     const server = new jayson.Server({
         vaa: (args: { hex: string }, callback: Function) => {
             const vaa = Buffer.from(args.hex, "hex");
-            processVAA(vaa).then(() => callback())
+            processVAA(vaa).then(() => callback()).catch(err => callback(err))
         },
         register: (args: { hex: string }, callback: Function) => {
             const vaa = Buffer.from(args.hex, "hex")
-            processRegisterVaa(vaa).then(() => callback())
+            processRegisterVaa(vaa).then(() => callback()).catch(err => callback(err))
         },
         guardian: (args: { hex: string }, callback: Function) => {
             const vaa = Buffer.from(args.hex, "hex")
-            processGuardianVaa(vaa).then(() => callback())
+            processGuardianVaa(vaa).then(() => callback()).catch(err => callback(err))
         },
     });
 

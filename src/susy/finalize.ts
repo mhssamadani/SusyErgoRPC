@@ -8,7 +8,7 @@ import Contracts from "./contracts";
 
 const processPayment = async (vaaBox: VAABox) => {
     const box = vaaBox.getErgoBox();
-    if (box.ergo_tree() == (await Contracts.generateVAAContract()).ergo_tree()) {
+    if (box.ergo_tree().to_base16_bytes() == (await Contracts.generateVAAContract()).ergo_tree().to_base16_bytes()) {
         const R4 = box.register_value(4)?.to_coll_coll_byte()!;
         const payload = new transferPayload(R4[1]);
         const tokenId = payload.TokenAddress();
@@ -22,25 +22,31 @@ const processPayment = async (vaaBox: VAABox) => {
 
 const processRegister = async (vaaBox: VAABox) => {
     const box = vaaBox.getErgoBox();
-    if (box.ergo_tree() === (await Contracts.generateRegisterVAAContract()).ergo_tree()) {
+    if (box.ergo_tree().to_base16_bytes() === (await Contracts.generateRegisterVAAContract()).ergo_tree().to_base16_bytes()) {
         const register = await ApiNetwork.getRegisterBox();
         const sponsor = await ApiNetwork.getSponsorBox();
-        await UpdateRegister(register, vaaBox, sponsor)
+        if(box.register_value(7)?.to_i32_array()[1]! >= config.adminBftSignatureCount) {
+            await UpdateRegister(register, vaaBox, sponsor);
+        }
     }
 }
 
 const processGuardian = async (vaaBox: VAABox) => {
     const box = vaaBox.getErgoBox();
-    if (box.ergo_tree() === (await Contracts.generateGuardianVAAContract()).ergo_tree()) {
+    if (box.ergo_tree().to_base16_bytes() === (await Contracts.generateGuardianVAAContract()).ergo_tree().to_base16_bytes()) {
         const tokenRepo = await ApiNetwork.getGuardianTokenRepo();
-        const R4 = tokenRepo.register_value(4)?.to_i32_array()!;
-        const oldGuardian = (R4[0] < R4[1] ? undefined : (await ApiNetwork.getGuardianBox(R4[0] - R4[1])))?.getErgoBox()
-        await updateGuardian(
-            tokenRepo,
-            vaaBox,
-            await ApiNetwork.getSponsorBox(),
-            oldGuardian
-        )
+        if(box.register_value(7)?.to_i32_array()[1]! >= config.adminBftSignatureCount) {
+            const R4 = tokenRepo.register_value(4)?.to_i32_array()!;
+            const lastGuardian = (await ApiNetwork.getGuardianBox(R4[0]))?.getErgoBox();
+            const oldGuardian = (R4[0] < R4[1] ? undefined : (await ApiNetwork.getGuardianBox(R4[0] - R4[1])))?.getErgoBox()
+            await updateGuardian(
+                tokenRepo,
+                vaaBox,
+                await ApiNetwork.getSponsorBox(),
+                lastGuardian,
+                oldGuardian
+            );
+        }
     }
 }
 const processFinalize = async () => {
@@ -61,8 +67,11 @@ const processFinalize = async () => {
 }
 
 const finalizeServiceContinues = () => {
+    console.log("new payment tick")
     processFinalize().then(() => {
-        setTimeout(() => finalizeServiceContinues(), config.timeout)
+        let timeout = config.timeout - config.sendTxTimeout;
+        timeout += Math.floor(Math.random() * 2 * config.sendTxTimeout);
+        setTimeout(() => finalizeServiceContinues(), timeout)
     })
 }
 

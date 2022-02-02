@@ -20,28 +20,31 @@ const verifyVAASignatures = (vaa: VAA, guardianBox: GuardianBox): boolean => {
 }
 
 const processVaaMessage = async (vaa: VAA, vaaContract: wasm.Contract, wait: boolean) => {
-    const vaaAddress = wasm.Address.recreate_from_ergo_tree(vaaContract.ergo_tree()).to_base58(config.networkType)
     const guardianBox: GuardianBox = await ApiNetwork.getGuardianBox(vaa.getGuardianSetIndex())
     if (!verifyVAASignatures(vaa, guardianBox)) {
         console.log("[-] verify signature failed")
         return false
     }
     const boxes = await ApiNetwork.getCoveringErgoAndTokenForAddress(
-        vaaContract.ergo_tree().to_base16_bytes(),
+        (await Contracts.generateVaaCreatorContract()).ergo_tree().to_base16_bytes(),
         config.fee * 3,
         {[config.token.VAAT]: 1}
     )
-    const register = await ApiNetwork.getRegisterBox();
+    const register = await ApiNetwork.trackMemPool(await ApiNetwork.getRegisterBox());
     if (!boxes.covered) {
-        console.log("[-] insufficient box found to issue new vaa")
+        console.log("[-] Insufficient box found to issue new vaa")
+        console.log("[-] Address is " + wasm.Address.recreate_from_ergo_tree((await Contracts.generateVaaCreatorContract()).ergo_tree()).to_base58(config.networkType));
         return false
     }
-    const ergoBoxes: wasm.ErgoBoxes = new wasm.ErgoBoxes(boxes.boxes[0])
-    boxes.boxes.slice(1).map(box => ergoBoxes.add(box))
+    const ergoBoxes: wasm.ErgoBoxes = new wasm.ErgoBoxes(await ApiNetwork.trackMemPool(boxes.boxes[0]))
+    for(let box of boxes.boxes.slice(1)){
+        ergoBoxes.add(await ApiNetwork.trackMemPool(box));
+    }
     if (wait) {
-        await sendAndWaitTx(await IssueVAA(ergoBoxes, vaa, vaaAddress, register, vaaContract))
+        await sendAndWaitTx(await IssueVAA(ergoBoxes, vaa, register, vaaContract))
     } else {
-        await ApiNetwork.sendTx((await IssueVAA(ergoBoxes, vaa, vaaAddress, register, vaaContract)).to_json);
+        const res = await ApiNetwork.sendTx((await IssueVAA(ergoBoxes, vaa, register, vaaContract)).to_json());
+        console.log(res)
     }
 }
 

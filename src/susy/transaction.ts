@@ -10,10 +10,10 @@ import * as wasm from 'ergo-lib-wasm-nodejs'
 import { blake2b } from "ethereum-cryptography/blake2b";
 import { VAABox } from "../models/boxes";
 
-const IssueVAA = async (VAASourceBox: ErgoBoxes, VAAMessage: VAA, VAAAuthorityAddress: string, register: wasm.ErgoBox, contract: wasm.Contract): Promise<wasm.Transaction> => {
+const IssueVAA = async (VAASourceBox: ErgoBoxes, VAAMessage: VAA, register: wasm.ErgoBox, contract: wasm.Contract): Promise<wasm.Transaction> => {
     const height = await ApiNetwork.getHeight();
-    const VAAAuthorityAddressSigma = wasm.Address.from_base58(VAAAuthorityAddress);
-    const addressHash = blake2b(Buffer.from(VAAAuthorityAddressSigma.to_ergo_tree().to_base16_bytes(), "hex"), 32)
+    const vaaTokenRepo = await Contracts.generateVaaCreatorContract()
+    const addressHash = blake2b(Buffer.from(vaaTokenRepo.ergo_tree().to_base16_bytes(), "hex"), 32)
     const VAABuilder = new wasm.ErgoBoxCandidateBuilder(
         wasm.BoxValue.from_i64(wasm.I64.from_str(config.minBoxValue.toString())),
         contract,
@@ -45,7 +45,7 @@ const IssueVAA = async (VAASourceBox: ErgoBoxes, VAAMessage: VAA, VAAAuthorityAd
         [outVAA],
         height,
         new wasm.ErgoBoxes(register),
-        wasm.Contract.pay_to_address(VAAAuthorityAddressSigma)
+        vaaTokenRepo
     ))
 }
 
@@ -166,7 +166,7 @@ const CreatePayment = async (bank: ErgoBox, VAABox: ErgoBox, sponsor: ErgoBox, p
     await ApiNetwork.sendTx(signed.to_json())
 }
 
-const UpdateRegister = async (register: wasm.ErgoBox, vaaBox: VAABox, sponsor: wasm.ErgoBox, height?: number) => {
+const UpdateRegister = async (register: wasm.ErgoBox, vaaBox: VAABox, sponsor: wasm.ErgoBox, height?: number, send: boolean = true) => {
     if (!height) height = await ApiNetwork.getHeight();
     const boxes = new wasm.ErgoBoxes(register)
     boxes.add(vaaBox.getErgoBox())
@@ -187,7 +187,11 @@ const UpdateRegister = async (register: wasm.ErgoBox, vaaBox: VAABox, sponsor: w
         config.secret?.get_address()!,
         wasm.BoxValue.SAFE_USER_MIN()
     )
-    return await signTx(config.secret!, builder.build(), selection, wasm.ErgoBoxes.from_boxes_json([]))
+    const signed = await signTx(config.secret!, builder.build(), selection, wasm.ErgoBoxes.from_boxes_json([]))
+    if(send) {
+        await ApiNetwork.sendTx(signed.to_json())
+    }
+    return signed
 }
 
 
@@ -195,6 +199,7 @@ const updateGuardian = async (
     guardianTokenRepoBox: wasm.ErgoBox,
     vaaBox: VAABox,
     sponsor: wasm.ErgoBox,
+    lastGuardian: wasm.ErgoBox,
     removingGuardianBox?: wasm.ErgoBox,
     height?: number
 ) => {
@@ -210,77 +215,29 @@ const updateGuardian = async (
     boxes.add(vaaBox.getErgoBox())
     boxes.add(sponsor)
     if (removingGuardianBox) boxes.add(removingGuardianBox)
-    const guardianTokenRepoOut = await Boxes.getGuardianTokenRepo(guardianTokenRepoBox.tokens().get(1).amount().as_i64().as_num(), guardianTokenRepoBox, undefined, height)
+    const guardianTokenRepoOut = await Boxes.getGuardianTokenRepo(guardianTokenRepoBox.tokens().get(1).amount().as_i64().as_num() - 1, guardianTokenRepoBox, undefined, height)
     const tokenRedeem = await Boxes.getTokenRedeemBox(height)
-    const guardian = await Boxes.getGuardianBox(payload.getNewIndex(), payload.getWormholePublic(), payload.getErgoPublic(), height)
+    const guardian = await Boxes.getGuardianBox(payload.getNewIndex(), R4[0] + 1, payload.getWormholePublic(), payload.getErgoPublic(), height)
     const sponsorOut = await Boxes.getSponsorBox(sponsor.value().as_i64().as_num() - config.fee - (removingGuardianBox ? 0 : config.minBoxValue))
     const outputs = new wasm.ErgoBoxCandidates(guardianTokenRepoOut);
     outputs.add(tokenRedeem)
     outputs.add(guardian)
-    outputs.add(sponsor)
+    outputs.add(sponsorOut)
+    const selection = new wasm.BoxSelection(boxes, new wasm.ErgoBoxAssetsDataList())
     const builder = wasm.TxBuilder.new(
-        new wasm.BoxSelection(boxes, new wasm.ErgoBoxAssetsDataList()),
+        selection,
         outputs,
         height,
         wasm.BoxValue.from_i64(wasm.I64.from_str(config.fee.toString())),
         config.secret?.get_address()!,
         wasm.BoxValue.SAFE_USER_MIN()
     )
+    const data_inputs = new wasm.DataInputs();
+    data_inputs.add(new wasm.DataInput(lastGuardian.box_id()))
+    builder.set_data_inputs(data_inputs)
+    const unsigned = builder.build()
+    const signed = await signTx(config.secret!, unsigned, selection, new wasm.ErgoBoxes(lastGuardian))
+    await ApiNetwork.sendTx(signed.to_json())
 }
 
-const CreateRequest = async (bank: ErgoBox, application: ErgoBox, amount: number, fee: number): Promise<string> => {
-    // hex string of "6obZ6DUGj8qLVwVB28U2tCwa13jVrAFvo3jzMuxTgSeY"
-    // const receiverAddress = strToUint8Array("563a38ab1f1be9e8c57f66f6cd56ed08e2b906e7e0310067f50171245906c21d");
-    // const receiverChainId = new Uint8Array([0, 1]);
-    const bankBuilder = new wasm.ErgoBoxCandidateBuilder(
-        bank.value(),
-        wasm.Contract.pay_to_address(codec.ergoTreeToAddress(bank.ergo_tree())),
-        0
-    );
-    // TODO:i64
-    bankBuilder.add_token(
-        bank.tokens().get(0).id(),
-        bank.tokens().get(0).amount()
-    );
-    bankBuilder.add_token(
-        bank.tokens().get(1).id(),
-        wasm.TokenAmount.from_i64(bank.tokens().get(1).amount().as_i64().checked_add(wasm.I64.from_str((amount).toString())))
-    );
-    bankBuilder.set_register_value(
-        4,
-        wasm.Constant.from_i64_str_array([amount.toString(), fee.toString()])
-    );
-    // TODO: should work with tuple coll
-    // bankBuilder.set_register_value(
-    //     5,
-    //     wasm.Constant.from_coll_coll_byte(receiverChainId, receiverAddress)
-    // );
-    const outBank = bankBuilder.build();
-    const inputBoxes = new wasm.ErgoBoxes(bank);
-    inputBoxes.add(application);
-    const txOutput = new wasm.ErgoBoxCandidates(outBank);
-    const boxSelection = new wasm.BoxSelection(inputBoxes, new wasm.ErgoBoxAssetsDataList());
-    const tx = wasm.TxBuilder.new(
-        boxSelection,
-        txOutput,
-        0,
-        wasm.BoxValue.from_i64(
-            wasm.I64.from_str(
-                config.fee.toString()
-            )
-        ),
-        codec.ergoTreeToAddress(application.ergo_tree()),
-        wasm.BoxValue.SAFE_USER_MIN()
-    ).build();
-    const sks = new wasm.SecretKeys();
-    sks.add(config.secret!);
-    const wallet = wasm.Wallet.from_secrets(sks);
-    const tx_data_inputs = wasm.ErgoBoxes.from_boxes_json([])
-
-    const ctx = await ApiNetwork.getErgoStateContext();
-    const signedTx = wallet.sign_transaction(ctx, tx, inputBoxes, tx_data_inputs)
-    return signedTx.to_json();
-
-}
-
-export { CreateRequest, IssueVAA, UpdateVAABox, CreatePayment, UpdateRegister, updateGuardian };
+export { IssueVAA, UpdateVAABox, CreatePayment, UpdateRegister, updateGuardian };

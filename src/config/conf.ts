@@ -28,7 +28,8 @@ interface SignServiceConfig {
 interface InitializeServiceConfig {
     secret: wasm.SecretKey;
     address?: wasm.Address;
-    test: boolean;
+    issueToken: boolean;
+    issueBox: boolean;
     guardian: Guardian;
 }
 
@@ -54,6 +55,7 @@ type BaseConfig = {
     getExtraInitialize: () => InitializeServiceConfig;
     guardianLimit: number;
     timeout: number;
+    sendTxTimeout: number;
 
 }
 
@@ -127,6 +129,7 @@ const createConfig = () => {
         secret: secret,
         guardianLimit: parseInt(get_env("GUARDIAN_LIMIT", "2")),
         timeout: parseInt(get_env("TIMEOUT", "180000")),
+        sendTxTimeout: parseInt(get_env("i", "10000")),
         getExtraRpc: notAvailable,
         getExtraInitialize: notAvailable,
         getExtraSign: notAvailable,
@@ -141,7 +144,8 @@ const createConfig = () => {
             },
             secret: secret,
             address: address,
-            test: get_env("TEST", "true").toLowerCase() == "true"
+            issueBox: get_env("CREATE_BOX", "false").toLowerCase() == "true",
+            issueToken: get_env("ISSUE_TOKEN", "false").toLowerCase() == "true"
         }
         resultConfig.getExtraInitialize = () => extra
         resultConfig.getExtraSign = () => extra as SignServiceConfig

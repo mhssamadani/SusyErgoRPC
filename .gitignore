@@ -4,4 +4,5 @@ build/
 package-lock.json
 .env
 src/config/tokens.json
+src/config/tokens.conf
 

@@ -220,18 +220,17 @@ export const guardianVAAScript: string = `{
 export const guardianTokenRepo: string = `{
   // INPUTS: [GuardianSetTokenRepo, VAA-Guardian, sponsor], optional[Guardian] --> OUTPUTS: [GuardianSetTokenRepo, VAA-refund, Guardian, sponsor]
   val VAAToken = fromBase64("VAA_TOKEN");
-  val guardianSetCount = SELF.R4[Coll[Int]].get(0)
-  val guardianSetLimit = SELF.R4[Coll[Int]].get(1)
+  val guardianIndex = SELF.R4[Coll[Int]].get(0)
+  val guardianLimit = SELF.R4[Coll[Int]].get(1)
   val tokenCheck = {
-    if(guardianSetCount >= guardianSetLimit){
+    if(guardianIndex > guardianLimit){
       allOf(Coll(
-        OUTPUTS(0).tokens(1)._2 == SELF.tokens(1)._2
+        OUTPUTS(0).tokens(1)._2 == SELF.tokens(1)._2,
+        INPUTS(3).R7[Int].get == guardianIndex - guardianLimit
       ))
     } else{
       allOf(Coll(
         OUTPUTS(0).tokens(1)._2 == SELF.tokens(1)._2 - 1,
-        // Guardian index of the next round stored on the oracle box
-        OUTPUTS(0).R4[Coll[Int]].get(0) == guardianSetCount + 1,
       ))
     }
   }
@@ -242,13 +241,17 @@ export const guardianTokenRepo: string = `{
       OUTPUTS(0).tokens(0)._1 == SELF.tokens(0)._1,
       OUTPUTS(0).tokens(1)._1 == SELF.tokens(1)._1,
       OUTPUTS(0).propositionBytes == SELF.propositionBytes,
-      OUTPUTS(0).R4[Coll[Int]].get(1) == guardianSetLimit,
+      OUTPUTS(0).R4[Coll[Int]].get(1) == guardianLimit,
+      // Guardian index of the next round stored on the oracle box
+      OUTPUTS(0).R4[Coll[Int]].get(0) == guardianIndex + 1,
       // Verifying VAA-Guardian
       INPUTS(1).tokens(0)._1 == VAAToken,
       // Guardian token
       OUTPUTS(2).tokens(0)._1 == SELF.tokens(1)._1,
       // DATA_INPUTS: [oldGuardianBox]
+      CONTEXT.dataInputs(0).R7[Int].get == guardianIndex,
       OUTPUTS(2).R6[Int].get > CONTEXT.dataInputs(0).R6[Int].get,
+      OUTPUTS(2).R7[Int].get == guardianIndex + 1,
       tokenCheck,
     ))
   )
